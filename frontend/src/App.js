@@ -1,23 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
+import RepositorySelector from './components/RepositorySelector';
+import PromptComposer from './components/PromptComposer';
 
 function App() {
-  const [message, setMessage] = useState("");
+  const [selectedRepository, setSelectedRepository] = useState('');
 
-  useEffect(() => {
-    axios.get('http://localhost:8000/')
-      .then(response => {
-        setMessage(response.data.message);
-      })
-      .catch(error => {
-        console.error("There was an error!", error);
-      });
-  }, []);
+  const handleRepositorySelect = (repo) => {
+    setSelectedRepository(repo);
+  };
 
   return (
-    <div className="App">
-      <h1>Speech-to-Code</h1>
-      <p>Message from backend: {message}</p>
+    <div className="container mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Speech-to-Code</h1>
+      <RepositorySelector onSelect={handleRepositorySelect} />
+      <PromptComposer selectedRepository={selectedRepository} />
     </div>
   );
 }
