@@ -1,6 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from utils.screenshot import capture_screenshot
 from utils.tree_structure import get_tree_structure
 import os
 
@@ -17,14 +16,6 @@ app.add_middleware(
 @app.get("/")
 async def root():
     return {"message": "Welcome to Speech-to-Code!"}
-
-@app.get("/screenshot")
-async def get_screenshot(path: str = 'localhost'):
-    screenshot = capture_screenshot(path)
-    if screenshot:
-        return {"screenshot": screenshot}
-    else:
-        raise HTTPException(status_code=500, detail="Failed to capture screenshot")
 
 @app.get("/tree")
 async def get_tree(repository: str = Query(..., description="The name of the repository")):

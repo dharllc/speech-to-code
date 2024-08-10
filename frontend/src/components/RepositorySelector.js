@@ -17,31 +17,25 @@ const RepositorySelector = ({ onSelect }) => {
     fetchDirectories();
   }, []);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (selectedDir) {
-      onSelect(`/Users/sachindhar/Documents/GitHub/${selectedDir}`);
-    }
+  const handleChange = (e) => {
+    const selected = e.target.value;
+    setSelectedDir(selected);
+    onSelect(selected);
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4 flex items-center">
-      <select
-        value={selectedDir}
-        onChange={(e) => setSelectedDir(e.target.value)}
-        className="px-2 py-1 border rounded"
-      >
-        <option value="">Select a repository</option>
-        {directories.map((dir) => (
-          <option key={dir} value={dir}>
-            {dir}
-          </option>
-        ))}
-      </select>
-      <button type="submit" className="ml-2 px-4 py-2 bg-blue-500 text-white rounded">
-        Set Repository
-      </button>
-    </form>
+    <select
+      value={selectedDir}
+      onChange={handleChange}
+      className="px-2 py-1 border rounded"
+    >
+      <option value="">Select a repository</option>
+      {directories.map((dir) => (
+        <option key={dir} value={dir}>
+          {dir}
+        </option>
+      ))}
+    </select>
   );
 };
 
