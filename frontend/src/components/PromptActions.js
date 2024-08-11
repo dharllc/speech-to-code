@@ -1,11 +1,11 @@
 import React, { useState, useRef } from 'react';
-import { Trees, Trash2, Mic, Square, Copy } from 'lucide-react';
+import { Trees, Trash2, Mic, Square, Copy, Check } from 'lucide-react';
 import AudioVisualizer from './AudioVisualizer';
-import CopyButton from './CopyButton';
 
 const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanceTranscription, setStatus, prompt }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [currentDuration, setCurrentDuration] = useState(0);
+  const [copied, setCopied] = useState(false);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
@@ -64,28 +64,38 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
     }
   };
 
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(prompt).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
   return (
     <div className="mb-2">
       <div className="flex mb-2 space-x-2">
-        <button className="px-4 py-2 bg-green-500 text-white rounded flex items-center" onClick={addTreeStructure}>
-          <Trees className="mr-2" />
-          Add Tree Structure
+        <button className="px-4 py-2 bg-green-500 text-white rounded flex items-center justify-center" onClick={addTreeStructure}>
+          <Trees className="mr-2" size={20} />
+          <span>Add Tree</span>
         </button>
-        <button className="px-4 py-2 bg-red-500 text-white rounded flex items-center" onClick={clearPrompt}>
-          <Trash2 className="mr-2" />
-          Clear
+        <button className="px-4 py-2 bg-red-500 text-white rounded flex items-center justify-center" onClick={clearPrompt}>
+          <Trash2 className="mr-2" size={20} />
+          <span>Clear</span>
         </button>
         <button
-          className={`px-4 py-2 ${isRecording ? 'bg-red-500' : 'bg-blue-500'} text-white rounded flex items-center`}
+          className={`px-4 py-2 ${isRecording ? 'bg-red-500' : 'bg-blue-500'} text-white rounded flex items-center justify-center`}
           onClick={isRecording ? stopRecording : startRecording}
         >
-          {isRecording ? <Square className="mr-2" /> : <Mic className="mr-2" />}
-          {isRecording ? 'Stop Recording' : 'Start Recording'}
+          {isRecording ? <Square className="mr-2" size={20} /> : <Mic className="mr-2" size={20} />}
+          <span>{isRecording ? 'Stop' : 'Record'}</span>
         </button>
-        <CopyButton textToCopy={prompt} className="px-4 py-2 bg-gray-500 text-white rounded flex items-center">
-          <Copy className="mr-2" />
-          Copy
-        </CopyButton>
+        <button 
+          className="px-4 py-2 bg-gray-500 text-white rounded flex items-center justify-center"
+          onClick={copyToClipboard}
+        >
+          {copied ? <Check className="mr-2" size={20} /> : <Copy className="mr-2" size={20} />}
+          <span>Copy</span>
+        </button>
       </div>
       {isRecording && (
         <div className="mb-2">

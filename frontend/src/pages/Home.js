@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import RepositorySelector from '../components/RepositorySelector';
-import PromptComposer from '../components/PromptComposer';
+import TwoColumnLayout from '../components/TwoColumnLayout';
 
 const Home = () => {
   const [selectedRepository, setSelectedRepository] = useState('');
 
   const handleRepositorySelect = (repo) => {
+    console.log("Selected repository in Home:", repo);
     setSelectedRepository(repo);
   };
 
@@ -14,10 +15,10 @@ const Home = () => {
       <h1 className="text-2xl font-bold mb-4">Speech-to-Code</h1>
       <RepositorySelector onSelect={handleRepositorySelect} />
       {selectedRepository && (
-        <div className="mt-4">
-          <h2 className="text-xl font-semibold mb-2">Prompt Composer</h2>
-          <PromptComposer selectedRepository={selectedRepository} />
-        </div>
+        <>
+          {console.log("Rendering TwoColumnLayout with repo:", selectedRepository)}
+          <TwoColumnLayout selectedRepository={selectedRepository} />
+        </>
       )}
     </div>
   );

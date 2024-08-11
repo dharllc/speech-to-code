@@ -3,20 +3,43 @@ import axios from 'axios';
 import PromptActions from './PromptActions';
 import PromptTextArea from './PromptTextArea';
 import TranscriptionDisplay from './TranscriptionDisplay';
+import FileChip from './FileChip';
 
-const PromptComposer = ({ selectedRepository }) => {
-  const [prompt, setPrompt] = useState('');
-  const [treeStructure, setTreeStructure] = useState('');
+const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => {
+  const [basePrompt, setBasePrompt] = useState('');
+  const [fileContents, setFileContents] = useState({});
   const [transcription, setTranscription] = useState('');
   const [enhancedTranscription, setEnhancedTranscription] = useState('');
   const [status, setStatus] = useState('');
+  const [treeStructure, setTreeStructure] = useState('');
 
   useEffect(() => {
     if (selectedRepository) {
       fetchTreeStructure(selectedRepository);
-      setPrompt('');
     }
   }, [selectedRepository]);
+
+  useEffect(() => {
+    const fetchFileContents = async () => {
+      const newContents = { ...fileContents };
+      for (const file of selectedFiles) {
+        if (!newContents[file.path]) {
+          try {
+            const response = await axios.get(`http://localhost:8000/file_content?repository=${selectedRepository}&path=${file.path}`);
+            newContents[file.path] = {
+              content: response.data.content,
+              tokenCount: response.data.token_count
+            };
+          } catch (error) {
+            console.error(`Failed to fetch content for ${file.path}:`, error);
+          }
+        }
+      }
+      setFileContents(newContents);
+    };
+
+    fetchFileContents();
+  }, [selectedFiles, selectedRepository]);
 
   const fetchTreeStructure = async (repo) => {
     try {
@@ -36,6 +59,30 @@ const PromptComposer = ({ selectedRepository }) => {
       }
     }
     return result;
+  };
+
+  const removeFile = (filePath) => {
+    setFileContents(prev => {
+      const newContents = { ...prev };
+      delete newContents[filePath];
+      return newContents;
+    });
+    onFileRemove(filePath);
+  };
+
+  const getFullPrompt = () => {
+    const filesContent = Object.entries(fileContents)
+      .map(([path, { content }]) => `File: ${path}\n\n${content}\n\n`)
+      .join('');
+    return `${basePrompt}\n${filesContent}`.trim();
+  };
+
+  const clearAll = () => {
+    setBasePrompt('');
+    setFileContents({});
+    setTranscription('');
+    setEnhancedTranscription('');
+    selectedFiles.forEach(file => onFileRemove(file.path));
   };
 
   const enhanceTranscription = async (text) => {
@@ -67,11 +114,17 @@ const PromptComposer = ({ selectedRepository }) => {
       setStatus('Error enhancing transcription');
     }
   };
-
   const addTreeStructure = () => {
-    if (!prompt.includes('[Repository Structure]')) {
-      const updatedPrompt = `${prompt}\n[Repository Structure for ${selectedRepository}]\n${treeStructure}`.trim();
-      setPrompt(updatedPrompt);
+    console.log("Adding tree structure");
+    console.log("Current treeStructure:", treeStructure);
+    console.log("Selected repository:", selectedRepository);
+  
+    if (!basePrompt.includes('[Repository Structure]')) {
+      const newPrompt = `${basePrompt}\n[Repository Structure for ${selectedRepository}]\n${treeStructure}`.trim();
+      console.log("New prompt:", newPrompt);
+      setBasePrompt(newPrompt);
+    } else {
+      console.log("Tree structure already exists in the prompt");
     }
   };
 
@@ -80,18 +133,31 @@ const PromptComposer = ({ selectedRepository }) => {
       <h2 className="text-xl font-bold mb-2">Prompt Composer</h2>
       <PromptActions
         addTreeStructure={addTreeStructure}
-        clearPrompt={() => setPrompt('')}
+        clearPrompt={clearAll}
         setTranscription={setTranscription}
         enhanceTranscription={enhanceTranscription}
         setStatus={setStatus}
-        prompt={prompt}
+        prompt={getFullPrompt()}
       />
-      <PromptTextArea prompt={prompt} setPrompt={setPrompt} />
+      <div className="mb-4">
+        {Object.entries(fileContents).map(([path, { tokenCount }]) => (
+          <FileChip
+            key={path}
+            fileName={path.split('/').pop()}
+            tokenCount={tokenCount}
+            onRemove={() => removeFile(path)}
+          />
+        ))}
+      </div>
+      <PromptTextArea 
+        prompt={getFullPrompt()} 
+        setPrompt={setBasePrompt}
+      />
       {status && <div className="mb-2 text-sm text-gray-600">{status}</div>}
       <TranscriptionDisplay
         transcription={transcription}
         enhancedTranscription={enhancedTranscription}
-        addToPrompt={(text) => setPrompt(prev => `${prev}\n${text}`.trim())}
+        addToPrompt={(text) => setBasePrompt(prev => `${prev}\n${text}`.trim())}
       />
     </div>
   );
