@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { FiFolder, FiFile, FiCode, FiFileText } from 'react-icons/fi';
 
@@ -13,21 +13,22 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
   const [treeStructure, setTreeStructure] = useState(null);
   const [expandedFolders, setExpandedFolders] = useState({});
 
+  const fetchTreeStructure = useCallback(async (repo) => {
+    try {
+      const response = await axios.get(`http://localhost:8000/tree?repository=${repo}`);
+      const parsedTree = JSON.parse(response.data.tree);
+      setTreeStructure(parsedTree);
+      initializeExpandedFolders(parsedTree);
+    } catch (error) {
+      console.error('Failed to fetch tree structure:', error);
+    }
+  }, []);
+
   useEffect(() => {
     if (selectedRepository) {
       fetchTreeStructure(selectedRepository);
     }
-  }, [selectedRepository]);
-
-  const fetchTreeStructure = async (repo) => {
-    try {
-      const response = await axios.get(`http://localhost:8000/tree?repository=${repo}`);
-      setTreeStructure(JSON.parse(response.data.tree));
-      initializeExpandedFolders(JSON.parse(response.data.tree));
-    } catch (error) {
-      console.error('Failed to fetch tree structure:', error);
-    }
-  };
+  }, [selectedRepository, fetchTreeStructure]);
 
   const initializeExpandedFolders = (node, path = '') => {
     if (node.type === 'directory') {
@@ -56,7 +57,7 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     const isSelected = selectedFiles.some(file => file.path === cleanPath);
     const isExpanded = expandedFolders[currentPath];
     const Icon = getFileIcon(node.type, node.name);
-
+  
     return (
       <div key={currentPath} className={`ml-${depth} text-sm`}>
         <div
@@ -66,7 +67,12 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
           onClick={(e) => handleFileClick(node, currentPath, e)}
         >
           <Icon className={`mr-1 ${node.type === 'directory' ? 'text-yellow-500' : 'text-gray-500'}`} size={14} />
-          <span className="truncate">{node.name}</span>
+          <span className="truncate flex-grow">{node.name}</span>
+          <span className="text-xs text-gray-500 ml-2">
+            {node.type === 'directory' 
+              ? `${node.item_count || 0} items${node.token_count ? `, ${node.token_count} tokens` : ''}`
+              : node.token_count ? `${node.token_count} tokens` : ''}
+          </span>
         </div>
         {node.type === 'directory' && isExpanded && (
           <div className="ml-2">

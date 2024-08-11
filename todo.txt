@@ -1,2 +1,0 @@
-add copy button to prompt text
-removing file chip should remove file text from prompt
