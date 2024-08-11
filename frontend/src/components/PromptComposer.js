@@ -114,10 +114,17 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => 
       setStatus('Error enhancing transcription');
     }
   };
-
   const addTreeStructure = () => {
+    console.log("Adding tree structure");
+    console.log("Current treeStructure:", treeStructure);
+    console.log("Selected repository:", selectedRepository);
+  
     if (!basePrompt.includes('[Repository Structure]')) {
-      setBasePrompt(prev => `${prev}\n[Repository Structure for ${selectedRepository}]\n${treeStructure}`.trim());
+      const newPrompt = `${basePrompt}\n[Repository Structure for ${selectedRepository}]\n${treeStructure}`.trim();
+      console.log("New prompt:", newPrompt);
+      setBasePrompt(newPrompt);
+    } else {
+      console.log("Tree structure already exists in the prompt");
     }
   };
 

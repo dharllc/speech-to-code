@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { FiFolder, FiFile, FiCode, FiFileText } from 'react-icons/fi';
+
+const getFileIcon = (type, name) => {
+  if (type === 'directory') return FiFolder;
+  if (name.endsWith('.js') || name.endsWith('.py')) return FiCode;
+  if (name.endsWith('.md') || name.endsWith('.txt')) return FiFileText;
+  return FiFile;
+};
 
 const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles }) => {
   const [treeStructure, setTreeStructure] = useState(null);
@@ -41,23 +49,30 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     }
   };
 
-  const renderTree = (node, path = '') => {
+  const renderTree = (node, path = '', depth = 0) => {
     if (!node) return null;
     const currentPath = `${path}/${node.name}`;
     const cleanPath = currentPath.replace(new RegExp(`^/${selectedRepository}/`), '');
     const isSelected = selectedFiles.some(file => file.path === cleanPath);
     const isExpanded = expandedFolders[currentPath];
+    const Icon = getFileIcon(node.type, node.name);
 
     return (
-      <div key={currentPath} className="ml-4">
+      <div key={currentPath} className={`ml-${depth} text-sm`}>
         <div
-          className={`cursor-pointer ${isSelected ? 'bg-blue-200' : ''} hover:bg-gray-100 flex items-center`}
+          className={`cursor-pointer ${
+            isSelected ? 'bg-blue-100 font-semibold' : ''
+          } hover:bg-gray-50 flex items-center py-0.5 px-1 rounded`}
           onClick={(e) => handleFileClick(node, currentPath, e)}
         >
-          <span className="mr-2">{node.type === 'directory' ? (isExpanded ? '📂' : '📁') : '📄'}</span>
-          <span className="flex-grow">{node.name}</span>
+          <Icon className={`mr-1 ${node.type === 'directory' ? 'text-yellow-500' : 'text-gray-500'}`} size={14} />
+          <span className="truncate">{node.name}</span>
         </div>
-        {node.type === 'directory' && isExpanded && node.children.map(child => renderTree(child, currentPath))}
+        {node.type === 'directory' && isExpanded && (
+          <div className="ml-2">
+            {node.children.map(child => renderTree(child, currentPath, depth + 1))}
+          </div>
+        )}
       </div>
     );
   };
