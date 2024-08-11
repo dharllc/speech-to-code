@@ -29,7 +29,7 @@ const TwoColumnLayout = ({ selectedRepository }) => {
           onFileRemove={handleFileRemove}
         />
       </div>
-      <div className="w-1/2 p-4 border-l">
+      <div className="w-1/2 p-4 border-l border-gray-300 dark:border-gray-700">
         <RepositoryFileViewer
           selectedRepository={selectedRepository}
           onFileSelect={handleFileSelect}

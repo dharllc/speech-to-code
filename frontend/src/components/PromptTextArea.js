@@ -39,14 +39,21 @@ const PromptTextArea = ({ prompt, setPrompt }) => {
   };
 
   return (
-    <div className="relative mb-4">
+    <div className="mb-4">
       <textarea
-        className="w-full h-64 p-2 border rounded"
+        className="w-full h-64 p-2 border rounded resize-none
+                   bg-white dark:bg-gray-800 
+                   text-gray-900 dark:text-gray-100
+                   border-gray-300 dark:border-gray-700
+                   focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400
+                   focus:border-transparent
+                   scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600
+                   scrollbar-track-gray-200 dark:scrollbar-track-gray-800"
         value={prompt}
         onChange={handlePromptChange}
         placeholder="Compose your prompt here..."
       />
-      <div className="absolute bottom-2 right-2 text-sm text-gray-500">
+      <div className="text-right mt-1 text-sm text-gray-500 dark:text-gray-400">
         Tokens: {tokenCount}
       </div>
     </div>
