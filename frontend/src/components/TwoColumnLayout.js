@@ -16,12 +16,17 @@ const TwoColumnLayout = ({ selectedRepository }) => {
     });
   };
 
+  const handleFileRemove = (filePath) => {
+    setSelectedFiles(prev => prev.filter(f => f.path !== filePath));
+  };
+
   return (
     <div className="flex flex-row w-full mt-4">
       <div className="w-1/2 p-4 overflow-auto">
         <PromptComposer
           selectedRepository={selectedRepository}
           selectedFiles={selectedFiles}
+          onFileRemove={handleFileRemove}
         />
       </div>
       <div className="w-1/2 p-4 border-l">

@@ -12,15 +12,20 @@ function App() {
     setSelectedFiles([]); // Clear selected files when a new repository is selected
   };
 
-  const handleFileSelect = (file) => {
+  const handleFileSelectionChange = (file, isSelected) => {
     setSelectedFiles(prev => {
-      const isAlreadySelected = prev.some(f => f.path === file.path);
-      if (isAlreadySelected) {
-        return prev.filter(f => f.path !== file.path);
+      if (isSelected) {
+        // Add the file if it's not already in the array
+        return prev.some(f => f.path === file.path) ? prev : [...prev, file];
       } else {
-        return [...prev, file];
+        // Remove the file if it's in the array
+        return prev.filter(f => f.path !== file.path);
       }
     });
+  };
+
+  const handleClearAllFiles = () => {
+    setSelectedFiles([]);
   };
 
   return (
@@ -31,7 +36,8 @@ function App() {
         <TwoColumnLayout
           selectedRepository={selectedRepository}
           selectedFiles={selectedFiles}
-          onFileSelect={handleFileSelect}
+          onFileSelectionChange={handleFileSelectionChange}
+          onClearAllFiles={handleClearAllFiles}
         />
       )}
     </div>
