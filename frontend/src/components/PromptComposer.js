@@ -3,20 +3,27 @@ import axios from 'axios';
 import PromptActions from './PromptActions';
 import PromptTextArea from './PromptTextArea';
 import TranscriptionDisplay from './TranscriptionDisplay';
+import FileChip from './FileChip';
 
-const PromptComposer = ({ selectedRepository }) => {
+const PromptComposer = ({ selectedRepository, selectedFiles }) => {
   const [prompt, setPrompt] = useState('');
-  const [treeStructure, setTreeStructure] = useState('');
   const [transcription, setTranscription] = useState('');
   const [enhancedTranscription, setEnhancedTranscription] = useState('');
   const [status, setStatus] = useState('');
+  const [includedFiles, setIncludedFiles] = useState([]);
+  const [treeStructure, setTreeStructure] = useState('');
 
   useEffect(() => {
     if (selectedRepository) {
       fetchTreeStructure(selectedRepository);
-      setPrompt('');
     }
   }, [selectedRepository]);
+
+  useEffect(() => {
+    if (selectedFiles && selectedFiles.length > 0) {
+      fetchFileContents(selectedFiles);
+    }
+  }, [selectedFiles, selectedRepository]);
 
   const fetchTreeStructure = async (repo) => {
     try {
@@ -36,6 +43,37 @@ const PromptComposer = ({ selectedRepository }) => {
       }
     }
     return result;
+  };
+
+  const fetchFileContents = async (files) => {
+    try {
+      const contents = await Promise.all(
+        files.map(file => {
+          const cleanPath = file.path.replace(new RegExp(`^${selectedRepository}/`), '');
+          return axios.get(`http://localhost:8000/file_content?repository=${selectedRepository}&path=${cleanPath}`);
+        })
+      );
+      const newIncludedFiles = contents.map((content, index) => ({
+        ...files[index],
+        content: content.data.content,
+        tokenCount: content.data.token_count
+      }));
+      setIncludedFiles(newIncludedFiles);
+      updatePromptWithFiles(newIncludedFiles);
+    } catch (error) {
+      console.error('Failed to fetch file contents:', error);
+    }
+  };
+
+  const updatePromptWithFiles = (files) => {
+    const fileContents = files.map(file => `File: ${file.path}\n\n${file.content}\n\n`).join('');
+    setPrompt(prev => `${prev}\n${fileContents}`.trim());
+  };
+
+  const removeFile = (file) => {
+    setIncludedFiles(prev => prev.filter(f => f.path !== file.path));
+    const fileContentRegex = new RegExp(`File: ${file.path}\\n\\n[\\s\\S]*?\\n\\n`, 'g');
+    setPrompt(prev => prev.replace(fileContentRegex, '').trim());
   };
 
   const enhanceTranscription = async (text) => {
@@ -86,6 +124,16 @@ const PromptComposer = ({ selectedRepository }) => {
         setStatus={setStatus}
         prompt={prompt}
       />
+      <div className="mb-4">
+        {includedFiles.map(file => (
+          <FileChip
+            key={file.path}
+            fileName={file.name}
+            tokenCount={file.tokenCount}
+            onRemove={() => removeFile(file)}
+          />
+        ))}
+      </div>
       <PromptTextArea prompt={prompt} setPrompt={setPrompt} />
       {status && <div className="mb-2 text-sm text-gray-600">{status}</div>}
       <TranscriptionDisplay

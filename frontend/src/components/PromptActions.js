@@ -1,9 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Trees, Trash2, Mic, Square, Copy } from 'lucide-react';
+import { Trees, Trash2, Mic, Square } from 'lucide-react';
 import AudioVisualizer from './AudioVisualizer';
-import CopyButton from './CopyButton';
 
-const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanceTranscription, setStatus, prompt }) => {
+const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanceTranscription, setStatus }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [currentDuration, setCurrentDuration] = useState(0);
   const mediaRecorderRef = useRef(null);
@@ -66,12 +65,12 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
 
   return (
     <div className="mb-2">
-      <div className="flex mb-2 space-x-2">
-        <button className="px-4 py-2 bg-green-500 text-white rounded flex items-center" onClick={addTreeStructure}>
+      <div className="flex mb-2">
+        <button className="px-4 py-2 bg-green-500 text-white rounded flex items-center mr-2" onClick={addTreeStructure}>
           <Trees className="mr-2" />
-          Add Tree Structure
+          Add Tree
         </button>
-        <button className="px-4 py-2 bg-red-500 text-white rounded flex items-center" onClick={clearPrompt}>
+        <button className="px-4 py-2 bg-red-500 text-white rounded flex items-center mr-2" onClick={clearPrompt}>
           <Trash2 className="mr-2" />
           Clear
         </button>
@@ -80,12 +79,8 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
           onClick={isRecording ? stopRecording : startRecording}
         >
           {isRecording ? <Square className="mr-2" /> : <Mic className="mr-2" />}
-          {isRecording ? 'Stop Recording' : 'Start Recording'}
+          {isRecording ? 'Stop' : 'Record'}
         </button>
-        <CopyButton textToCopy={prompt} className="px-4 py-2 bg-gray-500 text-white rounded flex items-center">
-          <Copy className="mr-2" />
-          Copy
-        </CopyButton>
       </div>
       {isRecording && (
         <div className="mb-2">
