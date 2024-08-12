@@ -21,15 +21,15 @@ const TwoColumnLayout = ({ selectedRepository }) => {
   };
 
   return (
-    <div className="flex flex-row w-full mt-4">
-      <div className="w-1/2 p-4 overflow-auto">
+    <div className="flex flex-row w-full mt-2">
+      <div className="w-1/2 pr-2 overflow-auto">
         <PromptComposer
           selectedRepository={selectedRepository}
           selectedFiles={selectedFiles}
           onFileRemove={handleFileRemove}
         />
       </div>
-      <div className="w-1/2 p-4 border-l">
+      <div className="w-1/2 pl-2 border-l border-gray-300 dark:border-gray-700">
         <RepositoryFileViewer
           selectedRepository={selectedRepository}
           onFileSelect={handleFileSelect}

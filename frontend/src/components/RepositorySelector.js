@@ -27,11 +27,11 @@ const RepositorySelector = ({ onSelect }) => {
     <select
       value={selectedDir}
       onChange={handleChange}
-      className="px-2 py-1 border rounded"
+      className="px-2 py-1 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
     >
-      <option value="">Select a repository</option>
+      <option value="" className="bg-white dark:bg-gray-800">Select a repository</option>
       {directories.map((dir) => (
-        <option key={dir} value={dir}>
+        <option key={dir} value={dir} className="bg-white dark:bg-gray-800">
           {dir}
         </option>
       ))}
