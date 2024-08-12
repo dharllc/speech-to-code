@@ -4,14 +4,24 @@ from utils.tree_structure import get_tree_structure
 from utils import prompt_manager
 import os, json, tiktoken
 from pydantic import BaseModel
-import openai
+from openai import AsyncOpenAI
+import logging
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
 app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
-# Set your OpenAI API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+MODEL_COSTS = {
+    "gpt-4o-mini": {"input": 0.15, "output": 0.60},
+}
 
 class TokenRequest(BaseModel):
     text: str
@@ -132,20 +142,44 @@ async def set_default_prompt(category: str, prompt_id: int):
         return {"status": "success"}
     raise HTTPException(status_code=404, detail="Prompt not found")
 
+def calculate_cost(input_tokens, output_tokens, model):
+    if model not in MODEL_COSTS:
+        return 0
+    input_cost = (input_tokens / 1000000) * MODEL_COSTS[model]["input"]
+    output_cost = (output_tokens / 1000000) * MODEL_COSTS[model]["output"]
+    return input_cost + output_cost
+
 @app.post("/llm_completion")
 async def llm_completion(request: CompletionRequest):
     try:
-        full_prompt = f"{request.prompt}\n\nUser Input: {request.user_input}"
-        response = openai.Completion.create(
+        logger.info(f"Generating response using model: {request.model}")
+        logger.info(f"Prompt: {request.prompt}")
+        logger.info(f"User Input: {request.user_input}")
+
+        response = await openai_client.chat.completions.create(
             model=request.model,
-            prompt=full_prompt,
-            max_tokens=1000,
-            n=1,
-            stop=None,
-            temperature=0.7,
+            messages=[
+                {"role": "system", "content": request.prompt},
+                {"role": "user", "content": request.user_input}
+            ]
         )
-        return {"completion": response.choices[0].text.strip()}
+
+        content = response.choices[0].message.content
+        input_tokens = response.usage.prompt_tokens
+        output_tokens = response.usage.completion_tokens
+        cost = calculate_cost(input_tokens, output_tokens, request.model)
+
+        logger.info(f"Response: {content}")
+        logger.info(f"Input tokens: {input_tokens}, Output tokens: {output_tokens}, Cost: ${cost:.6f}")
+
+        return {
+            "completion": content,
+            "input_tokens": input_tokens,
+            "output_tokens": output_tokens,
+            "cost": cost
+        }
     except Exception as e:
+        logger.error(f"Error generating AI response: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
