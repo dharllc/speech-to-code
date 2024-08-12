@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const RepositorySelector = ({ onSelect }) => {
+const RepositorySelector = ({ onSelect, selectedRepository }) => {
   const [directories, setDirectories] = useState([]);
-  const [selectedDir, setSelectedDir] = useState('');
 
   useEffect(() => {
     const fetchDirectories = async () => {
@@ -19,23 +18,29 @@ const RepositorySelector = ({ onSelect }) => {
 
   const handleChange = (e) => {
     const selected = e.target.value;
-    setSelectedDir(selected);
     onSelect(selected);
   };
 
   return (
-    <select
-      value={selectedDir}
-      onChange={handleChange}
-      className="px-2 py-1 border rounded bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-700"
-    >
-      <option value="" className="bg-white dark:bg-gray-800">Select a repository</option>
-      {directories.map((dir) => (
-        <option key={dir} value={dir} className="bg-white dark:bg-gray-800">
-          {dir}
-        </option>
-      ))}
-    </select>
+    <div className="mb-4">
+      <label htmlFor="repository" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+        Select Repository
+      </label>
+      <select
+        id="repository"
+        name="repository"
+        className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+        onChange={handleChange}
+        value={selectedRepository || ""}
+      >
+        <option value="" className="bg-white dark:bg-gray-800">Select a repository</option>
+        {directories.map((dir) => (
+          <option key={dir} value={dir} className="bg-white dark:bg-gray-800">
+            {dir}
+          </option>
+        ))}
+      </select>
+    </div>
   );
 };
 
