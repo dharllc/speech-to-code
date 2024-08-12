@@ -45,7 +45,7 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     const cleanPath = path.replace(new RegExp(`^/${selectedRepository}/`), '');
     if (node.type === 'directory') {
       toggleFolder(path);
-    } else if (event.detail === 2) {  // Double click
+    } else if (event.detail === 2) {
       onFileSelect({ ...node, path: cleanPath });
     }
   };
@@ -85,8 +85,8 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
 
   return (
     <div className="h-full overflow-auto">
-      <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-gray-100">Repository Structure</h3>
-      {treeStructure ? renderTree(treeStructure) : <p className="text-gray-700 dark:text-gray-300">Loading repository structure...</p>}
+      <h3 className="text-base font-bold mb-2">Repository Structure</h3>
+      {treeStructure ? renderTree(treeStructure) : <p className="text-sm text-gray-700 dark:text-gray-300">Loading repository structure...</p>}
     </div>
   );
 };

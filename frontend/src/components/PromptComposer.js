@@ -114,23 +114,17 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => 
       setStatus('Error enhancing transcription');
     }
   };
+
   const addTreeStructure = () => {
-    console.log("Adding tree structure");
-    console.log("Current treeStructure:", treeStructure);
-    console.log("Selected repository:", selectedRepository);
-  
     if (!basePrompt.includes('[Repository Structure]')) {
       const newPrompt = `${basePrompt}\n[Repository Structure for ${selectedRepository}]\n${treeStructure}`.trim();
-      console.log("New prompt:", newPrompt);
       setBasePrompt(newPrompt);
-    } else {
-      console.log("Tree structure already exists in the prompt");
     }
   };
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-2">Prompt Composer</h2>
+    <div className="p-2">
+      <h2 className="text-base font-bold mb-2">Prompt Composer</h2>
       <PromptActions
         addTreeStructure={addTreeStructure}
         clearPrompt={clearAll}
@@ -139,7 +133,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => 
         setStatus={setStatus}
         prompt={getFullPrompt()}
       />
-      <div className="mb-4">
+      <div className="mb-2">
         {Object.entries(fileContents).map(([path, { tokenCount }]) => (
           <FileChip
             key={path}
@@ -153,7 +147,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => 
         prompt={getFullPrompt()} 
         setPrompt={setBasePrompt}
       />
-      {status && <div className="mb-2 text-sm text-gray-600">{status}</div>}
+      {status && <div className="mb-1 text-xs text-gray-600">{status}</div>}
       <TranscriptionDisplay
         transcription={transcription}
         enhancedTranscription={enhancedTranscription}
