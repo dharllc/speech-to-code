@@ -232,17 +232,29 @@ async def intent_understanding(request: IntentUnderstandingRequest):
 
 @app.post("/code_planning")
 async def code_planning(request: CodePlanningRequest):
+    logger.info(f"Received code planning request: {request}")
+    logger.info(f"Prompt: {request.prompt}")
+    logger.info(f"Intent Data: {request.intent_data}")
+    logger.info(f"Repository: {request.repository}")
+
     try:
+        logger.info(f"Received code planning request: {request}")
+        logger.info(f"Prompt: {request.prompt}")
+        logger.info(f"Intent Data: {request.intent_data}")
+        logger.info(f"Repository: {request.repository}")
         response = await openai_client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": request.prompt},
-                {"role": "user", "content": f"Repository: {request.repository}\nIntent Data: {json.dumps(request.intent_data)}"}
+                {"role": "user", "content": f"Repository: {request.repository}\nIntent Data: {request.intent_data}"}
             ]
         )
-        return {"plan": response.choices[0].message.content}
+        plan = response.choices[0].message.content
+        logger.info(f"Generated code plan: {plan}")
+        return {"plan": plan}
     except Exception as e:
         logger.error(f"Error in code planning: {str(e)}")
+        logger.error(f"Request data: {request}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/code_generation")

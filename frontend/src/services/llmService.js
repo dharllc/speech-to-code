@@ -42,14 +42,16 @@ export const getIntentUnderstanding = async (prompt, userInput, repository) => {
 
 export const getCodePlanning = async (prompt, intentData, repository) => {
   try {
+    console.log('Sending code planning request with:', { prompt, intentData, repository });
     const response = await axios.post(`${API_URL}/code_planning`, {
       prompt,
       intent_data: intentData,
       repository
     });
+    console.log('Code planning response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error in code planning:', error);
+    console.error('Error in code planning:', error.response ? error.response.data : error.message);
     throw error;
   }
 };

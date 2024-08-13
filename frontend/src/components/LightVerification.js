@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import * as llmService from '../services/llmService';
 
-const LightVerification = ({ isActive, onComplete, environmentResults, repository }) => {
+const LightVerification = ({ isActive, onComplete, environmentResults, repository, moveToNextStage }) => {
   const [verificationResult, setVerificationResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showFullResults, setShowFullResults] = useState(false);
 
   useEffect(() => {
     if (isActive && environmentResults) {
-      performLightVerification();
+      console.log('Light Verification activated with results:', environmentResults);
     }
   }, [isActive, environmentResults]);
 
@@ -32,14 +33,40 @@ const LightVerification = ({ isActive, onComplete, environmentResults, repositor
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
       <h3 className="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">Light Verification</h3>
-      {loading && <p className="text-gray-600 dark:text-gray-400">Performing verification...</p>}
-      {error && <p className="text-red-500">{error}</p>}
+      <button
+        onClick={performLightVerification}
+        disabled={loading}
+        className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+      >
+        {loading ? 'Verifying...' : 'Perform Light Verification'}
+      </button>
+      <button
+        onClick={() => setShowFullResults(!showFullResults)}
+        className="mt-2 ml-2 px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+      >
+        {showFullResults ? 'Hide Environment Results' : 'Show Environment Results'}
+      </button>
+      {showFullResults && (
+        <div className="mt-4">
+          <h4 className="font-semibold text-gray-800 dark:text-gray-200">Environment Results:</h4>
+          <pre className="whitespace-pre-wrap bg-gray-100 dark:bg-gray-700 p-2 rounded mt-2 text-sm">
+            {JSON.stringify(environmentResults, null, 2)}
+          </pre>
+        </div>
+      )}
+      {error && <p className="text-red-500 mt-4">{error}</p>}
       {verificationResult && (
-        <div>
-          <h4 className="font-semibold mt-4 mb-2 text-gray-800 dark:text-gray-200">Verification Result:</h4>
+        <div className="mt-4">
+          <h4 className="font-semibold text-gray-800 dark:text-gray-200">Verification Result:</h4>
           <pre className="bg-gray-100 dark:bg-gray-700 p-4 rounded overflow-x-auto text-sm text-gray-800 dark:text-gray-200">
             {JSON.stringify(verificationResult, null, 2)}
           </pre>
+          <button
+            onClick={moveToNextStage}
+            className="mt-4 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+          >
+            Finish
+          </button>
         </div>
       )}
     </div>
