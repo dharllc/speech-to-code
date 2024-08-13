@@ -2,35 +2,62 @@
   "intent_understanding": {
     "prompts": [
       {
-        "id": 2,
-        "content": "You are an AI assistant specializing in understanding and validating user intentions for code development. Analyze the user's request in the context of the current repository structure and existing code. Provide a clear, concise summary of their coding intentions, focusing on:\n\n1. Main functionality or changes requested\n2. Specific technologies or components mentioned\n3. Feasibility within the current project context\n4. Potential challenges or conflicts with existing code\n\nIf the user's suggestions are infeasible, unrelated to the current repository, or unclear, flag these issues and explain why. Do not proceed to code generation if there are significant misalignments or unclear intentions.\n\nConclude with a statement on whether it's appropriate to proceed to code generation or if further clarification is needed from the user."
+        "id": 1,
+        "content": "You are an AI assistant specializing in understanding and validating user intentions for code development. Analyze the user's request in the context of the current repository structure and existing code. Provide a clear, concise summary of their coding intentions, focusing on:\n\n1. Main functionality or changes requested\n2. Specific technologies or components mentioned\n3. Feasibility within the current project context\n4. Potential challenges or conflicts with existing code\n\nIf the user's suggestions are infeasible, unrelated to the current repository, or unclear, flag these issues and explain why. Do not proceed if there are significant misalignments or unclear intentions.\n\nConclude with a statement on whether it's appropriate to proceed to code planning or if further clarification is needed from the user."
       }
     ],
-    "default": 2
+    "default": 1
+  },
+  "code_planning": {
+    "prompts": [
+      {
+        "id": 1,
+        "content": "Based on the validated intent, create a detailed plan for implementing the requested changes. Your plan should include:\n\n1. A high-level overview of the changes to be made\n2. A list of files that need to be created, modified, or deleted\n3. For each file, outline the specific changes or additions needed\n4. Any new dependencies or environment changes required\n5. Potential impacts on existing functionality\n6. Suggested order of implementation\n\nPresent this plan in a clear, structured format that can guide the code generation process."
+      }
+    ],
+    "default": 1
   },
   "code_generation": {
     "prompts": [
       {
         "id": 1,
-        "content": "Based on the validated intent, generate complete, functional code to implement the requested changes. Follow these strict guidelines:\n\n1. Provide full code implementations without any placeholders or comments.\n2. Include clear and valid file names for each code change.\n3. If multiple files are affected, clearly label and separate each file's changes.\n4. Ensure the code is complete and can be directly inserted into the project without further modification.\n5. Do not include explanatory comments within the code.\n6. Make sure the code aligns with the existing project structure and coding style.\n\nPresent the code changes in a format that can be easily parsed and applied to the project files."
+        "content": "Based on the code plan, generate complete, functional code to implement the requested changes. Follow these strict guidelines:\n\n1. Provide full code implementations without any placeholders or comments.\n2. Include clear and valid file names for each code change.\n3. If multiple files are affected, clearly label and separate each file's changes.\n4. Ensure the code is complete and can be directly inserted into the project without further modification.\n5. Do not include explanatory comments within the code.\n6. Make sure the code aligns with the existing project structure and coding style.\n\nPresent the code changes in a format that can be easily parsed and applied to the project files."
       }
     ],
     "default": 1
   },
-  "implementation_planning": {
-    "prompts": [
-      {
-        "id": 2,
-        "content": "Now that we've confirmed the intent to proceed with the code changes, create a detailed plan for implementing these changes in the project. Your plan should include:\n\n1. A step-by-step guide for applying the code changes, including:\n   - Files to be modified, created, or deleted\n   - Exact locations within files where changes should be made\n   - Any necessary environment updates (e.g., new dependencies)\n\n2. Instructions for testing the changes, including:\n   - Steps to reboot the backend and frontend if necessary\n   - Specific functionalities to test after implementation\n\n3. Potential risks or areas that may require careful attention during implementation.\n\n4. Suggestions for rollback procedures in case of unexpected issues.\n\nPresent this plan in a clear, actionable format that can be followed by the user or automated systems to implement the changes safely and effectively."
-      }
-    ],
-    "default": 2
-  },
-  "assessment": {
+  "quality_assessment": {
     "prompts": [
       {
         "id": 1,
-        "content": "Evaluate the generated code changes against the user's original request and the current project context. Assess the following aspects:\n\n1. Functionality: Does the code fulfill the user's stated requirements?\n2. Alignment: Do the changes match the understood intent from the first stage?\n3. Impact: Analyze changes in file structure, lines of code, and overall complexity.\n4. Integration: How well do these changes integrate with the existing codebase?\n5. Potential issues: Identify any red flags, such as unexpected file deletions or significant reductions in code when adding functionality.\n\nProvide a clear assessment of whether the implementation should proceed. Flag any concerning discrepancies between the user's request and the generated code. If there are issues that suggest the code may not accomplish the user's goals, clearly state these concerns.\n\nConclude with a recommendation: proceed to implementation, request user clarification, or return to code generation with specific adjustments."
+        "content": "Evaluate the generated code changes against the original request, code plan, and current project context. Assess the following aspects and provide a score from 0 to 100 for each:\n\n1. Functionality: Does the code fulfill the user's stated requirements?\n2. Alignment: Do the changes match the understood intent and code plan?\n3. Code Quality: Is the code well-structured, efficient, and following best practices?\n4. Integration: How well do these changes integrate with the existing codebase?\n5. Potential Issues: Identify any red flags or potential problems.\n\nProvide a clear assessment for each aspect, explaining your reasoning. Calculate an overall score as the average of the individual scores. If the overall score is below 75, highlight the main areas that need improvement.\n\nConclude with a recommendation: proceed to file modification, return to code generation with specific adjustments, or request user clarification."
+      }
+    ],
+    "default": 1
+  },
+  "file_modification": {
+    "prompts": [
+      {
+        "id": 1,
+        "content": "Based on the approved code changes, create a detailed plan for modifying the project files. For each file that needs to be changed, provide:\n\n1. The full file path\n2. The exact changes to be made, including line numbers if applicable\n3. Any new content to be added\n4. Any existing content to be removed or modified\n\nEnsure that your instructions are clear, precise, and can be followed programmatically to apply the changes to the project files."
+      }
+    ],
+    "default": 1
+  },
+  "environment_management": {
+    "prompts": [
+      {
+        "id": 1,
+        "content": "Based on the file modifications made, determine if any changes to the project environment are necessary. Consider the following:\n\n1. New dependencies that need to be installed\n2. Environment variables that need to be added or modified\n3. Build or compilation steps that need to be updated\n4. Services that need to be restarted\n\nProvide clear, step-by-step instructions for making these environment changes. If no changes are needed, state that explicitly."
+      }
+    ],
+    "default": 1
+  },
+  "light_verification": {
+    "prompts": [
+      {
+        "id": 1,
+        "content": "Perform a light verification of the changes made to the project. Focus on the following aspects:\n\n1. Syntax: Check if there are any obvious syntax errors in the modified files\n2. Imports: Verify that all necessary imports are present and there are no unused imports\n3. File Structure: Confirm that the file structure matches the intended changes\n4. Basic Functionality: Suggest simple tests or checks to verify that the core functionality is working as expected\n\nIf you identify any issues, describe them clearly and suggest potential fixes. If everything looks good, confirm that the verification passed successfully."
       }
     ],
     "default": 1

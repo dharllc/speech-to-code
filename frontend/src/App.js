@@ -6,6 +6,7 @@ import DarkModeToggle from './components/DarkModeToggle';
 import SystemPromptManagement from './components/SystemPromptManagement';
 import LLMInteraction from './components/LLMInteraction';
 import RepositorySettings from './components/RepositorySettings';
+import { WorkflowProvider } from './context/WorkflowContext';
 
 function App() {
   const [selectedRepository, setSelectedRepository] = useState('');
@@ -40,73 +41,73 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="flex h-screen bg-white dark:bg-gray-900">
-        {/* Sidebar */}
-        <div className="w-64 bg-gray-100 dark:bg-gray-800">
-          <nav className="mt-5">
-            <ul>
-              <li>
-                <NavLink to="/" className={({ isActive }) => 
-                  `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
-                } end>
-                  Prompt Composer
-                </NavLink>
-              </li>
-              <li>
-                <NavLink to="/system-prompt" className={({ isActive }) => 
-                  `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
-                }>
-                  System Prompt Management
-                </NavLink>
-              </li>
-              <li>
-                <NavLink to="/llm-interaction" className={({ isActive }) => 
-                  `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
-                }>
-                  LLM Interaction
-                </NavLink>
-              </li>
-              <li>
-                <NavLink to="/repository-settings" className={({ isActive }) => 
-                  `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
-                }>
-                  Repository Settings
-                </NavLink>
-              </li>
-            </ul>
-          </nav>
-        </div>
+    <WorkflowProvider>
+      <Router>
+        <div className="flex h-screen bg-white dark:bg-gray-900">
+          <div className="w-64 bg-gray-100 dark:bg-gray-800">
+            <nav className="mt-5">
+              <ul>
+                <li>
+                  <NavLink to="/" className={({ isActive }) => 
+                    `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
+                  } end>
+                    Prompt Composer
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/system-prompt" className={({ isActive }) => 
+                    `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
+                  }>
+                    System Prompt Management
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/llm-interaction" className={({ isActive }) => 
+                    `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
+                  }>
+                    LLM Interaction
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink to="/repository-settings" className={({ isActive }) => 
+                    `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
+                  }>
+                    Repository Settings
+                  </NavLink>
+                </li>
+              </ul>
+            </nav>
+          </div>
 
-        {/* Main content */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <header className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-800">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Speech-to-Code</h1>
-            <DarkModeToggle />
-          </header>
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
-            <Routes>
-              <Route path="/" element={
-                <TwoColumnLayout
-                  selectedRepository={selectedRepository}
-                  selectedFiles={selectedFiles}
-                  onFileSelectionChange={handleFileSelectionChange}
-                  onClearAllFiles={handleClearAllFiles}
-                />
-              } />
-              <Route path="/system-prompt" element={<SystemPromptManagement />} />
-              <Route path="/llm-interaction" element={<LLMInteraction />} />
-              <Route path="/repository-settings" element={
-                <RepositorySettings
-                  selectedRepository={selectedRepository}
-                  onRepositorySelect={handleRepositorySelect}
-                />
-              } />
-            </Routes>
-          </main>
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <header className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-800">
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Speech-to-Code</h1>
+              <DarkModeToggle />
+            </header>
+            <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
+              <Routes>
+                <Route path="/" element={
+                  <TwoColumnLayout
+                    selectedRepository={selectedRepository}
+                    selectedFiles={selectedFiles}
+                    onFileSelectionChange={handleFileSelectionChange}
+                    onClearAllFiles={handleClearAllFiles}
+                  />
+                } />
+                <Route path="/system-prompt" element={<SystemPromptManagement />} />
+                <Route path="/llm-interaction" element={<LLMInteraction selectedRepository={selectedRepository} />} />
+                <Route path="/repository-settings" element={
+                  <RepositorySettings
+                    selectedRepository={selectedRepository}
+                    onRepositorySelect={handleRepositorySelect}
+                  />
+                } />
+              </Routes>
+            </main>
+          </div>
         </div>
-      </div>
-    </Router>
+      </Router>
+    </WorkflowProvider>
   );
 }
 

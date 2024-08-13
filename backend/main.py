@@ -1,8 +1,9 @@
-from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
+from fastapi import FastAPI, HTTPException, Query, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from utils.tree_structure import get_tree_structure
 from utils import prompt_manager
-import os, json, tiktoken
+import os, json, tiktoken, asyncio, shutil, subprocess, ast
 from pydantic import BaseModel
 from openai import AsyncOpenAI
 import logging
@@ -35,6 +36,38 @@ class CompletionRequest(BaseModel):
 class Prompt(BaseModel):
     category: str
     content: str
+
+class IntentUnderstandingRequest(BaseModel):
+    prompt: str
+    user_input: str
+    repository: str
+
+class CodePlanningRequest(BaseModel):
+    prompt: str
+    intent_data: dict
+    repository: str
+
+class CodeGenerationRequest(BaseModel):
+    prompt: str
+    planning_data: dict
+    repository: str
+
+class QualityAssessmentRequest(BaseModel):
+    prompt: str
+    generated_code: dict
+    repository: str
+
+class FileModificationRequest(BaseModel):
+    modification_plan: dict
+    repository: str
+
+class EnvironmentManagementRequest(BaseModel):
+    modification_results: dict
+    repository: str
+
+class LightVerificationRequest(BaseModel):
+    environment_results: dict
+    repository: str
 
 @app.post("/count_tokens")
 async def count_tokens(request: TokenRequest):
@@ -180,6 +213,214 @@ async def llm_completion(request: CompletionRequest):
         }
     except Exception as e:
         logger.error(f"Error generating AI response: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/intent_understanding")
+async def intent_understanding(request: IntentUnderstandingRequest):
+    try:
+        response = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": request.prompt},
+                {"role": "user", "content": f"Repository: {request.repository}\nUser Input: {request.user_input}"}
+            ]
+        )
+        return {"understanding": response.choices[0].message.content}
+    except Exception as e:
+        logger.error(f"Error in intent understanding: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/code_planning")
+async def code_planning(request: CodePlanningRequest):
+    try:
+        response = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": request.prompt},
+                {"role": "user", "content": f"Repository: {request.repository}\nIntent Data: {json.dumps(request.intent_data)}"}
+            ]
+        )
+        return {"plan": response.choices[0].message.content}
+    except Exception as e:
+        logger.error(f"Error in code planning: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/code_generation")
+async def code_generation(request: CodeGenerationRequest):
+    try:
+        response = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": request.prompt},
+                {"role": "user", "content": f"Repository: {request.repository}\nPlanning Data: {json.dumps(request.planning_data)}"}
+            ]
+        )
+        return {"generated_code": response.choices[0].message.content}
+    except Exception as e:
+        logger.error(f"Error in code generation: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/quality_assessment")
+async def quality_assessment(request: QualityAssessmentRequest):
+    try:
+        response = await openai_client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": request.prompt},
+                {"role": "user", "content": f"Repository: {request.repository}\nGenerated Code: {json.dumps(request.generated_code)}"}
+            ]
+        )
+        assessment = response.choices[0].message.content
+        # Parse the assessment to extract score and details
+        # This is a simplified version; you might need to adjust based on the actual format of the assessment
+        lines = assessment.split('\n')
+        score = int(lines[0].split(':')[1].strip())
+        details = lines[1:]
+        return {"score": score, "details": details, "full_assessment": assessment}
+    except Exception as e:
+        logger.error(f"Error in quality assessment: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/file_modification")
+async def file_modification(request: FileModificationRequest):
+    try:
+        logger.info(f"Starting file modification for repository: {request.repository}")
+        base_path = os.path.join("/Users/sachindhar/Documents/GitHub", request.repository)
+        logger.info(f"Base path for modifications: {base_path}")
+        
+        modifications = []
+        
+        for file_change in request.modification_plan['file_changes']:
+            file_path = os.path.join(base_path, file_change['file_path'])
+            logger.info(f"Processing file: {file_path}")
+            
+            if file_change['action'] == 'create':
+                with open(file_path, 'w') as f:
+                    f.write(file_change['content'])
+                modifications.append(f"Created: {file_change['file_path']}")
+                logger.info(f"Created file: {file_path}")
+            
+            elif file_change['action'] == 'modify':
+                with open(file_path, 'r') as f:
+                    content = f.read()
+                
+                for change in file_change['changes']:
+                    content = content.replace(change['old'], change['new'])
+                
+                with open(file_path, 'w') as f:
+                    f.write(content)
+                modifications.append(f"Modified: {file_change['file_path']}")
+                logger.info(f"Modified file: {file_path}")
+            
+            elif file_change['action'] == 'delete':
+                os.remove(file_path)
+                modifications.append(f"Deleted: {file_change['file_path']}")
+                logger.info(f"Deleted file: {file_path}")
+        
+        logger.info("File modification completed successfully")
+        return {"status": "File modifications completed", "modifications": modifications}
+    except Exception as e:
+        logger.error(f"Error in file modification: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/environment_management")
+async def environment_management(request: EnvironmentManagementRequest):
+    try:
+        logger.info(f"Starting environment management for repository: {request.repository}")
+        base_path = os.path.join("/Users/sachindhar/Documents/GitHub", request.repository)
+        logger.info(f"Base path for environment management: {base_path}")
+        
+        results = []
+        
+        if 'new_dependencies' in request.modification_results:
+            logger.info("Installing new dependencies")
+            for dep in request.modification_results['new_dependencies']:
+                try:
+                    subprocess.run(['pip', 'install', dep], check=True)
+                    results.append(f"Installed: {dep}")
+                    logger.info(f"Installed dependency: {dep}")
+                except subprocess.CalledProcessError as e:
+                    results.append(f"Failed to install: {dep}. Error: {str(e)}")
+                    logger.error(f"Failed to install dependency: {dep}. Error: {str(e)}")
+        
+        if 'env_variables' in request.modification_results:
+            logger.info("Updating environment variables")
+            env_file_path = os.path.join(base_path, '.env')
+            with open(env_file_path, 'a') as f:
+                for key, value in request.modification_results['env_variables'].items():
+                    f.write(f"\n{key}={value}")
+                    results.append(f"Added environment variable: {key}")
+                    logger.info(f"Added environment variable: {key}")
+        
+        if 'restart_services' in request.modification_results:
+            logger.info("Restarting services")
+            for service in request.modification_results['restart_services']:
+                try:
+                    subprocess.run(['docker-compose', 'restart', service], cwd=base_path, check=True)
+                    results.append(f"Restarted service: {service}")
+                    logger.info(f"Restarted service: {service}")
+                except subprocess.CalledProcessError as e:
+                    results.append(f"Failed to restart service: {service}. Error: {str(e)}")
+                    logger.error(f"Failed to restart service: {service}. Error: {str(e)}")
+        
+        logger.info("Environment management completed successfully")
+        return {"status": "Environment updated", "results": results}
+    except Exception as e:
+        logger.error(f"Error in environment management: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/light_verification")
+async def light_verification(request: LightVerificationRequest):
+    try:
+        logger.info(f"Starting light verification for repository: {request.repository}")
+        base_path = os.path.join("/Users/sachindhar/Documents/GitHub", request.repository)
+        logger.info(f"Base path for verification: {base_path}")
+        
+        verification_results = []
+        
+        for file_path in request.environment_results.get('modified_files', []):
+            full_path = os.path.join(base_path, file_path)
+            logger.info(f"Verifying file: {full_path}")
+            
+            with open(full_path, 'r') as f:
+                content = f.read()
+            
+            # Syntax check
+            try:
+                ast.parse(content)
+                verification_results.append(f"Syntax check passed: {file_path}")
+                logger.info(f"Syntax check passed: {file_path}")
+            except SyntaxError as e:
+                verification_results.append(f"Syntax error in {file_path}: {str(e)}")
+                logger.error(f"Syntax error in {file_path}: {str(e)}")
+            
+            # Import check
+            imports = [line for line in content.split('\n') if line.startswith('import') or line.startswith('from')]
+            if imports:
+                verification_results.append(f"Imports found in {file_path}: {len(imports)}")
+                logger.info(f"Imports found in {file_path}: {len(imports)}")
+            else:
+                verification_results.append(f"No imports found in {file_path}")
+                logger.info(f"No imports found in {file_path}")
+            
+            # Basic functionality check
+            if 'def ' in content or 'class ' in content:
+                verification_results.append(f"Functions or classes found in {file_path}")
+                logger.info(f"Functions or classes found in {file_path}")
+            else:
+                verification_results.append(f"No functions or classes found in {file_path}")
+                logger.info(f"No functions or classes found in {file_path}")
+        
+        # Overall verification result
+        if any("error" in result.lower() for result in verification_results):
+            status = "Verification failed"
+        else:
+            status = "Verification passed"
+        
+        logger.info(f"Light verification completed. Status: {status}")
+        return {"status": status, "verification_results": verification_results}
+    except Exception as e:
+        logger.error(f"Error in light verification: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
