@@ -122,3 +122,13 @@ export const performLightVerification = async (environmentResults, repository) =
     throw error;
   }
 };
+
+export const countTokens = async (text, model = 'gpt-3.5-turbo') => {
+  try {
+    const response = await axios.post(`${API_URL}/count_tokens`, { text, model });
+    return response.data.count;
+  } catch (error) {
+    console.error('Error counting tokens:', error);
+    throw error;
+  }
+};

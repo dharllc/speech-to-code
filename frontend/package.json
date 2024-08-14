@@ -8,7 +8,7 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "autoprefixer": "^10.4.20",
-    "axios": "^1.7.3",
+    "axios": "^1.7.4",
     "lucide-react": "^0.427.0",
     "postcss": "^8.4.41",
     "react": "^18.3.1",
