@@ -7,5 +7,14 @@
     "is_default": true,
     "timestamp": "2024-08-17T23:56:18.360469",
     "token_count": 355
+  },
+  {
+    "id": "d1700e71-00d3-4d69-8b12-b55b668280a9",
+    "name": "test step",
+    "step": "test step",
+    "content": "Write a 10 word poem about a dimply baby girl named Lara",
+    "is_default": false,
+    "timestamp": "2024-08-18T00:44:36.106779",
+    "token_count": 14
   }
 ]

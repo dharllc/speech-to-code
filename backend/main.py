@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from typing import List
 from datetime import datetime
 import uuid
+from llm_interaction import handle_llm_interaction, get_available_models
 
 app = FastAPI()
 
@@ -223,6 +224,14 @@ async def delete_system_prompt(prompt_id: str):
     prompts = [p for p in prompts if p['id'] != prompt_id]
     save_system_prompts(prompts)
     return {"message": "Prompt deleted successfully"}
+
+@app.post("/llm_interaction")
+async def llm_interaction(request: dict):
+    return await handle_llm_interaction(request)
+
+@app.get("/available_models")
+async def available_models():
+    return await get_available_models()
 
 if __name__ == "__main__":
     import uvicorn
