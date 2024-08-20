@@ -7,35 +7,39 @@ const ConversationDisplay = ({ conversationHistory }) => {
   const conversationRef = useRef(null);
 
   useEffect(() => {
-    if (conversationRef.current && conversationHistory.length === 1) {
-      conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
+    if (conversationRef.current) {
+      conversationRef.current.scrollTop = 0;
     }
   }, [conversationHistory]);
 
-  const renderCodeBlock = (code, language) => (
-    <div className="relative my-2 rounded-md overflow-hidden">
-      <div className="absolute top-2 right-2 z-10">
-        <CopyButton
-          textToCopy={code}
-          className="bg-gray-700 text-white p-1 rounded text-xs hover:bg-gray-600 transition-colors duration-200"
-        />
+  const renderCodeBlock = (code, filename) => {
+    const language = filename.split('.').pop();
+    return (
+      <div className="relative my-2 rounded-md overflow-hidden">
+        <div className="absolute top-2 right-2 z-10">
+          <CopyButton
+            textToCopy={code}
+            className="bg-gray-700 text-white p-1 rounded text-xs hover:bg-gray-600 transition-colors duration-200"
+          />
+        </div>
+        <div className="bg-gray-700 text-white text-xs p-2">{filename}</div>
+        <SyntaxHighlighter
+          language={language}
+          style={vscDarkPlus}
+          className="p-4 text-sm rounded-md"
+          customStyle={{
+            margin: 0,
+            background: '#1E1E1E',
+          }}
+        >
+          {code}
+        </SyntaxHighlighter>
       </div>
-      <SyntaxHighlighter
-        language={language}
-        style={vscDarkPlus}
-        className="p-4 pt-8 text-sm rounded-md"
-        customStyle={{
-          margin: 0,
-          background: '#1E1E1E',
-        }}
-      >
-        {code}
-      </SyntaxHighlighter>
-    </div>
-  );
+    );
+  };
 
   const renderMessage = (message) => {
-    const codeBlockRegex = /```(\w+)?\n([\s\S]+?)```/g;
+    const codeBlockRegex = /<code filename="(.+?)">([\s\S]+?)<\/code>/g;
     const parts = [];
     let lastIndex = 0;
     let match;
@@ -44,9 +48,8 @@ const ConversationDisplay = ({ conversationHistory }) => {
       if (match.index > lastIndex) {
         parts.push(message.content.slice(lastIndex, match.index));
       }
-      const language = match[1] || 'plaintext';
-      const code = match[2];
-      parts.push(renderCodeBlock(code, language));
+      const [, filename, code] = match;
+      parts.push(renderCodeBlock(code.trim(), filename));
       lastIndex = match.index + match[0].length;
     }
 
@@ -75,9 +78,17 @@ const ConversationDisplay = ({ conversationHistory }) => {
             key={index}
             className={`mb-4 p-4 rounded-lg ${message.role === 'user' ? 'bg-blue-800' : 'bg-green-800'}`}
           >
-            <strong className="text-sm font-semibold">
-              {message.role === 'user' ? 'User:' : 'Assistant:'}
-            </strong>
+            <div className="flex justify-between items-start">
+              <strong className="text-sm font-semibold">
+                {message.role === 'user' ? 'User:' : 'Assistant:'}
+              </strong>
+              {message.role === 'assistant' && (
+                <CopyButton
+                  textToCopy={message.content}
+                  className="bg-gray-700 text-white p-1 rounded text-xs hover:bg-gray-600 transition-colors duration-200"
+                />
+              )}
+            </div>
             <div className="text-sm mt-2">{renderMessage(message)}</div>
           </div>
         ))}
