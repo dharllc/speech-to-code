@@ -90,7 +90,7 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
           <span>{isRecording ? 'Stop' : 'Record'}</span>
         </button>
         <button 
-          className="px-4 py-2 bg-gray-500 text-white rounded flex items-center justify-center"
+          className="px-4 py-2 bg-purple-600 text-white rounded flex items-center justify-center"
           onClick={copyToClipboard}
         >
           {copied ? <Check className="mr-2" size={20} /> : <Copy className="mr-2" size={20} />}

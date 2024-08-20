@@ -1,28 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { sendLLMRequest, getAvailableModels } from '../services/llmService';
 import CopyButton from './CopyButton';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import axios from 'axios';
 
 const LLMInteraction = () => {
   const [steps, setSteps] = useState([]);
-  const [selectedStep, setSelectedStep] = useState('');
-  const [systemPrompt, setSystemPrompt] = useState('');
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [userPrompt, setUserPrompt] = useState('');
   const [maxTokens, setMaxTokens] = useState(2000);
   const [temperature, setTemperature] = useState(0.7);
-  const [responses, setResponses] = useState([]);
+  const [conversationHistory, setConversationHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [availableModels, setAvailableModels] = useState({});
+  const [totalCost, setTotalCost] = useState(0);
+  const conversationRef = useRef(null);
 
   useEffect(() => {
     fetchSteps();
     fetchAvailableModels();
   }, []);
 
+  useEffect(() => {
+    if (conversationRef.current) {
+      conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
+    }
+  }, [conversationHistory]);
+
   const fetchSteps = async () => {
     try {
-      const response = await fetch('http://localhost:8000/system_prompts');
-      const data = await response.json();
-      setSteps(data);
+      const response = await axios.get('http://localhost:8000/system_prompts');
+      setSteps(response.data.sort((a, b) => parseInt(a.step.split(' ')[1]) - parseInt(b.step.split(' ')[1])));
     } catch (error) {
       console.error('Failed to fetch steps:', error);
     }
@@ -37,137 +46,178 @@ const LLMInteraction = () => {
     }
   };
 
-  const handleStepChange = (e) => {
-    const selectedPrompt = steps.find(step => step.id === e.target.value);
-    setSelectedStep(e.target.value);
-    setSystemPrompt(selectedPrompt ? selectedPrompt.content : '');
-  };
-
   const handleSubmit = async (model) => {
     setLoading(true);
     try {
-      const result = await sendLLMRequest(systemPrompt, userPrompt, maxTokens, temperature, model);
-      setResponses(prev => [{ ...result, model, timestamp: new Date() }, ...prev]);
+      const currentSystemPrompt = steps[currentStepIndex].content;
+      const messages = [
+        { role: 'system', content: currentSystemPrompt },
+        ...conversationHistory,
+        { role: 'user', content: userPrompt }
+      ];
+      
+      const result = await sendLLMRequest(messages, maxTokens, temperature, model);
+      
+      const newConversationHistory = [
+        { role: 'user', content: userPrompt },
+        { role: 'assistant', content: result.response },
+        ...conversationHistory
+      ];
+      setConversationHistory(newConversationHistory);
+      
+      setTotalCost(prevCost => prevCost + result.cost);
+      
+      setUserPrompt('');
+      
+      if (currentStepIndex < steps.length - 1) {
+        setCurrentStepIndex(currentStepIndex + 1);
+      }
     } catch (error) {
       console.error('Error in LLM request:', error);
-      setResponses(prev => [{ 
-        response: 'An error occurred while processing your request.',
-        model,
-        timestamp: new Date(),
-        error: true
-      }, ...prev]);
+      setConversationHistory([
+        { role: 'assistant', content: 'An error occurred while processing your request.' },
+        { role: 'user', content: userPrompt },
+        ...conversationHistory
+      ]);
     }
     setLoading(false);
   };
 
-  const getAllResponses = () => {
-    return responses.map(r => `Model: ${r.model}\nTimestamp: ${r.timestamp.toLocaleString()}\n\nResponse:\n${r.response}\n\n${r.error ? '' : `Input Tokens: ${r.tokenCounts.input}, Output Tokens: ${r.tokenCounts.output}, Estimated Cost: $${r.cost.toFixed(6)}, Queries per dollar: ${Math.round(1 / r.cost)}\n`}---\n\n`).join('');
+  const renderCodeBlock = (code, language) => (
+    <div className="relative my-2 rounded-md overflow-hidden">
+      <div className="absolute top-2 right-2 z-10">
+        <CopyButton
+          textToCopy={code}
+          className="bg-gray-700 text-white p-1 rounded text-xs hover:bg-gray-600 transition-colors duration-200"
+        />
+      </div>
+      <SyntaxHighlighter 
+        language={language} 
+        style={vscDarkPlus} 
+        className="p-4 pt-8 text-sm rounded-md"
+        customStyle={{
+          margin: 0,
+          background: '#1E1E1E',
+        }}
+      >
+        {code}
+      </SyntaxHighlighter>
+    </div>
+  );
+
+  const renderMessage = (message) => {
+    const codeBlockRegex = /```(\w+)?\n([\s\S]+?)```/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = codeBlockRegex.exec(message.content)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(message.content.slice(lastIndex, match.index));
+      }
+      const language = match[1] || 'plaintext';
+      const code = match[2].trim();
+      parts.push(renderCodeBlock(code, language));
+      lastIndex = match.index + match[0].length;
+    }
+
+    if (lastIndex < message.content.length) {
+      parts.push(message.content.slice(lastIndex));
+    }
+
+    return parts.map((part, index) => 
+      typeof part === 'string' ? <p key={index} className="my-1">{part}</p> : part
+    );
+  };
+
+  const renderConversation = () => {
+    return conversationHistory.map((message, index) => (
+      <div key={index} className={`mb-4 p-4 rounded-lg ${message.role === 'user' ? 'bg-blue-800' : 'bg-green-800'}`}>
+        <strong className="text-sm font-semibold">{message.role === 'user' ? 'User:' : 'Assistant:'}</strong>
+        <div className="text-sm mt-2">{renderMessage(message)}</div>
+      </div>
+    ));
   };
 
   return (
-    <div className="container mx-auto p-4 bg-gray-900 text-white">
-      <h2 className="text-2xl font-bold mb-4">LLM Interaction</h2>
-      <form className="mb-4">
-        <div className="mb-4">
-          <label className="block mb-2">Step:</label>
-          <select
-            value={selectedStep}
-            onChange={handleStepChange}
-            className="w-full p-2 border rounded bg-gray-700 text-white"
-            required
-          >
-            <option value="">Select a step</option>
-            {steps.map(step => (
-              <option key={step.id} value={step.id}>{step.name}</option>
-            ))}
-          </select>
+    <div className="container mx-auto p-6 bg-gray-900 text-white min-h-screen">
+      <h2 className="text-3xl font-bold mb-6">LLM Interaction - Step {currentStepIndex + 1}</h2>
+      <div className="mb-6 bg-gray-800 p-4 rounded-lg">
+        <h3 className="text-xl font-bold mb-2">Total Cost: ${totalCost.toFixed(6)}</h3>
+      </div>
+      <div className="mb-6">
+        <label className="block mb-2 font-semibold">System Prompt:</label>
+        <textarea
+          value={steps[currentStepIndex]?.content || ''}
+          className="w-full p-3 border rounded-lg bg-gray-800 text-white text-sm resize-none"
+          rows="4"
+          readOnly
+        ></textarea>
+      </div>
+      <div className="mb-6">
+        <label className="block mb-2 font-semibold">User Prompt:</label>
+        <textarea
+          value={userPrompt}
+          onChange={(e) => setUserPrompt(e.target.value)}
+          className="w-full p-3 border rounded-lg bg-gray-800 text-white text-sm resize-none"
+          rows="4"
+          required
+        ></textarea>
+      </div>
+      <div className="mb-6 flex space-x-4">
+        <div className="flex-1">
+          <label className="block mb-2 font-semibold">Max Tokens:</label>
+          <input
+            type="number"
+            value={maxTokens}
+            onChange={(e) => setMaxTokens(parseInt(e.target.value))}
+            className="w-full p-3 border rounded-lg bg-gray-800 text-white"
+            min="1"
+            max="8000"
+          />
         </div>
-        <div className="mb-4">
-          <label className="block mb-2">System Prompt:</label>
-          <textarea
-            value={systemPrompt}
-            onChange={(e) => setSystemPrompt(e.target.value)}
-            className="w-full p-2 border rounded bg-gray-700 text-white"
-            rows="4"
-            readOnly
-          ></textarea>
+        <div className="flex-1">
+          <label className="block mb-2 font-semibold">Temperature:</label>
+          <input
+            type="number"
+            value={temperature}
+            onChange={(e) => setTemperature(parseFloat(e.target.value))}
+            className="w-full p-3 border rounded-lg bg-gray-800 text-white"
+            min="0"
+            max="1"
+            step="0.1"
+          />
         </div>
-        <div className="mb-4">
-          <label className="block mb-2">User Prompt:</label>
-          <textarea
-            value={userPrompt}
-            onChange={(e) => setUserPrompt(e.target.value)}
-            className="w-full p-2 border rounded bg-gray-700 text-white"
-            rows="4"
-            required
-          ></textarea>
-        </div>
-        <div className="mb-4 flex space-x-4">
-          <div className="flex-1">
-            <label className="block mb-2">Max Tokens:</label>
-            <input
-              type="number"
-              value={maxTokens}
-              onChange={(e) => setMaxTokens(parseInt(e.target.value))}
-              className="w-full p-2 border rounded bg-gray-700 text-white"
-              min="1"
-              max="8000"
-            />
-          </div>
-          <div className="flex-1">
-            <label className="block mb-2">Temperature:</label>
-            <input
-              type="number"
-              value={temperature}
-              onChange={(e) => setTemperature(parseFloat(e.target.value))}
-              className="w-full p-2 border rounded bg-gray-700 text-white"
-              min="0"
-              max="1"
-              step="0.1"
-            />
-          </div>
-        </div>
-        <div className="mb-4 flex flex-wrap gap-2">
-          {Object.entries(availableModels).map(([provider, models]) => (
-            <div key={provider}>
-              <h3 className="text-lg font-semibold mb-2">{provider.charAt(0).toUpperCase() + provider.slice(1)}</h3>
+      </div>
+      <div className="mb-6">
+        {Object.entries(availableModels).map(([provider, models]) => (
+          <div key={provider} className="mb-4">
+            <h3 className="text-lg font-semibold mb-2">{provider.charAt(0).toUpperCase() + provider.slice(1)}</h3>
+            <div className="flex flex-wrap gap-2">
               {models.map(model => (
                 <button
                   key={model}
                   type="button"
                   onClick={() => handleSubmit(model)}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 mr-2 mb-2"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm"
                   disabled={loading}
                 >
                   {loading ? 'Processing...' : `${model}`}
                 </button>
               ))}
             </div>
-          ))}
-        </div>
-      </form>
-      {responses.length > 0 && (
-        <div className="mt-4">
-          <div className="flex items-center mb-2">
-            <h3 className="text-xl font-bold">Responses:</h3>
-            <CopyButton textToCopy={getAllResponses()} />
           </div>
-          {responses.map((response, index) => (
-            <div key={index} className="mb-6 border-b border-gray-700 pb-4">
-              <div className="flex justify-between items-center mb-2">
-                <p className="text-sm">Timestamp: {response.timestamp.toLocaleString()}</p>
-                <CopyButton textToCopy={`${response.response}\n\nModel: ${response.model}\nTimestamp: ${response.timestamp.toLocaleString()}\n${response.error ? '' : `Input Tokens: ${response.tokenCounts.input}, Output Tokens: ${response.tokenCounts.output}, Estimated Cost: $${response.cost.toFixed(6)}, Queries per dollar: ${Math.round(1 / response.cost)}`}`} />
-              </div>
-              <pre className="bg-gray-800 p-4 rounded whitespace-pre-wrap mb-2">{response.response}</pre>
-              {!response.error && (
-                <div className="text-sm">
-                  Model: {response.model}, Input Tokens: {response.tokenCounts.input}, Output Tokens: {response.tokenCounts.output}, Estimated Cost: ${response.cost.toFixed(6)}, Queries per dollar: {Math.round(1 / response.cost)}
-                </div>
-              )}
-            </div>
-          ))}
+        ))}
+      </div>
+      <div className="mt-6">
+        <h3 className="text-2xl font-bold mb-4">Conversation:</h3>
+        <div 
+          ref={conversationRef}
+          className="bg-gray-800 p-6 rounded-lg h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800"
+        >
+          {renderConversation()}
         </div>
-      )}
+      </div>
     </div>
   );
 };

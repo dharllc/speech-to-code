@@ -134,10 +134,6 @@ async def get_file_lines(repository: str, file_path: str):
     except Exception as e:
         return {"error": str(e)}
 
-@app.get("/system_prompts", response_model=List[SystemPrompt])
-async def get_system_prompts():
-    return load_system_prompts()
-
 def load_system_prompts():
     try:
         with open(SYSTEM_PROMPTS_FILE, 'r') as f:
@@ -158,34 +154,56 @@ def save_system_prompts(prompts):
     with open(SYSTEM_PROMPTS_FILE, 'w') as f:
         json.dump(prompts, f, indent=2)
 
+@app.get("/system_prompts", response_model=List[SystemPrompt])
+async def get_system_prompts():
+    prompts = load_system_prompts()
+    def safe_sort_key(x):
+        try:
+            return int(x['step'].split()[-1])
+        except (ValueError, IndexError):
+            return float('inf')  # Put invalid steps at the end
+    return sorted(prompts, key=safe_sort_key)
+
 @app.post("/system_prompts", response_model=SystemPrompt)
 async def create_system_prompt(prompt: SystemPromptCreate):
     try:
         prompts = load_system_prompts()
         
-        if any(p['name'] == prompt.name for p in prompts):
-            raise HTTPException(status_code=400, detail="Prompt name must be unique")
+        # Ensure step is in the format "Step X" where X is a number
+        if not prompt.step.startswith("Step "):
+            prompt.step = f"Step {prompt.step}"
         
-        if prompt.is_default:
-            for p in prompts:
-                if p['step'] == prompt.name:
-                    p['is_default'] = False
+        try:
+            step_number = int(prompt.step.split()[-1])
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Step must be a number or 'Step X' where X is a number")
+        
+        if any(p['step'] == prompt.step for p in prompts):
+            raise HTTPException(status_code=400, detail=f"Prompt for {prompt.step} already exists")
         
         new_prompt = SystemPrompt(
             id=str(uuid.uuid4()),
             name=prompt.name,
-            step=prompt.name,  # Set step same as name
+            step=prompt.step,
             content=prompt.content,
             is_default=prompt.is_default,
             timestamp=datetime.now().isoformat(),
             token_count=len(tiktoken.encoding_for_model("gpt-3.5-turbo").encode(prompt.content))
         )
         prompts.append(new_prompt.dict())
+        prompts.sort(key=lambda x: int(x['step'].split()[-1]))
         save_system_prompts(prompts)
         return new_prompt
     except Exception as e:
         print(f"Error creating system prompt: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to save prompt: {str(e)}")
+
+@app.delete("/system_prompts/{prompt_id}")
+async def delete_system_prompt(prompt_id: str):
+    prompts = load_system_prompts()
+    prompts = [p for p in prompts if p['id'] != prompt_id]
+    save_system_prompts(prompts)
+    return {"message": "Prompt deleted successfully"}
     
 @app.put("/system_prompts/{prompt_id}", response_model=SystemPrompt)
 async def update_system_prompt(prompt_id: str, prompt: SystemPromptCreate):
@@ -217,13 +235,6 @@ async def update_system_prompt(prompt_id: str, prompt: SystemPromptCreate):
         save_system_prompts(prompts)
         return updated_prompt
     raise HTTPException(status_code=404, detail="Prompt not found")
-
-@app.delete("/system_prompts/{prompt_id}")
-async def delete_system_prompt(prompt_id: str):
-    prompts = load_system_prompts()
-    prompts = [p for p in prompts if p['id'] != prompt_id]
-    save_system_prompts(prompts)
-    return {"message": "Prompt deleted successfully"}
 
 @app.post("/llm_interaction")
 async def llm_interaction(request: dict):

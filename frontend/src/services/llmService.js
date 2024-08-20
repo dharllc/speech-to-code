@@ -2,11 +2,10 @@ import axios from 'axios';
 
 const API_URL = 'http://localhost:8000';
 
-export const sendLLMRequest = async (systemPrompt, userPrompt, maxTokens, temperature, model) => {
+export const sendLLMRequest = async (messages, maxTokens, temperature, model) => {
   try {
     const response = await axios.post(`${API_URL}/llm_interaction`, {
-      system_prompt: systemPrompt,
-      user_prompt: userPrompt,
+      messages,
       max_tokens: maxTokens,
       temperature: temperature,
       model: model

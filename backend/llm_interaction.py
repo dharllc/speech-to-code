@@ -26,34 +26,39 @@ def count_tokens(text: str, model: str) -> int:
     encoding = get_encoding(model)
     return len(encoding.encode(text))
 
-async def openai_completion(model: str, system_prompt: str, user_prompt: str, max_tokens: int, temperature: float):
+async def openai_completion(model: str, messages: list, max_tokens: int, temperature: float):
     response = openai.ChatCompletion.create(
         model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
+        messages=messages,
         max_tokens=max_tokens,
         temperature=temperature
     )
     return response.choices[0].message['content']
 
-async def anthropic_completion(model: str, system_prompt: str, user_prompt: str, max_tokens: int, temperature: float):
-    response = anthropic_client.messages.create(
+async def anthropic_completion(model: str, messages: list, max_tokens: int, temperature: float):
+    system_prompt = next((msg['content'] for msg in messages if msg['role'] == 'system'), '')
+    human_messages = [msg['content'] for msg in messages if msg['role'] == 'user']
+    assistant_messages = [msg['content'] for msg in messages if msg['role'] == 'assistant']
+    
+    conversation = []
+    for h, a in zip(human_messages, assistant_messages + [None]):
+        conversation.extend([f"Human: {h}", f"Assistant: {a}" if a else ""])
+    
+    prompt = f"{system_prompt}\n\n{''.join(conversation)}Human: {human_messages[-1]}\nAssistant:"
+    
+    response = anthropic_client.completions.create(
         model=model,
-        max_tokens=max_tokens,
-        temperature=temperature,
-        system=system_prompt,
-        messages=[
-            {"role": "user", "content": user_prompt}
-        ]
+        prompt=prompt,
+        max_tokens_to_sample=max_tokens,
+        temperature=temperature
     )
-    return response.content[0].text
+    return response.completion
 
-async def google_completion(model: str, system_prompt: str, user_prompt: str, max_tokens: int, temperature: float):
+async def google_completion(model: str, messages: list, max_tokens: int, temperature: float):
     model = genai.GenerativeModel(model_name=model)
+    prompt = "\n".join([f"{msg['role'].capitalize()}: {msg['content']}" for msg in messages])
     response = model.generate_content(
-        f"{system_prompt}\n\n{user_prompt}",
+        prompt,
         generation_config=genai.GenerationConfig(
             max_output_tokens=max_tokens,
             temperature=temperature
@@ -63,21 +68,20 @@ async def google_completion(model: str, system_prompt: str, user_prompt: str, ma
 
 async def handle_llm_interaction(request: dict):
     model = request.get('model', 'gpt-3.5-turbo')
-    system_prompt = request.get('system_prompt', '')
-    user_prompt = request.get('user_prompt', '')
+    messages = request.get('messages', [])
     max_tokens = request.get('max_tokens', 2000)
     temperature = request.get('temperature', 0.7)
 
-    combined_prompt = f"{system_prompt}\n\n{user_prompt}"
+    combined_prompt = " ".join([msg['content'] for msg in messages])
     input_tokens = count_tokens(combined_prompt, model)
 
     try:
         if model in MODELS['OpenAI']:
-            output_text = await openai_completion(model, system_prompt, user_prompt, max_tokens, temperature)
+            output_text = await openai_completion(model, messages, max_tokens, temperature)
         elif model in MODELS['Anthropic']:
-            output_text = await anthropic_completion(model, system_prompt, user_prompt, max_tokens, temperature)
+            output_text = await anthropic_completion(model, messages, max_tokens, temperature)
         elif model in MODELS['Google']:
-            output_text = await google_completion(model, system_prompt, user_prompt, max_tokens, temperature)
+            output_text = await google_completion(model, messages, max_tokens, temperature)
         else:
             raise ValueError(f"Unsupported model: {model}")
 
