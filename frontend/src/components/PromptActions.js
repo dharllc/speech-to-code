@@ -1,3 +1,4 @@
+// Filename: PromptActions.js
 import React, { useState, useRef } from 'react';
 import { Trees, Trash2, Mic, Square, Copy, Check } from 'lucide-react';
 import AudioVisualizer from './AudioVisualizer';
@@ -71,26 +72,34 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
     });
   };
 
+  const buttonStyle = {
+    base: "px-4 py-2 text-white rounded flex items-center justify-center shadow-md transition-all duration-300 hover:shadow-lg",
+    green: "bg-gradient-to-r from-green-400 to-green-600",
+    red: "bg-gradient-to-r from-red-400 to-red-600",
+    blue: "bg-gradient-to-r from-blue-400 to-blue-600",
+    purple: "bg-gradient-to-r from-purple-400 to-purple-600"
+  };
+
   return (
     <div className="mb-2">
       <div className="flex mb-2 space-x-2">
-        <button className="px-4 py-2 bg-green-500 text-white rounded flex items-center justify-center" onClick={addTreeStructure}>
+        <button className={`${buttonStyle.base} ${buttonStyle.green}`} onClick={addTreeStructure}>
           <Trees className="mr-2" size={20} />
           <span>Add Tree</span>
         </button>
-        <button className="px-4 py-2 bg-red-500 text-white rounded flex items-center justify-center" onClick={clearPrompt}>
+        <button className={`${buttonStyle.base} ${buttonStyle.red}`} onClick={clearPrompt}>
           <Trash2 className="mr-2" size={20} />
           <span>Clear</span>
         </button>
         <button
-          className={`px-4 py-2 ${isRecording ? 'bg-red-500' : 'bg-blue-500'} text-white rounded flex items-center justify-center`}
+          className={`${buttonStyle.base} ${isRecording ? buttonStyle.red : buttonStyle.blue}`}
           onClick={isRecording ? stopRecording : startRecording}
         >
           {isRecording ? <Square className="mr-2" size={20} /> : <Mic className="mr-2" size={20} />}
           <span>{isRecording ? 'Stop' : 'Record'}</span>
         </button>
         <button 
-          className="px-4 py-2 bg-purple-600 text-white rounded flex items-center justify-center"
+          className={`${buttonStyle.base} ${buttonStyle.purple}`}
           onClick={copyToClipboard}
         >
           {copied ? <Check className="mr-2" size={20} /> : <Copy className="mr-2" size={20} />}
@@ -108,3 +117,4 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
 };
 
 export default PromptActions;
+// End of file: PromptActions.js
