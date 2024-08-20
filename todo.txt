@@ -1,0 +1,13 @@
+figure out what to do at end of step 2
+
+allow for back and forth with step 1 before moving on to step 2
+
+outline of step 3
+-update file based on filename
+
+stream response back using different api method
+
+fix setting a default prompt for a step
+-allow for multiple prompt options per step, where only default is actually used in LLM interaction
+
+show visual mapping of existing steps

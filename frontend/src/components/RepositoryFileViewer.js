@@ -68,7 +68,7 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
         >
           <Icon className={`mr-1 ${node.type === 'directory' ? 'text-yellow-500' : 'text-gray-500 dark:text-gray-400'}`} size={14} />
           <span className="truncate flex-grow text-gray-900 dark:text-gray-100">{node.name}</span>
-          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2 pr-2">
             {node.type === 'directory' 
               ? `${node.item_count || 0} items${node.token_count ? `, ${node.token_count} tokens` : ''}`
               : node.token_count ? `${node.token_count} tokens` : ''}
@@ -84,7 +84,7 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
   };
 
   return (
-    <div className="h-full overflow-auto">
+    <div className="h-full overflow-auto pr-2">
       <h3 className="text-base font-bold mb-2">Repository Structure</h3>
       {treeStructure ? renderTree(treeStructure) : <p className="text-sm text-gray-700 dark:text-gray-300">Loading repository structure...</p>}
     </div>

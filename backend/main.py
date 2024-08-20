@@ -3,14 +3,57 @@ from fastapi.middleware.cors import CORSMiddleware
 from utils.tree_structure import get_tree_structure
 import os, json, tiktoken
 from pydantic import BaseModel
+from typing import List
+from datetime import datetime
+import uuid
+from llm_interaction import handle_llm_interaction, get_available_models
 
 app = FastAPI()
 
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:3000"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Get the directory of the current script
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+# Define the path to system_prompts.json
+SYSTEM_PROMPTS_FILE = os.path.join(SCRIPT_DIR, "system_prompts.json")
+
+# Ensure the system_prompts.json file exists
+if not os.path.exists(SYSTEM_PROMPTS_FILE):
+    with open(SYSTEM_PROMPTS_FILE, 'w') as f:
+        json.dump([], f)
 
 class TokenRequest(BaseModel):
     text: str
     model: str = "gpt-3.5-turbo"
+
+class SystemPrompt(BaseModel):
+    id: str
+    name: str
+    step: str
+    content: str
+    is_default: bool
+    timestamp: str
+    token_count: int
+
+class SystemPromptCreate(BaseModel):
+    name: str
+    step: str
+    content: str
+    is_default: bool
+
+def load_system_prompts():
+    with open(SYSTEM_PROMPTS_FILE, 'r') as f:
+        return json.load(f)
+
+def save_system_prompts(prompts):
+    with open(SYSTEM_PROMPTS_FILE, 'w') as f:
+        json.dump(prompts, f, indent=2)
 
 @app.post("/count_tokens")
 async def count_tokens(request: TokenRequest):
@@ -90,6 +133,116 @@ async def get_file_lines(repository: str, file_path: str):
             return {"line_count": sum(1 for _ in file)}
     except Exception as e:
         return {"error": str(e)}
+
+def load_system_prompts():
+    try:
+        with open(SYSTEM_PROMPTS_FILE, 'r') as f:
+            content = f.read().strip()
+            if content:
+                return json.loads(content)
+            else:
+                return []
+    except json.JSONDecodeError:
+        print(f"Error decoding JSON from {SYSTEM_PROMPTS_FILE}. Resetting to empty list.")
+        return []
+    except FileNotFoundError:
+        print(f"{SYSTEM_PROMPTS_FILE} not found. Creating new file.")
+        save_system_prompts([])
+        return []
+
+def save_system_prompts(prompts):
+    with open(SYSTEM_PROMPTS_FILE, 'w') as f:
+        json.dump(prompts, f, indent=2)
+
+@app.get("/system_prompts", response_model=List[SystemPrompt])
+async def get_system_prompts():
+    prompts = load_system_prompts()
+    def safe_sort_key(x):
+        try:
+            return int(x['step'].split()[-1])
+        except (ValueError, IndexError):
+            return float('inf')  # Put invalid steps at the end
+    return sorted(prompts, key=safe_sort_key)
+
+@app.post("/system_prompts", response_model=SystemPrompt)
+async def create_system_prompt(prompt: SystemPromptCreate):
+    try:
+        prompts = load_system_prompts()
+        
+        # Ensure step is in the format "Step X" where X is a number
+        if not prompt.step.startswith("Step "):
+            prompt.step = f"Step {prompt.step}"
+        
+        try:
+            step_number = int(prompt.step.split()[-1])
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Step must be a number or 'Step X' where X is a number")
+        
+        if any(p['step'] == prompt.step for p in prompts):
+            raise HTTPException(status_code=400, detail=f"Prompt for {prompt.step} already exists")
+        
+        new_prompt = SystemPrompt(
+            id=str(uuid.uuid4()),
+            name=prompt.name,
+            step=prompt.step,
+            content=prompt.content,
+            is_default=prompt.is_default,
+            timestamp=datetime.now().isoformat(),
+            token_count=len(tiktoken.encoding_for_model("gpt-3.5-turbo").encode(prompt.content))
+        )
+        prompts.append(new_prompt.dict())
+        prompts.sort(key=lambda x: int(x['step'].split()[-1]))
+        save_system_prompts(prompts)
+        return new_prompt
+    except Exception as e:
+        print(f"Error creating system prompt: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to save prompt: {str(e)}")
+
+@app.delete("/system_prompts/{prompt_id}")
+async def delete_system_prompt(prompt_id: str):
+    prompts = load_system_prompts()
+    prompts = [p for p in prompts if p['id'] != prompt_id]
+    save_system_prompts(prompts)
+    return {"message": "Prompt deleted successfully"}
+    
+@app.put("/system_prompts/{prompt_id}", response_model=SystemPrompt)
+async def update_system_prompt(prompt_id: str, prompt: SystemPromptCreate):
+    prompts = load_system_prompts()
+    updated_prompt = None
+    for i, p in enumerate(prompts):
+        if p['id'] == prompt_id:
+            if any(other_p['name'] == prompt.name and other_p['id'] != prompt_id for other_p in prompts):
+                raise HTTPException(status_code=400, detail="Prompt name must be unique")
+            
+            if prompt.is_default:
+                for other_p in prompts:
+                    if other_p['step'] == prompt.step and other_p['id'] != prompt_id:
+                        other_p['is_default'] = False
+            
+            updated_prompt = SystemPrompt(
+                id=prompt_id,
+                name=prompt.name,
+                step=prompt.name,  # Set step same as name
+                content=prompt.content,
+                is_default=prompt.is_default,
+                timestamp=datetime.now().isoformat(),
+                token_count=len(tiktoken.encoding_for_model("gpt-3.5-turbo").encode(prompt.content))
+            )
+            prompts[i] = updated_prompt.dict()
+            break
+    
+    if updated_prompt:
+        save_system_prompts(prompts)
+        return updated_prompt
+    raise HTTPException(status_code=404, detail="Prompt not found")
+
+@app.post("/llm_interaction")
+async def llm_interaction(request: dict):
+    return await handle_llm_interaction(request)
+
+@app.get("/available_models")
+async def available_models():
+    return await get_available_models()
 
 if __name__ == "__main__":
     import uvicorn
