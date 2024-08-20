@@ -23,7 +23,8 @@ const LLMInteraction = () => {
   }, []);
 
   useEffect(() => {
-    if (conversationRef.current) {
+    // Only scroll to bottom on initial message
+    if (conversationRef.current && conversationHistory.length === 1) {
       conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
     }
   }, [conversationHistory]);
@@ -31,7 +32,12 @@ const LLMInteraction = () => {
   const fetchSteps = async () => {
     try {
       const response = await axios.get('http://localhost:8000/system_prompts');
-      setSteps(response.data.sort((a, b) => parseInt(a.step.split(' ')[1]) - parseInt(b.step.split(' ')[1])));
+      setSteps(
+        response.data.sort(
+          (a, b) =>
+            parseInt(a.step.split(' ')[1]) - parseInt(b.step.split(' ')[1])
+        )
+      );
     } catch (error) {
       console.error('Failed to fetch steps:', error);
     }
@@ -53,22 +59,22 @@ const LLMInteraction = () => {
       const messages = [
         { role: 'system', content: currentSystemPrompt },
         ...conversationHistory,
-        { role: 'user', content: userPrompt }
+        { role: 'user', content: userPrompt },
       ];
-      
+
       const result = await sendLLMRequest(messages, maxTokens, temperature, model);
-      
+
       const newConversationHistory = [
         { role: 'user', content: userPrompt },
         { role: 'assistant', content: result.response },
-        ...conversationHistory
+        ...conversationHistory,
       ];
       setConversationHistory(newConversationHistory);
-      
-      setTotalCost(prevCost => prevCost + result.cost);
-      
+
+      setTotalCost((prevCost) => prevCost + result.cost);
+
       setUserPrompt('');
-      
+
       if (currentStepIndex < steps.length - 1) {
         setCurrentStepIndex(currentStepIndex + 1);
       }
@@ -77,7 +83,7 @@ const LLMInteraction = () => {
       setConversationHistory([
         { role: 'assistant', content: 'An error occurred while processing your request.' },
         { role: 'user', content: userPrompt },
-        ...conversationHistory
+        ...conversationHistory,
       ]);
     }
     setLoading(false);
@@ -91,9 +97,9 @@ const LLMInteraction = () => {
           className="bg-gray-700 text-white p-1 rounded text-xs hover:bg-gray-600 transition-colors duration-200"
         />
       </div>
-      <SyntaxHighlighter 
-        language={language} 
-        style={vscDarkPlus} 
+      <SyntaxHighlighter
+        language={language}
+        style={vscDarkPlus}
         className="p-4 pt-8 text-sm rounded-md"
         customStyle={{
           margin: 0,
@@ -106,11 +112,10 @@ const LLMInteraction = () => {
   );
 
   const renderMessage = (message) => {
-    const codeBlockRegex = /```(\w+)?\n([\s\S]+?)```/g;
+    const codeBlockRegex = /(\w+)?\n([\s\S]+?)```/g;
     const parts = [];
     let lastIndex = 0;
     let match;
-
     while ((match = codeBlockRegex.exec(message.content)) !== null) {
       if (match.index > lastIndex) {
         parts.push(message.content.slice(lastIndex, match.index));
@@ -120,20 +125,23 @@ const LLMInteraction = () => {
       parts.push(renderCodeBlock(code, language));
       lastIndex = match.index + match[0].length;
     }
-
     if (lastIndex < message.content.length) {
       parts.push(message.content.slice(lastIndex));
     }
-
-    return parts.map((part, index) => 
+    return parts.map((part, index) =>
       typeof part === 'string' ? <p key={index} className="my-1">{part}</p> : part
     );
   };
 
   const renderConversation = () => {
     return conversationHistory.map((message, index) => (
-      <div key={index} className={`mb-4 p-4 rounded-lg ${message.role === 'user' ? 'bg-blue-800' : 'bg-green-800'}`}>
-        <strong className="text-sm font-semibold">{message.role === 'user' ? 'User:' : 'Assistant:'}</strong>
+      <div
+        key={index}
+        className={`mb-4 p-4 rounded-lg ${message.role === 'user' ? 'bg-blue-800' : 'bg-green-800'}`}
+      >
+        <strong className="text-sm font-semibold">
+          {message.role === 'user' ? 'User:' : 'Assistant:'}
+        </strong>
         <div className="text-sm mt-2">{renderMessage(message)}</div>
       </div>
     ));
@@ -192,9 +200,11 @@ const LLMInteraction = () => {
       <div className="mb-6">
         {Object.entries(availableModels).map(([provider, models]) => (
           <div key={provider} className="mb-4">
-            <h3 className="text-lg font-semibold mb-2">{provider.charAt(0).toUpperCase() + provider.slice(1)}</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              {provider.charAt(0).toUpperCase() + provider.slice(1)}
+            </h3>
             <div className="flex flex-wrap gap-2">
-              {models.map(model => (
+              {models.map((model) => (
                 <button
                   key={model}
                   type="button"
@@ -211,7 +221,7 @@ const LLMInteraction = () => {
       </div>
       <div className="mt-6">
         <h3 className="text-2xl font-bold mb-4">Conversation:</h3>
-        <div 
+        <div
           ref={conversationRef}
           className="bg-gray-800 p-6 rounded-lg h-[600px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800"
         >
