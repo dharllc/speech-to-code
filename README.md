@@ -1,7 +1,9 @@
 add api keys in a .env file in the backend 
 
-OPENAI_API_KEY=""
+OPENAI_API_KEY="" 
+
 GOOGLE_API_KEY=""
+
 ANTHROPIC_API_KEY="
 
 add openai api key in a .env file in the frontend
