@@ -1,5 +1,7 @@
+// Filename: frontend/src/components/SystemPromptManagement.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import CopyButton from './CopyButton';
 
 const SystemPromptManagement = () => {
   const [prompts, setPrompts] = useState([]);
@@ -122,7 +124,11 @@ const SystemPromptManagement = () => {
           <div key={prompt.id} className="bg-gray-800 p-4 rounded shadow">
             <div className="flex justify-between items-start mb-2">
               <h4 className="font-bold text-lg">{prompt.name} ({prompt.step})</h4>
-              <div>
+              <div className="flex items-center">
+                <CopyButton 
+                  textToCopy={prompt.content} 
+                  className="mr-2 bg-gray-700 hover:bg-gray-600"
+                />
                 <button onClick={() => handleEdit(prompt)} className="bg-yellow-500 text-white px-2 py-1 rounded mr-2 text-sm hover:bg-yellow-600">
                   Edit
                 </button>
@@ -146,3 +152,4 @@ const SystemPromptManagement = () => {
 };
 
 export default SystemPromptManagement;
+// End of file: frontend/src/components/SystemPromptManagement.js
