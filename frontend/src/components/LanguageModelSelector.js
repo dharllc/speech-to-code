@@ -1,3 +1,4 @@
+// Filename: frontend/src/components/LanguageModelSelector.js
 import React from 'react';
 
 const LanguageModelSelector = ({ availableModels, onModelSelect, loading }) => (
@@ -13,7 +14,10 @@ const LanguageModelSelector = ({ availableModels, onModelSelect, loading }) => (
               key={model}
               type="button"
               onClick={() => onModelSelect(model)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-200 text-sm"
+              className="px-4 py-2 rounded-lg text-white text-sm font-medium 
+              bg-gradient-to-r from-blue-600 to-blue-800 
+              hover:from-blue-700 hover:to-blue-900 
+              transition-colors duration-200"
               disabled={loading}
             >
               {loading ? 'Processing...' : `${model}`}
@@ -26,3 +30,4 @@ const LanguageModelSelector = ({ availableModels, onModelSelect, loading }) => (
 );
 
 export default LanguageModelSelector;
+// End of file: frontend/src/components/LanguageModelSelector.js
