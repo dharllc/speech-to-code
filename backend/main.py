@@ -1,3 +1,6 @@
+# source venv/bin/activate
+# uvicorn main:app --reload --log-level debug
+
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from utils.tree_structure import get_tree_structure

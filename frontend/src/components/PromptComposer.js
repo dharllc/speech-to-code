@@ -1,3 +1,4 @@
+// Filename: PromptComposer.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PromptActions from './PromptActions';
@@ -12,6 +13,8 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => 
   const [enhancedTranscription, setEnhancedTranscription] = useState('');
   const [status, setStatus] = useState('');
   const [treeStructure, setTreeStructure] = useState('');
+  const [isTreeAdded, setIsTreeAdded] = useState(false);
+  const [treeTokenCount, setTreeTokenCount] = useState(0);
 
   useEffect(() => {
     if (selectedRepository) {
@@ -74,7 +77,8 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => 
     const filesContent = Object.entries(fileContents)
       .map(([path, { content }]) => `File: ${path}\n\n${content}\n\n`)
       .join('');
-    return `${basePrompt}\n${filesContent}`.trim();
+    const treeContent = isTreeAdded ? `[Repository Structure for ${selectedRepository}]\n${treeStructure}\n\n` : '';
+    return `${treeContent}${basePrompt}\n${filesContent}`.trim();
   };
 
   const clearAll = () => {
@@ -82,6 +86,8 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => 
     setFileContents({});
     setTranscription('');
     setEnhancedTranscription('');
+    setIsTreeAdded(false);
+    setTreeTokenCount(0);
     selectedFiles.forEach(file => onFileRemove(file.path));
   };
 
@@ -115,11 +121,24 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => 
     }
   };
 
-  const addTreeStructure = () => {
-    if (!basePrompt.includes('[Repository Structure]')) {
-      const newPrompt = `${basePrompt}\n[Repository Structure for ${selectedRepository}]\n${treeStructure}`.trim();
-      setBasePrompt(newPrompt);
+  const addTreeStructure = async () => {
+    if (!isTreeAdded) {
+      try {
+        const response = await axios.post('http://localhost:8000/count_tokens', {
+          text: treeStructure,
+          model: 'gpt-3.5-turbo'
+        });
+        setTreeTokenCount(response.data.count);
+        setIsTreeAdded(true);
+      } catch (error) {
+        console.error('Error counting tree structure tokens:', error);
+      }
     }
+  };
+
+  const removeTreeStructure = () => {
+    setIsTreeAdded(false);
+    setTreeTokenCount(0);
   };
 
   return (
@@ -134,6 +153,13 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => 
         prompt={getFullPrompt()}
       />
       <div className="mb-2">
+        {isTreeAdded && (
+          <FileChip
+            fileName="Repository Structure"
+            tokenCount={treeTokenCount}
+            onRemove={removeTreeStructure}
+          />
+        )}
         {Object.entries(fileContents).map(([path, { tokenCount }]) => (
           <FileChip
             key={path}
@@ -144,8 +170,9 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => 
         ))}
       </div>
       <PromptTextArea 
-        prompt={getFullPrompt()} 
+        prompt={basePrompt} 
         setPrompt={setBasePrompt}
+        additionalTokenCount={treeTokenCount + Object.values(fileContents).reduce((sum, { tokenCount }) => sum + tokenCount, 0)}
       />
       {status && <div className="mb-1 text-xs text-gray-600">{status}</div>}
       <TranscriptionDisplay
@@ -158,3 +185,4 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => 
 };
 
 export default PromptComposer;
+// End of file: PromptComposer.js
