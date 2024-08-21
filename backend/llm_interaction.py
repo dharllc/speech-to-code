@@ -1,3 +1,4 @@
+# Filename: backend/llm_interaction.py
 from fastapi import HTTPException
 import openai
 from anthropic import Anthropic
@@ -58,23 +59,19 @@ async def anthropic_completion(model: str, messages: list, max_tokens: int, temp
         elif role == 'assistant':
             formatted_messages.append({"role": "assistant", "content": content})
 
-    # If there's no user message after the last assistant message, add a default one
     if formatted_messages and formatted_messages[-1]['role'] == 'assistant':
         default_user_message = "Please continue with the next step based on the previous context."
         formatted_messages.append({"role": "user", "content": default_user_message})
 
-    # If there's remaining system content, add it to the first user message or create a new one
     if system_content:
         if formatted_messages and formatted_messages[0]['role'] == 'user':
             formatted_messages[0]['content'] = f"{system_content}{formatted_messages[0]['content']}"
         else:
             formatted_messages.insert(0, {"role": "user", "content": system_content})
 
-    # Ensure the message list starts with a user message
     if not formatted_messages or formatted_messages[0]['role'] != 'user':
         formatted_messages.insert(0, {"role": "user", "content": "Please assist me with the following."})
 
-    # Ensure alternating user/assistant messages
     final_messages = []
     for msg in formatted_messages:
         if not final_messages or msg['role'] != final_messages[-1]['role']:
@@ -108,8 +105,14 @@ async def google_completion(model: str, messages: list, max_tokens: int, tempera
 async def handle_llm_interaction(request: dict):
     model = request.get('model', 'gpt-3.5-turbo')
     messages = request.get('messages', [])
-    max_tokens = request.get('max_tokens', 2000)
     temperature = request.get('temperature', 0.7)
+
+    for provider, models in MODELS.items():
+        if model in models:
+            max_tokens = models[model]['output_tokens']
+            break
+    else:
+        raise ValueError(f"Unsupported model: {model}")
 
     combined_prompt = " ".join([msg['content'] for msg in messages])
     input_tokens = count_tokens(combined_prompt, model)
@@ -145,4 +148,4 @@ async def handle_llm_interaction(request: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 async def get_available_models():
-    return {provider: list(models.keys()) for provider, models in MODELS.items()}
+    return MODELS
