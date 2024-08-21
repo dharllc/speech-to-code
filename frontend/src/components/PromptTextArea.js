@@ -1,7 +1,8 @@
+// Filename: PromptTextArea.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const PromptTextArea = ({ prompt, setPrompt }) => {
+const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount }) => {
   const [tokenCount, setTokenCount] = useState(0);
 
   useEffect(() => {
@@ -54,10 +55,11 @@ const PromptTextArea = ({ prompt, setPrompt }) => {
         placeholder="Compose your prompt here..."
       />
       <div className="text-right mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Tokens: {tokenCount}
+        Tokens: {tokenCount + additionalTokenCount}
       </div>
     </div>
   );
 };
 
 export default PromptTextArea;
+// End of file: PromptTextArea.js
