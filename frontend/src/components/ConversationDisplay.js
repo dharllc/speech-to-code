@@ -6,8 +6,8 @@ import CopyButton from './CopyButton';
 
 const ConversationDisplay = ({ conversationHistory }) => {
   const renderCodeBlock = (code, filename) => (
-    <div className="relative my-2 rounded-md overflow-hidden">
-      <div className="sticky top-0 z-10 bg-gray-700 p-2 flex justify-between items-center">
+    <div className="relative my-1 rounded-md overflow-hidden">
+      <div className="sticky top-0 z-10 bg-gray-700 p-1 flex justify-between items-center">
         <span className="text-white text-xs">{filename}</span>
         <CopyButton
           textToCopy={code}
@@ -18,7 +18,7 @@ const ConversationDisplay = ({ conversationHistory }) => {
         <SyntaxHighlighter
           language={filename.split('.').pop()}
           style={vscDarkPlus}
-          className="p-4 text-sm rounded-md"
+          className="p-2 text-xs rounded-md"
           customStyle={{margin: 0, background: '#1E1E1E'}}
         >
           {code}
@@ -48,7 +48,7 @@ const ConversationDisplay = ({ conversationHistory }) => {
 
     return parts.map((part, index) =>
       typeof part === 'string' ? (
-        <p key={index} className="my-1 whitespace-pre-wrap text-sm">{part}</p>
+        <p key={index} className="my-0.5 whitespace-pre-wrap text-xs">{part}</p>
       ) : (
         React.cloneElement(part, { key: index })
       )
@@ -56,24 +56,24 @@ const ConversationDisplay = ({ conversationHistory }) => {
   };
 
   return (
-    <div className="mt-4">
-      <h3 className="text-xl font-bold mb-2">Conversation:</h3>
-      <div className="bg-gray-800 p-4 rounded-lg max-h-[calc(100vh-200px)] overflow-y-auto">
+    <div className="mt-2">
+      <h3 className="text-lg font-bold mb-1">Conversation:</h3>
+      <div className="bg-gray-800 p-2 rounded-lg max-h-[calc(100vh-150px)] overflow-y-auto">
         {conversationHistory.map((message, index) => (
-          <div key={index} className="mb-2">
-            <div className={`p-2 rounded-lg ${
+          <div key={index} className="mb-1">
+            <div className={`p-1 rounded-lg ${
               message.role === 'user' ? 'bg-blue-800' : 'bg-green-800'
             }`}>
-              <div className="flex justify-between items-center mb-1">
+              <div className="flex justify-between items-center mb-0.5">
                 <strong className="text-xs font-semibold">
                   {message.role === 'user' ? 'User:' : 'Assistant:'}
                 </strong>
                 <CopyButton
                   textToCopy={message.content}
-                  className="bg-gray-700 text-white p-1 rounded text-xs hover:bg-gray-600 transition-colors duration-200"
+                  className="bg-gray-700 text-white p-0.5 rounded text-xs hover:bg-gray-600 transition-colors duration-200"
                 />
               </div>
-              <div className="text-sm">
+              <div className={`text-xs ${message.role === 'user' ? 'max-h-20 overflow-y-auto' : ''}`}>
                 {renderMessage(message)}
               </div>
             </div>
