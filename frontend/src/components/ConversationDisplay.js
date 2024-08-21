@@ -1,3 +1,4 @@
+// Filename: frontend/src/components/ConversationDisplay.js
 import React, { useRef, useEffect } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -8,7 +9,7 @@ const ConversationDisplay = ({ conversationHistory }) => {
 
   useEffect(() => {
     if (conversationRef.current) {
-      conversationRef.current.scrollTop = 0;
+      conversationRef.current.scrollTop = conversationRef.current.scrollHeight;
     }
   }, [conversationHistory]);
 
@@ -76,20 +77,22 @@ const ConversationDisplay = ({ conversationHistory }) => {
         {conversationHistory.map((message, index) => (
           <div
             key={index}
-            className={`mb-4 p-4 rounded-lg ${message.role === 'user' ? 'bg-blue-800' : 'bg-green-800'}`}
+            className={`mb-4 p-3 rounded-lg ${
+              message.role === 'user' ? 'bg-blue-800' : 'bg-green-800'
+            }`}
           >
             <div className="flex justify-between items-start">
               <strong className="text-sm font-semibold">
                 {message.role === 'user' ? 'User:' : 'Assistant:'}
               </strong>
-              {message.role === 'assistant' && (
-                <CopyButton
-                  textToCopy={message.content}
-                  className="bg-gray-700 text-white p-1 rounded text-xs hover:bg-gray-600 transition-colors duration-200"
-                />
-              )}
+              <CopyButton
+                textToCopy={message.content}
+                className="bg-gray-700 text-white p-1 rounded text-xs hover:bg-gray-600 transition-colors duration-200"
+              />
             </div>
-            <div className="text-sm mt-2">{renderMessage(message)}</div>
+            <div className={`text-sm mt-2 ${message.role === 'user' ? 'max-h-20 overflow-y-auto' : ''}`}>
+              {renderMessage(message)}
+            </div>
           </div>
         ))}
       </div>
@@ -98,3 +101,4 @@ const ConversationDisplay = ({ conversationHistory }) => {
 };
 
 export default ConversationDisplay;
+// End of file: frontend/src/components/ConversationDisplay.js
