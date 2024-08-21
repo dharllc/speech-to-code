@@ -1,5 +1,16 @@
-// LanguageModelSelector.js
+// Filename: LanguageModelSelector.js
 import React from 'react';
+
+const formatTokenCount = (count) => {
+  if (count >= 1000) {
+    return `${Math.round(count / 1000)}k`;
+  }
+  return count.toString();
+};
+
+const formatCost = (cost) => {
+  return Number(cost).toFixed(2);
+};
 
 const LanguageModelSelector = ({ availableModels, onModelSelect, loading }) => (
   <div className="mb-6">
@@ -22,10 +33,10 @@ const LanguageModelSelector = ({ availableModels, onModelSelect, loading }) => (
             >
               <span className="font-bold mb-1">{model}</span>
               <span className="text-xs">
-                Input: {details.input_tokens.toLocaleString()} tokens (${details.input}/1Mt)
+                Input: {formatTokenCount(details.input_tokens)} (${formatCost(details.input)}/1Mt)
               </span>
               <span className="text-xs">
-                Output: {details.output_tokens.toLocaleString()} tokens (${details.output}/1Mt)
+                Output: {formatTokenCount(details.output_tokens)} (${formatCost(details.output)}/1Mt)
               </span>
             </button>
           ))}
@@ -36,3 +47,5 @@ const LanguageModelSelector = ({ availableModels, onModelSelect, loading }) => (
 );
 
 export default LanguageModelSelector;
+
+// End of file: LanguageModelSelector.js

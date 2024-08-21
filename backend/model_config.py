@@ -10,7 +10,7 @@ MODELS = {
         "claude-3-opus-20240229": {"input": 15, "output": 75, "input_tokens": 200000, "output_tokens": 4096}
     },
     "Google": {
-        "gemini-1.5-pro": {"input": 3.5, "output": 10.5, "input_tokens": 2097152, "output_tokens": 8192},
+        "gemini-1.5-pro": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
         "gemini-1.5-flash": {"input": 0.075, "output": 0.30, "input_tokens": 1048576, "output_tokens": 8192}
     }
 }

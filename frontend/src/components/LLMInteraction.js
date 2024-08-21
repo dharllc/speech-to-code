@@ -1,5 +1,5 @@
 // Filename: frontend/src/components/LLMInteraction.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { sendLLMRequest, getAvailableModels } from '../services/llmService';
 import axios from 'axios';
 import SystemPromptDisplay from './SystemPromptDisplay';
@@ -17,11 +17,26 @@ const LLMInteraction = () => {
   const [loading, setLoading] = useState(false);
   const [availableModels, setAvailableModels] = useState({});
   const [totalCost, setTotalCost] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     fetchSteps();
     fetchAvailableModels();
   }, []);
+
+  useEffect(() => {
+    if (loading) {
+      timerRef.current = setInterval(() => {
+        setElapsedTime((prevTime) => prevTime + 0.1);
+      }, 100);
+    } else {
+      clearInterval(timerRef.current);
+      setElapsedTime(0);
+    }
+
+    return () => clearInterval(timerRef.current);
+  }, [loading]);
 
   const fetchSteps = async () => {
     try {
@@ -48,6 +63,7 @@ const LLMInteraction = () => {
 
   const handleSubmit = async (model) => {
     setLoading(true);
+    setElapsedTime(0);
     try {
       const currentSystemPrompt = steps[currentStepIndex].content;
       const messages = [
@@ -126,6 +142,12 @@ const LLMInteraction = () => {
         onModelSelect={handleSubmit}
         loading={loading}
       />
+      {loading && (
+        <div className="mt-4 p-4 bg-blue-900 rounded-lg shadow-lg">
+          <p className="text-lg font-semibold">Request in progress...</p>
+          <p className="text-xl font-bold">{elapsedTime.toFixed(1)} seconds</p>
+        </div>
+      )}
       <ConversationDisplay conversationHistory={conversationHistory} />
     </div>
   );
