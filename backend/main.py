@@ -219,13 +219,13 @@ async def update_system_prompt(prompt_id: str, prompt: SystemPromptCreate):
             
             if prompt.is_default:
                 for other_p in prompts:
-                    if other_p['step'] == prompt.step and other_p['id'] != prompt_id:
+                    if other_p['step'] == p['step'] and other_p['id'] != prompt_id:
                         other_p['is_default'] = False
             
             updated_prompt = SystemPrompt(
                 id=prompt_id,
                 name=prompt.name,
-                step=prompt.name,  # Set step same as name
+                step=p['step'],  # Keep the original step
                 content=prompt.content,
                 is_default=prompt.is_default,
                 timestamp=datetime.now().isoformat(),
