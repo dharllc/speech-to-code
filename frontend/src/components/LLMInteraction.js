@@ -1,28 +1,42 @@
-import React, { useState, useEffect } from 'react';
+// Filename: frontend/src/components/LLMInteraction.js
+import React, { useState, useEffect, useRef } from 'react';
 import { sendLLMRequest, getAvailableModels } from '../services/llmService';
 import axios from 'axios';
 import SystemPromptDisplay from './SystemPromptDisplay';
 import UserPromptInput from './UserPromptInput';
-import ModelParameters from './ModelParameters';
 import LanguageModelSelector from './LanguageModelSelector';
 import ConversationDisplay from './ConversationDisplay';
 import CostDisplay from './CostDisplay';
 
-const LLMInteraction = () => {
+const LLMInteraction = ({ initialPrompt }) => {
   const [steps, setSteps] = useState([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [userPrompt, setUserPrompt] = useState('');
-  const [maxTokens, setMaxTokens] = useState(2000);
+  const [userPrompt, setUserPrompt] = useState(initialPrompt || '');
   const [temperature, setTemperature] = useState(0.7);
   const [conversationHistory, setConversationHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [availableModels, setAvailableModels] = useState({});
   const [totalCost, setTotalCost] = useState(0);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const timerRef = useRef(null);
 
   useEffect(() => {
     fetchSteps();
     fetchAvailableModels();
   }, []);
+
+  useEffect(() => {
+    if (loading) {
+      timerRef.current = setInterval(() => {
+        setElapsedTime((prevTime) => prevTime + 0.1);
+      }, 100);
+    } else {
+      clearInterval(timerRef.current);
+      setElapsedTime(0);
+    }
+
+    return () => clearInterval(timerRef.current);
+  }, [loading]);
 
   const fetchSteps = async () => {
     try {
@@ -49,6 +63,7 @@ const LLMInteraction = () => {
 
   const handleSubmit = async (model) => {
     setLoading(true);
+    setElapsedTime(0);
     try {
       const currentSystemPrompt = steps[currentStepIndex].content;
       const messages = [
@@ -57,7 +72,7 @@ const LLMInteraction = () => {
         { role: 'user', content: userPrompt },
       ];
 
-      const result = await sendLLMRequest(messages, maxTokens, temperature, model);
+      const result = await sendLLMRequest(messages, temperature, model);
 
       const newConversationHistory = [
         { role: 'user', content: userPrompt },
@@ -84,23 +99,55 @@ const LLMInteraction = () => {
     setLoading(false);
   };
 
+  const getTemperatureColor = (temp) => {
+    if (temp <= 1) return '#34D399';
+    if (temp <= 1.5) return '#FBBF24';
+    return '#EF4444';
+  };
+
   return (
     <div className="container mx-auto p-6 bg-gray-900 text-white min-h-screen">
       <h2 className="text-3xl font-bold mb-6">LLM Interaction - Step {currentStepIndex + 1}</h2>
       <CostDisplay totalCost={totalCost} />
       <SystemPromptDisplay content={steps[currentStepIndex]?.content || ''} />
       <UserPromptInput value={userPrompt} onChange={(e) => setUserPrompt(e.target.value)} />
-      <ModelParameters
-        maxTokens={maxTokens}
-        setMaxTokens={setMaxTokens}
-        temperature={temperature}
-        setTemperature={setTemperature}
-      />
+      <div className="mb-4">
+        <label htmlFor="temperature" className="block text-sm font-medium text-gray-300 mb-2">
+          Temperature: {temperature}
+        </label>
+        <div className="relative w-1/4 h-8 bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-full overflow-hidden">
+          <input
+            type="range"
+            id="temperature"
+            name="temperature"
+            min="0"
+            max="2"
+            step="0.05"
+            value={temperature}
+            onChange={(e) => setTemperature(parseFloat(e.target.value))}
+            className="absolute w-full h-full opacity-0 cursor-pointer z-10"
+          />
+          <div 
+            className="absolute top-0 left-0 h-full bg-white transition-all duration-300 ease-in-out"
+            style={{ 
+              width: `${(temperature / 2) * 100}%`,
+              backgroundColor: getTemperatureColor(temperature),
+              boxShadow: `0 0 10px ${getTemperatureColor(temperature)}`,
+            }}
+          ></div>
+        </div>
+      </div>
       <LanguageModelSelector
         availableModels={availableModels}
         onModelSelect={handleSubmit}
         loading={loading}
       />
+      {loading && (
+        <div className="mt-4 p-4 bg-blue-900 rounded-lg shadow-lg">
+          <p className="text-lg font-semibold">Request in progress...</p>
+          <p className="text-xl font-bold">{elapsedTime.toFixed(1)} seconds</p>
+        </div>
+      )}
       <ConversationDisplay conversationHistory={conversationHistory} />
     </div>
   );

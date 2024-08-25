@@ -10,6 +10,7 @@ import RepositorySettings from './components/RepositorySettings';
 function App() {
   const [selectedRepository, setSelectedRepository] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [userPrompt, setUserPrompt] = useState('');
 
   useEffect(() => {
     const storedRepo = localStorage.getItem('selectedRepository');
@@ -92,10 +93,11 @@ function App() {
                   selectedFiles={selectedFiles}
                   onFileSelectionChange={handleFileSelectionChange}
                   onClearAllFiles={handleClearAllFiles}
+                  setUserPrompt={setUserPrompt}
                 />
               } />
               <Route path="/system-prompt" element={<SystemPromptManagement />} />
-              <Route path="/llm-interaction" element={<LLMInteraction />} />
+              <Route path="/llm-interaction" element={<LLMInteraction initialPrompt={userPrompt} />} />
               <Route path="/repository-settings" element={
                 <RepositorySettings
                   selectedRepository={selectedRepository}

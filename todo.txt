@@ -1,9 +1,24 @@
-figure out what to do at end of step 2
+prompt composer
+- new button to take exising prompt text, and put it in the llm interaction user prompt, transition in UI to the LLM interaction page with the prompt text added to the user prompt for step 1
+
+llm interaction
+- visual feedback to user once an LLM button is clicked
+- show total tokens of the conversation so far
+- show input tokens in each user prompt in the botton right
+- allow for speech to text in the user prompt to make it easier to answer questions given to the user in the response in step 1
+
+prompt changes
+- 3 shot examples in each prompt
+- step 2, generate code for each file that needs to be changed and nothing else
+- step 2, give all terminal commands in a separate code block, for any required library installations (ex: pip install or npm install), mkdir commands for new folders, and touch commands for new files. Assume I am in the root directory of my repo when giving me terminal commands.
+
+step 3
+- create a series of executable commands that when run, will create/update the files with the contents in the message
+- if there is placeholder code in the file that will make it likely to fail, respond with "PLACEHOLDER CODE DETECTED" and do not update the file
+- if the new file is less lines of code than the existing file, respond with "WARNING - LINES OF CODE REDUCED" 
 
 allow for back and forth with step 1 before moving on to step 2
-
-outline of step 3
--update file based on filename
+- for example, confidence score must be > 60 before proceeding
 
 stream response back using different api method
 
@@ -11,3 +26,8 @@ fix setting a default prompt for a step
 -allow for multiple prompt options per step, where only default is actually used in LLM interaction
 
 show visual mapping of existing steps
+- if confidence score from step 1 is very low, exit and tell user to restructure prompt
+- if low, ask user for more info or more source code, or repo tree
+- if ok, proceed with warning, and at least 1 question
+- if high, proceed to code gen
+- if very high, proceed to code gen and applying changes

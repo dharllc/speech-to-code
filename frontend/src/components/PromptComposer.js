@@ -6,7 +6,7 @@ import PromptTextArea from './PromptTextArea';
 import TranscriptionDisplay from './TranscriptionDisplay';
 import FileChip from './FileChip';
 
-const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => {
+const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUserPrompt }) => {
   const [basePrompt, setBasePrompt] = useState('');
   const [fileContents, setFileContents] = useState({});
   const [transcription, setTranscription] = useState('');
@@ -151,6 +151,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => 
         enhanceTranscription={enhanceTranscription}
         setStatus={setStatus}
         prompt={getFullPrompt()}
+        setUserPrompt={setUserPrompt}
       />
       <div className="mb-2">
         {isTreeAdded && (
@@ -185,4 +186,3 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove }) => 
 };
 
 export default PromptComposer;
-// End of file: PromptComposer.js

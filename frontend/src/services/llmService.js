@@ -1,14 +1,14 @@
+// Filename: frontend/src/services/llmService.js
 import axios from 'axios';
 
 const API_URL = 'http://localhost:8000';
 
-export const sendLLMRequest = async (messages, maxTokens, temperature, model) => {
+export const sendLLMRequest = async (messages, temperature, model) => {
   try {
     const response = await axios.post(`${API_URL}/llm_interaction`, {
       messages,
-      max_tokens: maxTokens,
-      temperature: temperature,
-      model: model
+      temperature,
+      model
     });
     return response.data;
   } catch (error) {

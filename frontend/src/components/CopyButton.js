@@ -1,7 +1,8 @@
+// Filename: frontend/src/components/CopyButton.js
 import React, { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 
-const CopyButton = ({ textToCopy }) => {
+const CopyButton = ({ textToCopy, className }) => {
   const [copied, setCopied] = useState(false);
 
   const copyToClipboard = () => {
@@ -14,12 +15,13 @@ const CopyButton = ({ textToCopy }) => {
   return (
     <button
       onClick={copyToClipboard}
-      style={{ marginLeft: '8px' }} // Ensure some spacing from the text
-      className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 transition-colors duration-300"
+      className={`p-1 rounded text-xs transition-colors duration-200 ${className}`}
+      title={copied ? "Copied!" : "Copy to clipboard"}
     >
-      {copied ? <Check size={20} /> : <Copy size={20} />}
+      {copied ? <Check size={16} /> : <Copy size={16} />}
     </button>
   );
 };
 
 export default CopyButton;
+// End of file: frontend/src/components/CopyButton.js

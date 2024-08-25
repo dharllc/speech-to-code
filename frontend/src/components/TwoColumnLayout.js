@@ -1,8 +1,9 @@
+// Filename: TwoColumnLayout.js
 import React, { useState } from 'react';
 import PromptComposer from './PromptComposer';
 import RepositoryFileViewer from './RepositoryFileViewer';
 
-const TwoColumnLayout = ({ selectedRepository }) => {
+const TwoColumnLayout = ({ selectedRepository, setUserPrompt, onFileSelectionChange, onClearAllFiles }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
 
   const handleFileSelect = (file) => {
@@ -14,10 +15,12 @@ const TwoColumnLayout = ({ selectedRepository }) => {
         return [...prev, file];
       }
     });
+    onFileSelectionChange(file, !selectedFiles.some(f => f.path === file.path));
   };
 
   const handleFileRemove = (filePath) => {
     setSelectedFiles(prev => prev.filter(f => f.path !== filePath));
+    onFileSelectionChange({ path: filePath }, false);
   };
 
   return (
@@ -27,6 +30,7 @@ const TwoColumnLayout = ({ selectedRepository }) => {
           selectedRepository={selectedRepository}
           selectedFiles={selectedFiles}
           onFileRemove={handleFileRemove}
+          setUserPrompt={setUserPrompt}
         />
       </div>
       <div className="w-1/2 pl-2 border-l border-gray-300 dark:border-gray-700">
