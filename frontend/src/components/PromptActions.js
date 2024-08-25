@@ -1,15 +1,17 @@
 // Filename: PromptActions.js
 import React, { useState, useRef } from 'react';
-import { Trees, Trash2, Mic, Square, Copy, Check } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Trees, Trash2, Mic, Square, Copy, Check, ArrowRight } from 'lucide-react';
 import AudioVisualizer from './AudioVisualizer';
 
-const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanceTranscription, setStatus, prompt }) => {
+const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanceTranscription, setStatus, prompt, setUserPrompt }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [currentDuration, setCurrentDuration] = useState(0);
   const [copied, setCopied] = useState(false);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
+  const navigate = useNavigate();
 
   const startRecording = async () => {
     try {
@@ -72,20 +74,31 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
     });
   };
 
+  const handleGoToLLM = () => {
+    if (prompt.trim().length > 0) {
+      setUserPrompt(prompt.trim());
+      navigate('/llm-interaction');
+    }
+  };
+
   const buttonStyle = {
-    base: "px-4 py-2 text-white rounded flex items-center justify-center shadow-md transition-all duration-300 hover:shadow-lg",
+    base: "px-2 py-2 text-white rounded flex items-center justify-center shadow-md transition-all duration-300 hover:shadow-lg flex-1",
     green: "bg-gradient-to-r from-green-400 to-green-600",
     red: "bg-gradient-to-r from-red-400 to-red-600",
     blue: "bg-gradient-to-r from-blue-400 to-blue-600",
-    purple: "bg-gradient-to-r from-purple-400 to-purple-600"
+    purple: "bg-gradient-to-r from-purple-400 to-purple-600",
+    orange: "bg-gradient-to-r from-orange-400 to-orange-600",
+    disabled: "bg-gray-400 cursor-not-allowed"
   };
+
+  const isPromptEmpty = prompt.trim().length === 0;
 
   return (
     <div className="mb-2">
       <div className="flex mb-2 space-x-2">
         <button className={`${buttonStyle.base} ${buttonStyle.green}`} onClick={addTreeStructure}>
           <Trees className="mr-2" size={20} />
-          <span>Add Tree</span>
+          <span>Tree</span>
         </button>
         <button className={`${buttonStyle.base} ${buttonStyle.red}`} onClick={clearPrompt}>
           <Trash2 className="mr-2" size={20} />
@@ -105,6 +118,14 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
           {copied ? <Check className="mr-2" size={20} /> : <Copy className="mr-2" size={20} />}
           <span>Copy</span>
         </button>
+        <button 
+          className={`${buttonStyle.base} ${isPromptEmpty ? buttonStyle.disabled : buttonStyle.orange}`}
+          onClick={handleGoToLLM}
+          disabled={isPromptEmpty}
+        >
+          <ArrowRight className="mr-2" size={20} />
+          <span>Go</span>
+        </button>
       </div>
       {isRecording && (
         <div className="mb-2">
@@ -117,4 +138,3 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
 };
 
 export default PromptActions;
-// End of file: PromptActions.js

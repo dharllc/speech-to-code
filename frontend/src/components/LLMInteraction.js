@@ -8,10 +8,10 @@ import LanguageModelSelector from './LanguageModelSelector';
 import ConversationDisplay from './ConversationDisplay';
 import CostDisplay from './CostDisplay';
 
-const LLMInteraction = () => {
+const LLMInteraction = ({ initialPrompt }) => {
   const [steps, setSteps] = useState([]);
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [userPrompt, setUserPrompt] = useState('');
+  const [userPrompt, setUserPrompt] = useState(initialPrompt || '');
   const [temperature, setTemperature] = useState(0.7);
   const [conversationHistory, setConversationHistory] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -154,4 +154,3 @@ const LLMInteraction = () => {
 };
 
 export default LLMInteraction;
-// End of file: frontend/src/components/LLMInteraction.js
