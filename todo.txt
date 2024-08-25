@@ -1,9 +1,4 @@
-prompt composer
-- new button to take exising prompt text, and put it in the llm interaction user prompt, transition in UI to the LLM interaction page with the prompt text added to the user prompt for step 1
-
 llm interaction
-- visual feedback to user once an LLM button is clicked
-- show total tokens of the conversation so far
 - show input tokens in each user prompt in the botton right
 - allow for speech to text in the user prompt to make it easier to answer questions given to the user in the response in step 1
 
