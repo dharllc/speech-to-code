@@ -1,5 +1,11 @@
 bugs
 - Ensure that the order of system prompts is maintained when updating them to prevent mix-ups in the order of execution.
+- update requirements.txt with the latest packages
+- update the readme with the latest instructions, maybe a build script would be helpful
+
+usability improvements
+- sensible handling of refreshing, currently it wipes out everything on the home and llm interaction pages
+- handle responsiveness when adjusting width of the window
 
 logging responses
 - log all responses from the LLM to a file
