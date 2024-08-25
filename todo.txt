@@ -1,5 +1,4 @@
 bugs
-- update requirements.txt with the latest packages
 - update the readme with the latest instructions, maybe a build script would be helpful
 
 usability improvements
