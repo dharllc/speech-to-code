@@ -1,11 +1,15 @@
-prompt composer
-- new button to take exising prompt text, and put it in the llm interaction user prompt, transition in UI to the LLM interaction page with the prompt text added to the user prompt for step 1
+bugs
+- Ensure that the order of system prompts is maintained when updating them to prevent mix-ups in the order of execution.
+
+logging responses
+- log all responses from the LLM to a file
+- enable users to resume conversations
+- store each interaction as a unique conversations
+- tag each conversation with a score 1-5 to make it easier to add and bad examples to the prompts
 
 llm interaction
-- visual feedback to user once an LLM button is clicked
-- show total tokens of the conversation so far
-- show input tokens in each user prompt in the botton right
 - allow for speech to text in the user prompt to make it easier to answer questions given to the user in the response in step 1
+- handling of creating new files with touch commands if necessary
 
 prompt changes
 - 3 shot examples in each prompt
@@ -13,17 +17,13 @@ prompt changes
 - step 2, give all terminal commands in a separate code block, for any required library installations (ex: pip install or npm install), mkdir commands for new folders, and touch commands for new files. Assume I am in the root directory of my repo when giving me terminal commands.
 
 step 3
-- create a series of executable commands that when run, will create/update the files with the contents in the message
 - if there is placeholder code in the file that will make it likely to fail, respond with "PLACEHOLDER CODE DETECTED" and do not update the file
 - if the new file is less lines of code than the existing file, respond with "WARNING - LINES OF CODE REDUCED" 
 
-allow for back and forth with step 1 before moving on to step 2
+allow for back and forth with each step before proceeding to the next system prompt
 - for example, confidence score must be > 60 before proceeding
 
 stream response back using different api method
-
-fix setting a default prompt for a step
--allow for multiple prompt options per step, where only default is actually used in LLM interaction
 
 show visual mapping of existing steps
 - if confidence score from step 1 is very low, exit and tell user to restructure prompt
@@ -31,3 +31,4 @@ show visual mapping of existing steps
 - if ok, proceed with warning, and at least 1 question
 - if high, proceed to code gen
 - if very high, proceed to code gen and applying changes
+

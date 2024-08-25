@@ -1,4 +1,3 @@
-// Filename: frontend/src/components/LLMInteraction.js
 import React, { useState, useEffect, useRef } from 'react';
 import { sendLLMRequest, getAvailableModels } from '../services/llmService';
 import axios from 'axios';
@@ -17,7 +16,10 @@ const LLMInteraction = ({ initialPrompt }) => {
   const [loading, setLoading] = useState(false);
   const [availableModels, setAvailableModels] = useState({});
   const [totalCost, setTotalCost] = useState(0);
+  const [totalTokens, setTotalTokens] = useState({ input: 0, output: 0 });
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [systemPromptTokens, setSystemPromptTokens] = useState(0);
+  const [userPromptTokens, setUserPromptTokens] = useState(0);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -37,6 +39,16 @@ const LLMInteraction = ({ initialPrompt }) => {
 
     return () => clearInterval(timerRef.current);
   }, [loading]);
+
+  useEffect(() => {
+    if (steps[currentStepIndex]) {
+      countTokens(steps[currentStepIndex].content, setSystemPromptTokens);
+    }
+  }, [steps, currentStepIndex]);
+
+  useEffect(() => {
+    countTokens(userPrompt, setUserPromptTokens);
+  }, [userPrompt]);
 
   const fetchSteps = async () => {
     try {
@@ -61,6 +73,19 @@ const LLMInteraction = ({ initialPrompt }) => {
     }
   };
 
+  const countTokens = async (text, setTokens) => {
+    try {
+      const response = await axios.post('http://localhost:8000/count_tokens', {
+        text: text,
+        model: 'gpt-3.5-turbo'
+      });
+      setTokens(response.data.count);
+    } catch (error) {
+      console.error('Error counting tokens:', error);
+      setTokens(0);
+    }
+  };
+
   const handleSubmit = async (model) => {
     setLoading(true);
     setElapsedTime(0);
@@ -82,6 +107,10 @@ const LLMInteraction = ({ initialPrompt }) => {
       setConversationHistory(newConversationHistory);
 
       setTotalCost((prevCost) => prevCost + result.cost);
+      setTotalTokens((prevTokens) => ({
+        input: prevTokens.input + result.tokenCounts.input,
+        output: prevTokens.output + result.tokenCounts.output
+      }));
 
       setUserPrompt('');
 
@@ -108,9 +137,9 @@ const LLMInteraction = ({ initialPrompt }) => {
   return (
     <div className="container mx-auto p-6 bg-gray-900 text-white min-h-screen">
       <h2 className="text-3xl font-bold mb-6">LLM Interaction - Step {currentStepIndex + 1}</h2>
-      <CostDisplay totalCost={totalCost} />
-      <SystemPromptDisplay content={steps[currentStepIndex]?.content || ''} />
-      <UserPromptInput value={userPrompt} onChange={(e) => setUserPrompt(e.target.value)} />
+      <CostDisplay totalCost={totalCost} totalTokens={totalTokens} />
+      <SystemPromptDisplay content={steps[currentStepIndex]?.content || ''} tokenCount={systemPromptTokens} />
+      <UserPromptInput value={userPrompt} onChange={(e) => setUserPrompt(e.target.value)} tokenCount={userPromptTokens} />
       <div className="mb-4">
         <label htmlFor="temperature" className="block text-sm font-medium text-gray-300 mb-2">
           Temperature: {temperature}
