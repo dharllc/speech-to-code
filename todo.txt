@@ -1,6 +1,3 @@
-bugs
-- update the readme with the latest instructions, maybe a build script would be helpful
-
 usability improvements
 - sensible handling of refreshing, currently it wipes out everything on the home and llm interaction pages
 - handle responsiveness when adjusting width of the window
