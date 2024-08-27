@@ -1,10 +1,5 @@
-CRITICAL
-- fix main.py hardcoded path
-- improve config process
-- ui for config
-- local storage of api keys
-
-- deploy 
+deploy online
+- figure out how to access file system from browser 
 
 usability improvements
 - sensible handling of refreshing, currently it wipes out everything on the home and llm interaction pages

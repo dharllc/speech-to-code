@@ -5,14 +5,19 @@ from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from utils.tree_structure import get_tree_structure
 import os, json, tiktoken
+from dotenv import load_dotenv, set_key
 from pydantic import BaseModel
 from typing import List
 from datetime import datetime
 import uuid
 from llm_interaction import handle_llm_interaction, get_available_models
 
-app = FastAPI()
+load_dotenv()
+REPO_PATH = os.getenv("REPO_PATH")
+if REPO_PATH is None:
+    raise ValueError("REPO_PATH environment variable is not set")
 
+app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -94,7 +99,7 @@ async def get_tree(background_tasks: BackgroundTasks, repository: str = Query(..
     print(f"Fetching tree for repository: {repository}")
     if not repository:
         raise HTTPException(status_code=400, detail="Repository name is required")
-    base_path = f"/Users/sachindhar/Documents/GitHub/{repository}"
+    base_path = os.path.join(REPO_PATH, repository)
     print(f"Base path: {base_path}")
     if not os.path.exists(base_path):
         raise HTTPException(status_code=404, detail=f"Repository '{repository}' not found")
@@ -105,15 +110,14 @@ async def get_tree(background_tasks: BackgroundTasks, repository: str = Query(..
 
 @app.get("/directories")
 async def get_directories():
-    base_path = "/Users/sachindhar/Documents/GitHub"
     try:
-        return {"directories": [d for d in os.listdir(base_path) if os.path.isdir(os.path.join(base_path, d))]}
+        return {"directories": [d for d in os.listdir(REPO_PATH) if os.path.isdir(os.path.join(REPO_PATH, d))]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
+    
 @app.get("/file_content")
 async def get_file_content(repository: str = Query(...), path: str = Query(...)):
-    file_path = os.path.join(f"/Users/sachindhar/Documents/GitHub/{repository}", path)
+    file_path = os.path.join(REPO_PATH, repository, path)
     print(f"Attempting to read file: {file_path}")
     if not os.path.exists(file_path):
         print(f"File not found: {file_path}")
@@ -130,7 +134,7 @@ async def get_file_content(repository: str = Query(...), path: str = Query(...))
 
 @app.get("/file_lines")
 async def get_file_lines(repository: str, file_path: str):
-    full_path = os.path.join("/Users/sachindhar/Documents/GitHub", repository, file_path)
+    full_path = os.path.join(REPO_PATH, repository, file_path)
     try:
         with open(full_path, 'r', encoding='utf-8', errors='ignore') as file:
             return {"line_count": sum(1 for _ in file)}
@@ -246,6 +250,28 @@ async def llm_interaction(request: dict):
 @app.get("/available_models")
 async def available_models():
     return await get_available_models()
+
+class EnvVarUpdate(BaseModel):
+    key: str
+    value: str
+
+@app.get("/env_vars")
+async def get_env_vars():
+    return {
+        "OPENAI_API_KEY": os.getenv("OPENAI_API_KEY", ""),
+        "GOOGLE_API_KEY": os.getenv("GOOGLE_API_KEY", ""),
+        "ANTHROPIC_API_KEY": os.getenv("ANTHROPIC_API_KEY", ""),
+        "GROQ_API_KEY": os.getenv("GROQ_API_KEY", ""),
+        "REPO_PATH": os.getenv("REPO_PATH", "")
+    }
+
+@app.post("/env_vars")
+async def update_env_var(env_var: dict):
+    key, value = next(iter(env_var.items()))
+    env_file = os.path.join(os.path.dirname(__file__), ".env")
+    set_key(env_file, key, value)
+    os.environ[key] = value
+    return {"message": f"{key} updated successfully"}
 
 if __name__ == "__main__":
     import uvicorn

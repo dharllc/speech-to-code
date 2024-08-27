@@ -5,7 +5,7 @@ import TwoColumnLayout from './components/TwoColumnLayout';
 import DarkModeToggle from './components/DarkModeToggle';
 import SystemPromptManagement from './components/SystemPromptManagement';
 import LLMInteraction from './components/LLMInteraction';
-import RepositorySettings from './components/RepositorySettings';
+import Settings from './components/Settings';
 
 function App() {
   const [selectedRepository, setSelectedRepository] = useState('');
@@ -69,10 +69,10 @@ function App() {
                 </NavLink>
               </li>
               <li>
-                <NavLink to="/repository-settings" className={({ isActive }) => 
+                <NavLink to="/settings" className={({ isActive }) => 
                   `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
                 }>
-                  Repository Settings
+                  Settings
                 </NavLink>
               </li>
             </ul>
@@ -98,8 +98,8 @@ function App() {
               } />
               <Route path="/system-prompt" element={<SystemPromptManagement />} />
               <Route path="/llm-interaction" element={<LLMInteraction initialPrompt={userPrompt} />} />
-              <Route path="/repository-settings" element={
-                <RepositorySettings
+              <Route path="/settings" element={
+                <Settings
                   selectedRepository={selectedRepository}
                   onRepositorySelect={handleRepositorySelect}
                 />
