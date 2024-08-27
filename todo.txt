@@ -1,8 +1,11 @@
+bugs
+- openai api calls failing due to "bad api key"
+-- api key is definitely ok, maybe an error in llm_interaction.py
+
 deploy online
 - figure out how to access file system from browser 
 
 usability improvements
-- sensible handling of refreshing, currently it wipes out everything on the home and llm interaction pages
 - handle responsiveness when adjusting width of the window
 
 logging responses

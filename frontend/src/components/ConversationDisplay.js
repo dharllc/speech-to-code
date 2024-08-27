@@ -1,14 +1,13 @@
-// Filename: frontend/src/components/ConversationDisplay.js
 import React from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import CopyButton from './CopyButton';
 
 const ConversationDisplay = ({ conversationHistory }) => {
-  const renderCodeBlock = (code, filename) => (
+  const renderCodeBlock = (code, language) => (
     <div className="relative my-1 rounded-md overflow-hidden">
       <div className="sticky top-0 z-10 bg-gray-700 p-1 flex justify-between items-center">
-        <span className="text-white text-xs">{filename}</span>
+        <span className="text-white text-xs">{language}</span>
         <CopyButton
           textToCopy={code}
           className="bg-gray-600 text-white p-1 rounded text-xs hover:bg-gray-500 transition-colors duration-200"
@@ -16,7 +15,7 @@ const ConversationDisplay = ({ conversationHistory }) => {
       </div>
       <div className="max-h-80 overflow-y-auto">
         <SyntaxHighlighter
-          language={filename.split('.').pop()}
+          language={language}
           style={vscDarkPlus}
           className="p-2 text-xs rounded-md"
           customStyle={{margin: 0, background: '#1E1E1E'}}
@@ -27,45 +26,18 @@ const ConversationDisplay = ({ conversationHistory }) => {
     </div>
   );
 
-  const renderCommandBlock = (command) => (
-    <div className="relative my-1 rounded-md overflow-hidden">
-      <div className="sticky top-0 z-10 bg-gray-700 p-1 flex justify-between items-center">
-        <span className="text-white text-xs">Shell Command</span>
-        <CopyButton
-          textToCopy={command}
-          className="bg-gray-600 text-white p-1 rounded text-xs hover:bg-gray-500 transition-colors duration-200"
-        />
-      </div>
-      <div className="max-h-80 overflow-y-auto">
-        <SyntaxHighlighter
-          language="bash"
-          style={vscDarkPlus}
-          className="p-2 text-xs rounded-md"
-          customStyle={{margin: 0, background: '#1E1E1E'}}
-        >
-          {command}
-        </SyntaxHighlighter>
-      </div>
-    </div>
-  );
-
   const renderMessage = (message) => {
-    const codeBlockRegex = /<code filename="(.+?)">([\s\S]+?)<\/code>/g;
-    const commandRegex = /^\(cat << 'EOF'/;
+    const codeBlockRegex = /```(\w+)?\n([\s\S]+?)```/g;
     const parts = [];
     let lastIndex = 0;
     let match;
-
-    if (commandRegex.test(message.content.trim())) {
-      return renderCommandBlock(message.content.trim());
-    }
 
     while ((match = codeBlockRegex.exec(message.content)) !== null) {
       if (match.index > lastIndex) {
         parts.push(message.content.slice(lastIndex, match.index));
       }
-      const [, filename, code] = match;
-      parts.push(renderCodeBlock(code.trim(), filename));
+      const [, language = 'plaintext', code] = match;
+      parts.push(renderCodeBlock(code.trim(), language));
       lastIndex = match.index + match[0].length;
     }
 
