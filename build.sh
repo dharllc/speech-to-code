@@ -31,6 +31,16 @@ if [ ! -f .env ]; then
     echo "OPENAI_API_KEY=your-openai-api-key" > .env
     echo "GOOGLE_API_KEY=your-google-api-key" >> .env
     echo "ANTHROPIC_API_KEY=your-anthropic-api-key" >> .env
+    
+    # Prompt for repository path
+    read -p "Enter the path to your repositories: " repo_path
+    echo "REPO_PATH=$repo_path" >> .env
+else
+    # Check if REPO_PATH exists in .env, if not, prompt for it
+    if ! grep -q "REPO_PATH" .env; then
+        read -p "Enter the path to your repositories: " repo_path
+        echo "REPO_PATH=$repo_path" >> .env
+    fi
 fi
 
 echo "Setup complete!"
