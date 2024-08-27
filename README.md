@@ -1,6 +1,6 @@
 # Speech-to-Code
 
-Speech-to-Code is an web application that leverages Large Language Models (LLMs) to convert spoken language into executable code. This project aims to streamline the code generation process by allowing developers to express their ideas verbally and have them translated into functional code.
+Speech-to-Code is a web application that leverages Large Language Models (LLMs) to convert spoken language into executable code. This project aims to streamline the code generation process by allowing developers to express their ideas verbally and have them translated into functional code.
 
 ## Prerequisites
 
@@ -33,19 +33,12 @@ To install Speech-to-Code, follow these steps:
    - Set up a Python virtual environment
    - Create .env files with placeholders for API keys if they don't exist
 
-4. Set up API keys
-   - Navigate to the `frontend` directory and open the `.env` file
-   - Replace the placeholder with your OpenAI API key:
-     ```
-     REACT_APP_OPENAI_API_KEY="your-openai-api-key"
-     ```
-   - Navigate to the `backend` directory and open the `.env` file
-   - Replace the placeholders with your API keys:
-     ```
-     OPENAI_API_KEY="your-openai-api-key"
-     GOOGLE_API_KEY="your-google-api-key"
-     ANTHROPIC_API_KEY="your-anthropic-api-key"
-     ```
+4. Configure environment variables
+   After running the application, navigate to the Settings page to configure your environment variables, including:
+   - OPENAI_API_KEY
+   - GOOGLE_API_KEY
+   - ANTHROPIC_API_KEY
+   - REPO_PATH (path to your local GitHub repositories)
 
 ## Running the Application
 
@@ -102,11 +95,20 @@ speech-to-code/
 - `src/components/`: React components for the user interface
 - `src/services/llmService.js`: Service for interacting with the backend LLM API
 - `src/App.js`: Main React application component
+- `src/components/Settings.js`: Component for managing environment variables and repository settings
+
+## Features
+
+- Prompt Composer: Craft and edit prompts for code generation
+- System Prompt Management: Manage and customize system prompts
+- LLM Interaction: Interact with various Language Learning Models
+- Settings: Configure environment variables and repository settings
+- Dark Mode: Toggle between light and dark themes
 
 ## Troubleshooting
 
 If you encounter any issues:
-- Ensure all API keys are correctly set in the .env files
+- Ensure all API keys are correctly set in the Settings page
 - Check that all dependencies are installed correctly
 - Verify that both frontend and backend servers are running
 
