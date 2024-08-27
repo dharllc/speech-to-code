@@ -64,6 +64,11 @@ The application should now be running. Access the frontend at `http://localhost:
 ```
 speech-to-code/
 ├── backend/
+│   ├── .env
+│   ├── main.py
+│   ├── llm_interaction.py
+│   ├── model_config.py
+│   ├── system_prompts.json
 ├── frontend/
 │   ├── public/
 │   ├── src/
@@ -101,7 +106,7 @@ speech-to-code/
 
 - Prompt Composer: Craft and edit prompts for code generation
 - System Prompt Management: Manage and customize system prompts
-- LLM Interaction: Interact with various Language Learning Models
+- LLM Interaction: Interact with various Large Language Models
 - Settings: Configure environment variables and repository settings
 - Dark Mode: Toggle between light and dark themes
 
