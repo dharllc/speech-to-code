@@ -15,6 +15,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   const [treeStructure, setTreeStructure] = useState('');
   const [isTreeAdded, setIsTreeAdded] = useState(false);
   const [treeTokenCount, setTreeTokenCount] = useState(0);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     if (selectedRepository) {
@@ -44,6 +45,21 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     fetchFileContents();
   }, [selectedFiles, selectedRepository]);
 
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      if (hasUnsavedChanges) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
   const fetchTreeStructure = async (repo) => {
     try {
       const response = await axios.get(`http://localhost:8000/tree?repository=${repo}`);
@@ -71,6 +87,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       return newContents;
     });
     onFileRemove(filePath);
+    setHasUnsavedChanges(true);
   };
 
   const getFullPrompt = () => {
@@ -89,6 +106,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     setIsTreeAdded(false);
     setTreeTokenCount(0);
     selectedFiles.forEach(file => onFileRemove(file.path));
+    setHasUnsavedChanges(false);
   };
 
   const enhanceTranscription = async (text) => {
@@ -115,6 +133,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
 
       setEnhancedTranscription(response.data.choices[0].message.content);
       setStatus('Transcription ready');
+      setHasUnsavedChanges(true);
     } catch (error) {
       console.error('Error enhancing transcription:', error);
       setStatus('Error enhancing transcription');
@@ -130,6 +149,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         });
         setTreeTokenCount(response.data.count);
         setIsTreeAdded(true);
+        setHasUnsavedChanges(true);
       } catch (error) {
         console.error('Error counting tree structure tokens:', error);
       }
@@ -139,6 +159,12 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   const removeTreeStructure = () => {
     setIsTreeAdded(false);
     setTreeTokenCount(0);
+    setHasUnsavedChanges(true);
+  };
+
+  const handleBasePromptChange = (newPrompt) => {
+    setBasePrompt(newPrompt);
+    setHasUnsavedChanges(true);
   };
 
   return (
@@ -151,7 +177,10 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         enhanceTranscription={enhanceTranscription}
         setStatus={setStatus}
         prompt={getFullPrompt()}
-        setUserPrompt={setUserPrompt}
+        setUserPrompt={(prompt) => {
+          setUserPrompt(prompt);
+          setHasUnsavedChanges(false);
+        }}
       />
       <div className="mb-2">
         {isTreeAdded && (
@@ -172,14 +201,17 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       </div>
       <PromptTextArea 
         prompt={basePrompt} 
-        setPrompt={setBasePrompt}
+        setPrompt={handleBasePromptChange}
         additionalTokenCount={treeTokenCount + Object.values(fileContents).reduce((sum, { tokenCount }) => sum + tokenCount, 0)}
       />
       {status && <div className="mb-1 text-xs text-gray-600">{status}</div>}
       <TranscriptionDisplay
         transcription={transcription}
         enhancedTranscription={enhancedTranscription}
-        addToPrompt={(text) => setBasePrompt(prev => `${prev}\n${text}`.trim())}
+        addToPrompt={(text) => {
+          setBasePrompt(prev => `${prev}\n${text}`.trim());
+          setHasUnsavedChanges(true);
+        }}
       />
     </div>
   );
