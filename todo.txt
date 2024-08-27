@@ -12,11 +12,6 @@ logging responses
 - tag each conversation with a score 1-5 to make it easier to add and bad examples to the prompts
 
 llm interaction
-- redo user flo in llm interaction, to allow for adding more context or redo-ing output a step intentionally before proceeding to the next.
--- option to skip individual gates or steps entirely
--- set threshold to pass from step to step
--- add more context to the step to improve the "feasibility score"
--- proceed when feasibility score is above a threshold
 -- rate step as either success or failure, to inform whether feasibility score is accurate
 - allow for speech to text in the user prompt to make it easier to answer questions given to the user in the response in step 1
 - handling of creating new files with touch commands if necessary
