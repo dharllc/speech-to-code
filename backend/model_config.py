@@ -11,6 +11,9 @@ MODELS = {
     },
     "Google": {
         "gemini-1.5-pro": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
-        "gemini-1.5-flash": {"input": 0.075, "output": 0.30, "input_tokens": 1048576, "output_tokens": 8192}
+        "gemini-1.5-pro-exp-0801": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
+        "gemini-1.5-flash": {"input": 0.075, "output": 0.30, "input_tokens": 1048576, "output_tokens": 8192},
+        "gemini-1.5-flash-exp-0827": {"input": 0.075, "output": 0.30, "input_tokens": 1048576, "output_tokens": 8192},
+        "gemini-1.5-flash-8b-exp-0827": {"input": 0.075, "output": 0.30, "input_tokens": 1048576, "output_tokens": 8192}
     }
 }
