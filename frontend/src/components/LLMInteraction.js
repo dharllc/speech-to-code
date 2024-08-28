@@ -1,3 +1,4 @@
+// Filename: LLMInteraction.js
 import React, { useState, useEffect, useRef } from 'react';
 import { sendLLMRequest, getAvailableModels } from '../services/llmService';
 import axios from 'axios';
@@ -6,6 +7,7 @@ import UserPromptInput from './UserPromptInput';
 import LanguageModelSelector from './LanguageModelSelector';
 import ConversationDisplay from './ConversationDisplay';
 import CostDisplay from './CostDisplay';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 
 const LLMInteraction = ({ initialPrompt }) => {
   const [steps, setSteps] = useState([]);
@@ -22,6 +24,7 @@ const LLMInteraction = ({ initialPrompt }) => {
   const [userPromptTokens, setUserPromptTokens] = useState(0);
   const [feasibilityScore, setFeasibilityScore] = useState(null);
   const [questions, setQuestions] = useState([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -51,6 +54,21 @@ const LLMInteraction = ({ initialPrompt }) => {
   useEffect(() => {
     countTokens(userPrompt, setUserPromptTokens);
   }, [userPrompt]);
+
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      if (hasUnsavedChanges) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
 
   const fetchSteps = async () => {
     try {
@@ -101,7 +119,6 @@ const LLMInteraction = ({ initialPrompt }) => {
 
       const result = await sendLLMRequest(messages, temperature, model);
 
-      // Parse the JSON output from the LLM response
       const jsonOutput = result.response.match(/```json\n([\s\S]*?)\n```/);
       if (jsonOutput && jsonOutput[1]) {
         const parsedOutput = JSON.parse(jsonOutput[1]);
@@ -123,6 +140,7 @@ const LLMInteraction = ({ initialPrompt }) => {
       }));
 
       setUserPrompt('');
+      setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Error in LLM request:', error);
       setConversationHistory([
@@ -158,6 +176,17 @@ const LLMInteraction = ({ initialPrompt }) => {
     return 'text-red-500';
   };
 
+  const handleUserPromptChange = (newPrompt) => {
+    setUserPrompt(newPrompt);
+    setHasUnsavedChanges(true);
+  };
+
+  const buttonStyle = {
+    base: "px-3 py-2 text-white rounded flex items-center justify-center shadow-md transition-all duration-300 hover:shadow-lg",
+    gray: "bg-gradient-to-r from-gray-400 to-gray-600",
+    blue: "bg-gradient-to-r from-blue-400 to-blue-600"
+  };
+
   return (
     <div className="container mx-auto p-6 bg-gray-900 text-white min-h-screen">
       <h2 className="text-3xl font-bold mb-6">LLM Interaction - Step {currentStepIndex + 1}</h2>
@@ -181,25 +210,29 @@ const LLMInteraction = ({ initialPrompt }) => {
           </ul>
         </div>
       )}
-      <UserPromptInput value={userPrompt} onChange={(e) => setUserPrompt(e.target.value)} tokenCount={userPromptTokens} />
+      <UserPromptInput 
+        value={userPrompt} 
+        onChange={handleUserPromptChange} 
+        tokenCount={userPromptTokens} 
+      />
       
-      <div className="flex justify-between items-center mb-4">
-        <div className="flex space-x-2">
-          <button
-            onClick={handleGoBack}
-            disabled={currentStepIndex === 0}
-            className="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-          >
-            Back
-          </button>
-          <button
-            onClick={handleProceedToNextStep}
-            disabled={currentStepIndex >= steps.length - 1}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
+      <div className="flex space-x-2 mb-4">
+        <button
+          onClick={handleGoBack}
+          disabled={currentStepIndex === 0}
+          className={`${buttonStyle.base} ${buttonStyle.gray} ${currentStepIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <ArrowLeft className="mr-2" size={20} />
+          <span>Back</span>
+        </button>
+        <button
+          onClick={handleProceedToNextStep}
+          disabled={currentStepIndex >= steps.length - 1}
+          className={`${buttonStyle.base} ${buttonStyle.blue} ${currentStepIndex >= steps.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <span>Next</span>
+          <ArrowRight className="ml-2" size={20} />
+        </button>
       </div>
 
       <div className="mb-4">
@@ -215,7 +248,10 @@ const LLMInteraction = ({ initialPrompt }) => {
             max="2"
             step="0.05"
             value={temperature}
-            onChange={(e) => setTemperature(parseFloat(e.target.value))}
+            onChange={(e) => {
+              setTemperature(parseFloat(e.target.value));
+              setHasUnsavedChanges(true);
+            }}
             className="absolute w-full h-full opacity-0 cursor-pointer z-10"
           />
           <div 

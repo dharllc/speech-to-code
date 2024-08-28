@@ -58,14 +58,14 @@ function App() {
                 <NavLink to="/system-prompt" className={({ isActive }) => 
                   `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
                 }>
-                  System Prompt Management
+                  System Prompts
                 </NavLink>
               </li>
               <li>
                 <NavLink to="/llm-interaction" className={({ isActive }) => 
                   `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
                 }>
-                  LLM Interaction
+                  Prompt UI
                 </NavLink>
               </li>
               <li>

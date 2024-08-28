@@ -2,7 +2,6 @@ deploy online
 - figure out how to access file system from browser 
 
 usability improvements
-- sensible handling of refreshing, currently it wipes out everything on the home and llm interaction pages
 - handle responsiveness when adjusting width of the window
 
 logging responses
@@ -25,15 +24,6 @@ step 3
 - if there is placeholder code in the file that will make it likely to fail, respond with "PLACEHOLDER CODE DETECTED" and do not update the file
 - if the new file is less lines of code than the existing file, respond with "WARNING - LINES OF CODE REDUCED" 
 
-allow for back and forth with each step before proceeding to the next system prompt
-- for example, confidence score must be > 60 before proceeding
-
 stream response back using different api method
 
 show visual mapping of existing steps
-- if confidence score from step 1 is very low, exit and tell user to restructure prompt
-- if low, ask user for more info or more source code, or repo tree
-- if ok, proceed with warning, and at least 1 question
-- if high, proceed to code gen
-- if very high, proceed to code gen and applying changes
-
