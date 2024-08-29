@@ -1,4 +1,4 @@
-// Filename: PromptComposer.js
+// PromptComposer.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PromptActions from './PromptActions';
@@ -26,6 +26,13 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   useEffect(() => {
     const fetchFileContents = async () => {
       const newContents = { ...fileContents };
+      // Remove files that are no longer selected
+      Object.keys(newContents).forEach(path => {
+        if (!selectedFiles.some(file => file.path === path)) {
+          delete newContents[path];
+        }
+      });
+      // Add newly selected files
       for (const file of selectedFiles) {
         if (!newContents[file.path]) {
           try {
@@ -167,6 +174,9 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     setHasUnsavedChanges(true);
   };
 
+  const sortedFileContents = Object.entries(fileContents)
+    .sort(([, a], [, b]) => b.tokenCount - a.tokenCount);
+
   return (
     <div className="p-2">
       <h2 className="text-base font-bold mb-2">Prompt Composer</h2>
@@ -190,7 +200,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
             onRemove={removeTreeStructure}
           />
         )}
-        {Object.entries(fileContents).map(([path, { tokenCount }]) => (
+        {sortedFileContents.map(([path, { tokenCount }]) => (
           <FileChip
             key={path}
             fileName={path.split('/').pop()}

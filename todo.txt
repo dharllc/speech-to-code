@@ -1,5 +1,9 @@
+replace hardcoded port number with env variable
+- this is kinda hard and needs to be done carefully
+- package.json is tricky since its can't interpret the env variable
+
 deploy online
-- figure out how to access file system from browser 
+- figure out how to access file system from browser (file system access api)
 
 usability improvements
 - handle responsiveness when adjusting width of the window

@@ -1,6 +1,7 @@
+// RepositoryFileViewer.js
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { FiFolder, FiFile, FiCode, FiFileText } from 'react-icons/fi';
+import { FiFolder, FiFile, FiCode, FiFileText, FiCheck, FiSquare } from 'react-icons/fi';
 
 const getFileIcon = (type, name) => {
   if (type === 'directory') return FiFolder;
@@ -12,6 +13,7 @@ const getFileIcon = (type, name) => {
 const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles }) => {
   const [treeStructure, setTreeStructure] = useState(null);
   const [expandedFolders, setExpandedFolders] = useState({});
+  const [allSelected, setAllSelected] = useState(false);
 
   const fetchTreeStructure = useCallback(async (repo) => {
     try {
@@ -46,7 +48,28 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     if (node.type === 'directory') {
       toggleFolder(path);
     } else if (event.detail === 2) {
-      onFileSelect({ ...node, path: cleanPath });
+      onFileSelect({ ...node, path: cleanPath }, false);
+    }
+  };
+
+  const handleSelectAll = () => {
+    const newAllSelected = !allSelected;
+    setAllSelected(newAllSelected);
+    
+    const selectAllFiles = (node, path = '') => {
+      if (node.type === 'file') {
+        const cleanPath = `${path}/${node.name}`.replace(new RegExp(`^/${selectedRepository}/`), '');
+        onFileSelect({ ...node, path: cleanPath }, newAllSelected);
+      } else if (node.children) {
+        node.children.forEach(child => selectAllFiles(child, `${path}/${node.name}`));
+      }
+    };
+
+    if (!newAllSelected) {
+      // Deselect all files
+      selectedFiles.forEach(file => onFileSelect(file, false));
+    } else {
+      selectAllFiles(treeStructure);
     }
   };
 
@@ -86,6 +109,15 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
   return (
     <div className="h-full overflow-auto pr-2">
       <h3 className="text-base font-bold mb-2">Repository Structure</h3>
+      <div className="mb-2">
+        <button
+          className="flex items-center text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200"
+          onClick={handleSelectAll}
+        >
+          {allSelected ? <FiCheck className="mr-1" /> : <FiSquare className="mr-1" />}
+          {allSelected ? 'Deselect All' : 'Select All'}
+        </button>
+      </div>
       {treeStructure ? renderTree(treeStructure) : <p className="text-sm text-gray-700 dark:text-gray-300">Loading repository structure...</p>}
     </div>
   );
