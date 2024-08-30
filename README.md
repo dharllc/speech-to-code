@@ -2,6 +2,20 @@
 
 Speech-to-Code is a web application that leverages Large Language Models (LLMs) to convert spoken language into executable code. This project aims to streamline the code generation process by allowing developers to express their ideas verbally and have them translated into functional code.
 
+## Usage
+
+Here is an example workflow of the Speech-to-Code application:
+
+### Write a prompt, combining speech, the repo tree, and current source code
+![Prompt Composer](./screenshots/prompt_composer.png)
+
+### Prompt an LLM and copy the code
+![Prompt](./screenshots/prompt_ui.png)
+![Copy Code](./screenshots/conversation_display.png)
+
+### Manage system prompts
+![System Prompts](./screenshots/system_prompts.png)
+
 ## Prerequisites
 
 Before you begin, ensure you have met the following requirements:
@@ -122,6 +136,10 @@ For more detailed error messages, check the console output of both frontend and 
 ## Contributing
 
 Contributions to Speech-to-Code are welcome. Please refer to the repository's issues page for current tasks or to suggest new features.
+
+## Feedback
+
+Please send feedback via email to sachin@dharllc.com
 
 ## License
 
