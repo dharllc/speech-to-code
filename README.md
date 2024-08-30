@@ -110,6 +110,21 @@ speech-to-code/
 - Settings: Configure environment variables and repository settings
 - Dark Mode: Toggle between light and dark themes
 
+## Usage
+
+Here is an example workflow of the Speech-to-Code application:
+
+### Write a prompt, combining speech, the repo tree, and current source code
+![Prompt Composer](./screenshots/prompt_composer.png)
+
+### Prompt an LLM and copy the code
+![Prompt](./screenshots/prompt_ui.png)
+![Copy Code](./screenshots/conversation_display.png)
+
+### Manage system prompts
+![System Prompts](./screenshots/system_prompts.png)
+
+
 ## Troubleshooting
 
 If you encounter any issues:
@@ -122,6 +137,10 @@ For more detailed error messages, check the console output of both frontend and 
 ## Contributing
 
 Contributions to Speech-to-Code are welcome. Please refer to the repository's issues page for current tasks or to suggest new features.
+
+## Feedback
+
+Please send feedback via email to sachin@dharllc.com
 
 ## License
 
