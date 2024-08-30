@@ -19,8 +19,9 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     try {
       const response = await axios.get(`http://localhost:8000/tree?repository=${repo}`);
       const parsedTree = JSON.parse(response.data.tree);
-      setTreeStructure(parsedTree);
-      initializeExpandedFolders(parsedTree);
+      const sortedTree = sortTreeStructure(parsedTree);
+      setTreeStructure(sortedTree);
+      initializeExpandedFolders(sortedTree);
     } catch (error) {
       console.error('Failed to fetch tree structure:', error);
     }
@@ -31,6 +32,18 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
       fetchTreeStructure(selectedRepository);
     }
   }, [selectedRepository, fetchTreeStructure]);
+
+  const sortTreeStructure = (node) => {
+    if (node.type === 'directory' && node.children) {
+      node.children = node.children.sort((a, b) => {
+        if (a.type === 'directory' && b.type !== 'directory') return -1;
+        if (a.type !== 'directory' && b.type === 'directory') return 1;
+        return (b.token_count || 0) - (a.token_count || 0);
+      });
+      node.children.forEach(sortTreeStructure);
+    }
+    return node;
+  };
 
   const initializeExpandedFolders = (node, path = '') => {
     if (node.type === 'directory') {
@@ -66,7 +79,6 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     };
 
     if (!newAllSelected) {
-      // Deselect all files
       selectedFiles.forEach(file => onFileSelect(file, false));
     } else {
       selectAllFiles(treeStructure);
