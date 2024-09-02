@@ -1,4 +1,4 @@
-// PromptComposer.js
+// File: frontend/src/components/PromptComposer.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import PromptActions from './PromptActions';
@@ -9,8 +9,7 @@ import FileChip from './FileChip';
 const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUserPrompt }) => {
   const [basePrompt, setBasePrompt] = useState('');
   const [fileContents, setFileContents] = useState({});
-  const [transcription, setTranscription] = useState('');
-  const [enhancedTranscription, setEnhancedTranscription] = useState('');
+  const [transcriptionHistory, setTranscriptionHistory] = useState([]);
   const [status, setStatus] = useState('');
   const [treeStructure, setTreeStructure] = useState('');
   const [isTreeAdded, setIsTreeAdded] = useState(false);
@@ -26,13 +25,11 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   useEffect(() => {
     const fetchFileContents = async () => {
       const newContents = { ...fileContents };
-      // Remove files that are no longer selected
       Object.keys(newContents).forEach(path => {
         if (!selectedFiles.some(file => file.path === path)) {
           delete newContents[path];
         }
       });
-      // Add newly selected files
       for (const file of selectedFiles) {
         if (!newContents[file.path]) {
           try {
@@ -108,8 +105,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   const clearAll = () => {
     setBasePrompt('');
     setFileContents({});
-    setTranscription('');
-    setEnhancedTranscription('');
+    setTranscriptionHistory([]);
     setIsTreeAdded(false);
     setTreeTokenCount(0);
     selectedFiles.forEach(file => onFileRemove(file.path));
@@ -138,7 +134,12 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         }
       });
 
-      setEnhancedTranscription(response.data.choices[0].message.content);
+      const enhancedText = response.data.choices[0].message.content;
+      setTranscriptionHistory(prev => [{
+        timestamp: new Date().toISOString(),
+        raw: text,
+        enhanced: enhancedText
+      }, ...prev]);
       setStatus('Transcription ready');
       setHasUnsavedChanges(true);
     } catch (error) {
@@ -183,7 +184,11 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       <PromptActions
         addTreeStructure={addTreeStructure}
         clearPrompt={clearAll}
-        setTranscription={setTranscription}
+        setTranscription={(text) => setTranscriptionHistory(prev => [{
+          timestamp: new Date().toISOString(),
+          raw: text,
+          enhanced: ''
+        }, ...prev])}
         enhanceTranscription={enhanceTranscription}
         setStatus={setStatus}
         prompt={getFullPrompt()}
@@ -216,8 +221,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       />
       {status && <div className="mb-1 text-xs text-gray-600">{status}</div>}
       <TranscriptionDisplay
-        transcription={transcription}
-        enhancedTranscription={enhancedTranscription}
+        transcriptionHistory={transcriptionHistory}
         addToPrompt={(text) => {
           setBasePrompt(prev => `${prev}\n${text}`.trim());
           setHasUnsavedChanges(true);
