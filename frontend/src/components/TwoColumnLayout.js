@@ -42,6 +42,6 @@ const TwoColumnLayout = ({ selectedRepository, setUserPrompt, onFileSelectionCha
       </div>
     </div>
   );
-};
+}
 
 export default TwoColumnLayout;
