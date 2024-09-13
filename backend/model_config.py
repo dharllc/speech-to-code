@@ -1,5 +1,7 @@
 MODELS = {
     "OpenAI": {
+        "o1-preview-2024-09-12": {"input": 15, "output": 60, "input_tokens": 128000, "output_tokens": 32768},
+        "o1-mini-2024-09-12": {"input": 3, "output": 12, "input_tokens": 128000, "output_tokens": 65536},
         "gpt-4o-2024-05-13": {"input": 5, "output": 15, "input_tokens": 128000, "output_tokens": 4096},
         "gpt-4o-2024-08-06": {"input": 5, "output": 15, "input_tokens": 128000, "output_tokens": 16384},
         "chatgpt-4o-latest": {"input": 5, "output": 15, "input_tokens": 128000, "output_tokens": 16384},
