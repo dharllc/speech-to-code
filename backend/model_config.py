@@ -8,6 +8,7 @@ MODELS = {
         "gpt-4o-mini-2024-07-18": {"input": 0.15, "output": 0.60, "input_tokens": 128000, "output_tokens": 16384}
     },
     "Anthropic": {
+        "claude-3-5-sonnet-20241022": {"input": 3, "output": 15, "input_tokens": 200000, "output_tokens": 8192},
         "claude-3-5-sonnet-20240620": {"input": 3, "output": 15, "input_tokens": 200000, "output_tokens": 8192},
         "claude-3-haiku-20240307": {"input": 0.25, "output": 1.25, "input_tokens": 200000, "output_tokens": 4096},
         "claude-3-opus-20240229": {"input": 15, "output": 75, "input_tokens": 200000, "output_tokens": 4096}
