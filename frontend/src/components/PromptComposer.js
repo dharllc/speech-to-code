@@ -108,7 +108,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       .map(([path, { content }]) => `File: ${path}\n\n${content}\n\n`)
       .join('');
     const treeContent = isTreeAdded ? `[Repository Structure for ${selectedRepository}]\n${treeStructure}\n\n` : '';
-    return `${treeContent}${basePrompt}\n${filesContent}`.trim();
+    return `${basePrompt}\n${treeContent}${filesContent}`.trim();
   };
 
   const clearAll = () => {
