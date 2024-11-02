@@ -22,6 +22,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   const [fileSuggestions, setFileSuggestions] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAutoAnalyzeEnabled, setIsAutoAnalyzeEnabled] = useState(false);
+  const [addedBatches, setAddedBatches] = useState([]); // Track added batches
   const MIN_PROMPT_LENGTH = 50;
 
   useEffect(() => {
@@ -118,6 +119,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     setTreeTokenCount(0);
     setFileSuggestions(null);
     selectedFiles.forEach(file => onFileRemove(file.path));
+    setAddedBatches([]); // Reset added batches
     setHasUnsavedChanges(false);
   };
 
@@ -181,7 +183,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
 
   const analyzePrompt = async (prompt) => {
     if (prompt.length < MIN_PROMPT_LENGTH || !selectedRepository || isAnalyzing) return;
-    
+
     setIsAnalyzing(true);
     setStatus('Analyzing prompt for relevant files...');
     try {
@@ -217,6 +219,32 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
 
   const sortedFileContents = Object.entries(fileContents)
     .sort(([, a], [, b]) => b.tokenCount - a.tokenCount);
+
+  // Function to handle adding a batch
+  const handleBatchAdd = (batchKey) => {
+    if (!fileSuggestions || !fileSuggestions[batchKey]) return;
+    const filesToAdd = fileSuggestions[batchKey].map(item => item.file);
+    filesToAdd.forEach(filePath => {
+      if (!selectedFiles.some(file => file.path === filePath)) {
+        onFileSelectionChange({ path: filePath }, true);
+      }
+    });
+    setAddedBatches(prev => [...prev, batchKey]);
+    setHasUnsavedChanges(true);
+  };
+
+  // Function to handle removing a batch
+  const handleBatchRemove = (batchKey) => {
+    if (!fileSuggestions || !fileSuggestions[batchKey]) return;
+    const filesToRemove = fileSuggestions[batchKey].map(item => item.file);
+    filesToRemove.forEach(filePath => {
+      if (selectedFiles.some(file => file.path === filePath)) {
+        onFileRemove(filePath);
+      }
+    });
+    setAddedBatches(prev => prev.filter(key => key !== batchKey));
+    setHasUnsavedChanges(true);
+  };
 
   return (
     <div className="p-2">
@@ -272,16 +300,18 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       {isAnalyzing && (
         <div className="flex items-center justify-center p-4 text-gray-500">
           <FiLoader className="animate-spin mr-2" />
-          Analyzing prompt for relevant files...
         </div>
       )}
       {fileSuggestions && (
         <FileSuggestions
-          suggestions={fileSuggestions}
-          onFileSelect={(filePath) => {
-            onFileSelectionChange({ path: filePath }, true);
+          suggestions={{
+            high_confidence: fileSuggestions.high_confidence,
+            medium_confidence: fileSuggestions.medium_confidence,
+            low_confidence: fileSuggestions.low_confidence
           }}
-          selectedFiles={selectedFiles.map(f => f.path)}
+          onBatchAdd={handleBatchAdd}
+          onBatchRemove={handleBatchRemove}
+          addedBatches={addedBatches}
         />
       )}
       <TranscriptionDisplay
