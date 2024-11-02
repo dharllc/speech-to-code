@@ -30,6 +30,7 @@ const TwoColumnLayout = ({ selectedRepository, setUserPrompt, onFileSelectionCha
           selectedRepository={selectedRepository}
           selectedFiles={selectedFiles}
           onFileRemove={handleFileRemove}
+          onFileSelectionChange={onFileSelectionChange}
           setUserPrompt={setUserPrompt}
         />
       </div>

@@ -1,12 +1,16 @@
 // File: frontend/src/components/PromptComposer.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { FiLoader } from 'react-icons/fi';
 import PromptActions from './PromptActions';
 import PromptTextArea from './PromptTextArea';
 import TranscriptionDisplay from './TranscriptionDisplay';
 import FileChip from './FileChip';
+import { analyzePromptForFiles } from '../services/llmService';
+import FileSuggestions from './FileSuggestions';
+import PromptAnalysisControls from './PromptAnalysisControls';
 
-const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUserPrompt }) => {
+const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUserPrompt, onFileSelectionChange }) => {
   const [basePrompt, setBasePrompt] = useState('');
   const [fileContents, setFileContents] = useState({});
   const [transcriptionHistory, setTranscriptionHistory] = useState([]);
@@ -15,6 +19,10 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   const [isTreeAdded, setIsTreeAdded] = useState(false);
   const [treeTokenCount, setTreeTokenCount] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [fileSuggestions, setFileSuggestions] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAutoAnalyzeEnabled, setIsAutoAnalyzeEnabled] = useState(false);
+  const MIN_PROMPT_LENGTH = 50;
 
   useEffect(() => {
     if (selectedRepository) {
@@ -108,6 +116,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     setTranscriptionHistory([]);
     setIsTreeAdded(false);
     setTreeTokenCount(0);
+    setFileSuggestions(null);
     selectedFiles.forEach(file => onFileRemove(file.path));
     setHasUnsavedChanges(false);
   };
@@ -170,9 +179,40 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     setHasUnsavedChanges(true);
   };
 
+  const analyzePrompt = async (prompt) => {
+    if (prompt.length < MIN_PROMPT_LENGTH || !selectedRepository || isAnalyzing) return;
+    
+    setIsAnalyzing(true);
+    setStatus('Analyzing prompt for relevant files...');
+    try {
+      const response = await analyzePromptForFiles(selectedRepository, prompt);
+      setFileSuggestions(response.suggestions);
+    } catch (error) {
+      console.error('Error getting file suggestions:', error);
+      setStatus('Error analyzing prompt');
+    } finally {
+      setIsAnalyzing(false);
+      setStatus('');
+    }
+  };
+
+  const debouncedAnalyzePrompt = useCallback(
+    debounce(analyzePrompt, 2000),
+    [selectedRepository, isAnalyzing]
+  );
+
+  useEffect(() => {
+    return () => {
+      debouncedAnalyzePrompt.cancel();
+    };
+  }, [debouncedAnalyzePrompt]);
+
   const handleBasePromptChange = (newPrompt) => {
     setBasePrompt(newPrompt);
     setHasUnsavedChanges(true);
+    if (isAutoAnalyzeEnabled) {
+      debouncedAnalyzePrompt(newPrompt);
+    }
   };
 
   const sortedFileContents = Object.entries(fileContents)
@@ -219,7 +259,31 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         setPrompt={handleBasePromptChange}
         additionalTokenCount={treeTokenCount + Object.values(fileContents).reduce((sum, { tokenCount }) => sum + tokenCount, 0)}
       />
+      <PromptAnalysisControls
+        promptLength={basePrompt.length}
+        minLength={MIN_PROMPT_LENGTH}
+        isAnalyzing={isAnalyzing}
+        isAutoAnalyzeEnabled={isAutoAnalyzeEnabled}
+        onToggleAutoAnalyze={() => setIsAutoAnalyzeEnabled(prev => !prev)}
+        onManualAnalyze={() => analyzePrompt(basePrompt)}
+        disabled={!selectedRepository}
+      />
       {status && <div className="mb-1 text-xs text-gray-600">{status}</div>}
+      {isAnalyzing && (
+        <div className="flex items-center justify-center p-4 text-gray-500">
+          <FiLoader className="animate-spin mr-2" />
+          Analyzing prompt for relevant files...
+        </div>
+      )}
+      {fileSuggestions && (
+        <FileSuggestions
+          suggestions={fileSuggestions}
+          onFileSelect={(filePath) => {
+            onFileSelectionChange({ path: filePath }, true);
+          }}
+          selectedFiles={selectedFiles.map(f => f.path)}
+        />
+      )}
       <TranscriptionDisplay
         transcriptionHistory={transcriptionHistory}
         addToPrompt={(text) => {
@@ -229,6 +293,17 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       />
     </div>
   );
+};
+
+const debounce = (func, wait) => {
+  let timeout;
+  const debouncedFunc = (...args) => {
+    const context = this;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), wait);
+  };
+  debouncedFunc.cancel = () => clearTimeout(timeout);
+  return debouncedFunc;
 };
 
 export default PromptComposer;

@@ -1,0 +1,575 @@
+{
+  "repositoryId": "speech-to-code",
+  "lastUpdated": "2024-11-02T12:49:43.025635",
+  "files": {
+    "todo.txt": {
+      "type": "txt",
+      "size": 1657,
+      "lastModified": "2024-08-29T22:42:13.397422",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "build.sh": {
+      "type": "sh",
+      "size": 1586,
+      "lastModified": "2024-08-27T11:42:21.620246",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "package-lock.json": {
+      "type": "json",
+      "size": 93,
+      "lastModified": "2024-08-24T21:52:27.670532",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "frontend/tailwind.config.js": {
+      "type": "js",
+      "size": 334,
+      "lastModified": "2024-08-28T21:00:04.398752",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "frontend/package-lock.json": {
+      "type": "json",
+      "size": 767568,
+      "lastModified": "2024-08-24T21:52:34.286206",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "frontend/package.json": {
+      "type": "json",
+      "size": 1270,
+      "lastModified": "2024-08-28T21:26:06.711139",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "frontend/postcss.config.js": {
+      "type": "js",
+      "size": 82,
+      "lastModified": "2024-08-28T21:00:04.400525",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "frontend/public/index.html": {
+      "type": "html",
+      "size": 1726,
+      "lastModified": "2024-08-11T20:35:01.787496",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "frontend/public/manifest.json": {
+      "type": "json",
+      "size": 492,
+      "lastModified": "2024-08-11T14:43:07.534801",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "frontend/public/robots.txt": {
+      "type": "txt",
+      "size": 67,
+      "lastModified": "2024-08-10T11:45:14.290492",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "frontend/src/reportWebVitals.js": {
+      "type": "js",
+      "size": 362,
+      "lastModified": "2024-08-28T21:24:43.659580",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "frontend/src/App.css": {
+      "type": "css",
+      "size": 564,
+      "lastModified": "2024-08-11T01:57:14.882537",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "frontend/src/index.js": {
+      "type": "js",
+      "size": 288,
+      "lastModified": "2024-08-28T21:24:43.659884",
+      "key_elements": [
+        "reportWebVitals",
+        "React",
+        "App",
+        "ReactDOM"
+      ],
+      "summary": "Function containing 4 key elements"
+    },
+    "frontend/src/index.css": {
+      "type": "css",
+      "size": 189,
+      "lastModified": "2024-08-14T06:19:40.142668",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "frontend/src/App.test.js": {
+      "type": "js",
+      "size": 246,
+      "lastModified": "2024-08-28T21:24:43.667033",
+      "key_elements": [
+        "render, screen ",
+        "App"
+      ],
+      "summary": "Function containing 2 key elements"
+    },
+    "frontend/src/setupTests.js": {
+      "type": "js",
+      "size": 241,
+      "lastModified": "2024-08-28T21:24:43.667290",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "frontend/src/logo.svg": {
+      "type": "svg",
+      "size": 2632,
+      "lastModified": "2024-08-10T11:45:14.292261",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "frontend/src/App.js": {
+      "type": "js",
+      "size": 4437,
+      "lastModified": "2024-08-28T21:24:43.667564",
+      "key_elements": [
+        "handleRepositorySelect",
+        "TwoColumnLayout",
+        "Settings",
+        "handleFileSelectionChange",
+        "App",
+        "DarkModeToggle",
+        "RepositorySelector",
+        "BrowserRouter as Router, Route, Routes, NavLink ",
+        "handleClearAllFiles",
+        "LLMInteraction",
+        "SystemPromptManagement"
+      ],
+      "summary": "Function containing 11 key elements"
+    },
+    "frontend/src/components/TreeStructure.js": {
+      "type": "js",
+      "size": 795,
+      "lastModified": "2024-08-28T21:25:39.482270",
+      "key_elements": [
+        "TreeNode",
+        "TreeStructure",
+        "React"
+      ],
+      "summary": "Function containing 3 key elements"
+    },
+    "frontend/src/components/ConversationDisplay.js": {
+      "type": "js",
+      "size": 3077,
+      "lastModified": "2024-08-28T21:25:39.476998",
+      "key_elements": [
+        "ConversationDisplay",
+        "Prism as SyntaxHighlighter ",
+        "CopyButton",
+        "React",
+        "renderCodeBlock",
+        "vscDarkPlus ",
+        "renderMessage"
+      ],
+      "summary": "Function containing 7 key elements"
+    },
+    "frontend/src/components/ModelParameters.js": {
+      "type": "js",
+      "size": 927,
+      "lastModified": "2024-08-28T21:25:39.479157",
+      "key_elements": [
+        "ModelParameters",
+        "React"
+      ],
+      "summary": "Function containing 2 key elements"
+    },
+    "frontend/src/components/FileChip.js": {
+      "type": "js",
+      "size": 483,
+      "lastModified": "2024-08-28T21:25:39.478021",
+      "key_elements": [
+        "FileChip",
+        "React"
+      ],
+      "summary": "Function containing 2 key elements"
+    },
+    "frontend/src/components/RepositorySelector.js": {
+      "type": "js",
+      "size": 3711,
+      "lastModified": "2024-11-02T12:49:34.953545",
+      "key_elements": [
+        "axios",
+        "handleChange",
+        "formatDate",
+        "RepositorySelector"
+      ],
+      "summary": "Function containing 4 key elements"
+    },
+    "frontend/src/components/SystemPromptManagement.js": {
+      "type": "js",
+      "size": 5363,
+      "lastModified": "2024-08-28T21:26:06.712201",
+      "key_elements": [
+        "handleInputChange",
+        "CopyButton",
+        "handleEdit",
+        "axios",
+        "SystemPromptManagement"
+      ],
+      "summary": "Function containing 5 key elements"
+    },
+    "frontend/src/components/DarkModeToggle.js": {
+      "type": "js",
+      "size": 867,
+      "lastModified": "2024-08-28T21:25:39.477823",
+      "key_elements": [
+        "Sun, Moon ",
+        "toggleDarkMode",
+        "DarkModeToggle"
+      ],
+      "summary": "Function containing 3 key elements"
+    },
+    "frontend/src/components/CopyButton.js": {
+      "type": "js",
+      "size": 776,
+      "lastModified": "2024-08-28T21:25:39.477304",
+      "key_elements": [
+        "Copy, Check ",
+        "CopyButton",
+        "copyToClipboard"
+      ],
+      "summary": "Function containing 3 key elements"
+    },
+    "frontend/src/components/UserPromptInput.js": {
+      "type": "js",
+      "size": 4919,
+      "lastModified": "2024-08-28T21:25:39.482822",
+      "key_elements": [
+        "stopRecording",
+        "handleInputChange",
+        "AudioVisualizer",
+        "handleBeforeUnload",
+        "clearInput",
+        "ondataavailable",
+        "UserPromptInput",
+        "copyToClipboard",
+        "axios",
+        "Mic, Square, Trash2, Copy, Check "
+      ],
+      "summary": "Function containing 10 key elements"
+    },
+    "frontend/src/components/RepositoryFileViewer.js": {
+      "type": "js",
+      "size": 5416,
+      "lastModified": "2024-08-29T22:43:55.467381",
+      "key_elements": [
+        "sortTreeStructure",
+        "selectAllFiles",
+        "initializeExpandedFolders",
+        "handleFileClick",
+        "RepositoryFileViewer",
+        "toggleFolder",
+        "getFileIcon",
+        "renderTree",
+        "axios",
+        "handleSelectAll",
+        "FiFolder, FiFile, FiCode, FiFileText, FiCheck, FiSquare "
+      ],
+      "summary": "Function containing 11 key elements"
+    },
+    "frontend/src/components/LLMInteraction.js": {
+      "type": "js",
+      "size": 9748,
+      "lastModified": "2024-08-28T21:26:06.711345",
+      "key_elements": [
+        "sendLLMRequest, getAvailableModels ",
+        "ConversationDisplay",
+        "CostDisplay",
+        "handleBeforeUnload",
+        "SystemPromptDisplay",
+        "getFeasibilityScoreColor",
+        "getTemperatureColor",
+        "handleUserPromptChange",
+        "handleGoBack",
+        "ArrowLeft, ArrowRight ",
+        "UserPromptInput",
+        "axios",
+        "LLMInteraction",
+        "handleProceedToNextStep",
+        "LanguageModelSelector"
+      ],
+      "summary": "Function containing 15 key elements"
+    },
+    "frontend/src/components/LanguageModelSelector.js": {
+      "type": "js",
+      "size": 2182,
+      "lastModified": "2024-08-28T21:25:39.478882",
+      "key_elements": [
+        "formatCost",
+        "handleModelClick",
+        "LanguageModelSelector",
+        "formatTokenCount"
+      ],
+      "summary": "Function containing 4 key elements"
+    },
+    "frontend/src/components/PromptActions.js": {
+      "type": "js",
+      "size": 5109,
+      "lastModified": "2024-09-24T21:22:21.605051",
+      "key_elements": [
+        "stopRecording",
+        "AudioVisualizer",
+        "PromptActions",
+        "useNavigate ",
+        "handleGoToLLM",
+        "Trees, Trash2, Mic, Square, Copy, Check, ArrowRight ",
+        "copyToClipboard",
+        "ondataavailable"
+      ],
+      "summary": "Function containing 8 key elements"
+    },
+    "frontend/src/components/SystemPromptDisplay.js": {
+      "type": "js",
+      "size": 462,
+      "lastModified": "2024-08-28T21:25:39.481378",
+      "key_elements": [
+        "SystemPromptDisplay",
+        "React"
+      ],
+      "summary": "Function containing 2 key elements"
+    },
+    "frontend/src/components/TranscriptionDisplay.js": {
+      "type": "js",
+      "size": 2666,
+      "lastModified": "2024-09-02T11:19:39.890818",
+      "key_elements": [
+        "TranscriptionSection",
+        "CopyButton",
+        "handleAddToPrompt",
+        "formatTimestamp",
+        "TranscriptionDisplay"
+      ],
+      "summary": "Function containing 5 key elements"
+    },
+    "frontend/src/components/PromptComposer.js": {
+      "type": "js",
+      "size": 8077,
+      "lastModified": "2024-11-01T15:23:36.671222",
+      "key_elements": [
+        "FileChip",
+        "getFullPrompt",
+        "handleBeforeUnload",
+        "removeTreeStructure",
+        "axios",
+        "PromptActions",
+        "handleBasePromptChange",
+        "TranscriptionDisplay",
+        "formatTreeStructure",
+        "PromptComposer",
+        "PromptTextArea",
+        "removeFile",
+        "clearAll"
+      ],
+      "summary": "Function containing 13 key elements"
+    },
+    "frontend/src/components/CostDisplay.js": {
+      "type": "js",
+      "size": 1487,
+      "lastModified": "2024-08-28T21:25:39.477594",
+      "key_elements": [
+        "FaDollarSign, FaCoins ",
+        "React",
+        "CostDisplay"
+      ],
+      "summary": "Function containing 3 key elements"
+    },
+    "frontend/src/components/TwoColumnLayout.js": {
+      "type": "js",
+      "size": 1542,
+      "lastModified": "2024-08-28T21:25:39.482562",
+      "key_elements": [
+        "TwoColumnLayout",
+        "handleFileRemove",
+        "RepositoryFileViewer",
+        "handleFileSelect",
+        "PromptComposer"
+      ],
+      "summary": "Function containing 5 key elements"
+    },
+    "frontend/src/components/PromptTextArea.js": {
+      "type": "js",
+      "size": 2081,
+      "lastModified": "2024-08-28T21:26:06.711730",
+      "key_elements": [
+        "debouncedFunc",
+        "cancel",
+        "handlePromptChange",
+        "axios",
+        "PromptTextArea",
+        "debounce"
+      ],
+      "summary": "Function containing 6 key elements"
+    },
+    "frontend/src/components/AudioVisualizer.js": {
+      "type": "js",
+      "size": 3251,
+      "lastModified": "2024-08-28T21:25:39.476637",
+      "key_elements": [
+        "draw",
+        "AudioVisualizer",
+        "stopVisualization"
+      ],
+      "summary": "Function containing 3 key elements"
+    },
+    "frontend/src/components/Settings.js": {
+      "type": "js",
+      "size": 3497,
+      "lastModified": "2024-08-28T21:26:06.712087",
+      "key_elements": [
+        "Settings",
+        "renderEnvVar",
+        "Eye, EyeOff, Save ",
+        "RepositorySelector",
+        "toggleShowApiKey"
+      ],
+      "summary": "Function containing 5 key elements"
+    },
+    "frontend/src/services/llmService.js": {
+      "type": "js",
+      "size": 702,
+      "lastModified": "2024-08-28T21:26:06.712312",
+      "key_elements": [
+        "axios"
+      ],
+      "summary": "Function containing 1 key elements"
+    },
+    "backend/model_config.py": {
+      "type": "py",
+      "size": 1869,
+      "lastModified": "2024-11-01T15:23:36.670987",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "backend/requirements.txt": {
+      "type": "txt",
+      "size": 1117,
+      "lastModified": "2024-08-25T12:41:58.721492",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "backend/few_shot_examples.json": {
+      "type": "json",
+      "size": 0,
+      "lastModified": "2024-08-28T13:02:50.210632",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "backend/llm_interaction.py": {
+      "type": "py",
+      "size": 5431,
+      "lastModified": "2024-08-28T22:36:39.010187",
+      "key_elements": [
+        "openai",
+        "anthropic.Anthropic",
+        "tiktoken",
+        "count_tokens",
+        "os",
+        "model_config.MODELS",
+        "google.generativeai",
+        "fastapi.HTTPException",
+        "dotenv.load_dotenv",
+        "get_encoding"
+      ],
+      "summary": "Function containing 10 key elements"
+    },
+    "backend/main.py": {
+      "type": "py",
+      "size": 11859,
+      "lastModified": "2024-11-02T12:43:52.459153",
+      "key_elements": [
+        "fastapi.middleware.cors.CORSMiddleware",
+        "tiktoken",
+        "save_system_prompts",
+        "pydantic.BaseModel",
+        "os",
+        "utils.context_map.generate_context_map",
+        "llm_interaction.handle_llm_interaction",
+        "count_tokens_for_file",
+        "datetime.datetime",
+        "typing.List",
+        "fastapi.FastAPI",
+        "dotenv.load_dotenv",
+        "update_token_counts",
+        "json",
+        "uvicorn",
+        "load_system_prompts",
+        "safe_sort_key",
+        "os.path",
+        "uuid",
+        "utils.tree_structure.get_tree_structure"
+      ],
+      "summary": "Function containing 20 key elements"
+    },
+    "backend/system_prompts.json": {
+      "type": "json",
+      "size": 4854,
+      "lastModified": "2024-08-27T22:01:21.986426",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "backend/context_maps/speech-to-code.json": {
+      "type": "json",
+      "size": 16801,
+      "lastModified": "2024-11-02T12:49:40.609701",
+      "key_elements": [],
+      "summary": "File containing 0 key elements"
+    },
+    "backend/utils/tree_structure.py": {
+      "type": "py",
+      "size": 1215,
+      "lastModified": "2024-08-28T21:00:04.411775",
+      "key_elements": [
+        "traverse",
+        "os",
+        "json",
+        "get_tree_structure"
+      ],
+      "summary": "Function containing 4 key elements"
+    },
+    "backend/utils/context_map.py": {
+      "type": "py",
+      "size": 3466,
+      "lastModified": "2024-11-02T12:40:03.047315",
+      "key_elements": [
+        "generate_context_map",
+        "re",
+        "get_file_metadata",
+        "json",
+        "parse_javascript_file",
+        "datetime.datetime",
+        "save_context_map",
+        "time",
+        "typing.Dict",
+        "extract_readme_description",
+        "os",
+        "parse_python_file",
+        "load_context_map",
+        "ast"
+      ],
+      "summary": "Function containing 14 key elements"
+    },
+    "backend/utils/screenshot.py": {
+      "type": "py",
+      "size": 823,
+      "lastModified": "2024-08-28T21:00:04.412012",
+      "key_elements": [
+        "capture_screenshot",
+        "os",
+        "PIL.ImageGrab"
+      ],
+      "summary": "Function containing 3 key elements"
+    }
+  },
+  "projectDescription": "This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app). In the project directory, you can run: Runs the app in the development mode.\\ Open [http://localhost:3000](http://localhost:3000) to view it in your browser. The page will reload when you make changes.\\ You may also see any lint errors in the console. Launches the test runner in the interactive watch mode.\\ See the section about [running tests](https://facebook.github.io/create-react-app/docs/run"
+}
