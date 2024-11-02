@@ -1,5 +1,5 @@
-// Filename: PromptActions.js
-import React, { useState, useRef } from 'react';
+// Filename: frontend/src/components/PromptActions.js
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trees, Trash2, Mic, Square, Copy, Check, ArrowRight } from 'lucide-react';
 import AudioVisualizer from './AudioVisualizer';
@@ -13,7 +13,47 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
   const timerRef = useRef(null);
   const navigate = useNavigate();
 
-  const startRecording = async () => {
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.metaKey || e.ctrlKey) {
+        switch(e.key.toLowerCase()) {
+          case ',':
+            e.preventDefault();
+            addTreeStructure();
+            break;
+          case '.':
+            e.preventDefault();
+            clearPrompt();
+            break;
+          case '/':
+            e.preventDefault();
+            if (isRecording) {
+              handleStopRecording();
+            } else {
+              handleStartRecording();
+            }
+            break;
+          case 'shift':
+            if (!e.target.closest('input, textarea')) {
+              e.preventDefault();
+              copyToClipboard();
+            }
+            break;
+          case 'enter':
+            e.preventDefault();
+            if (!isPromptEmpty) handleGoToLLM();
+            break;
+          default:
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isRecording, prompt]);
+
+  const handleStartRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
@@ -31,16 +71,19 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
     }
   };
 
-  const stopRecording = () => {
+  const handleStopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
+      const tracks = mediaRecorderRef.current.stream.getTracks();
+      tracks.forEach(track => track.stop());
     }
     setIsRecording(false);
     clearInterval(timerRef.current);
     setCurrentDuration(0);
+    processRecording();
   };
 
-  const handleStopRecording = async () => {
+  const processRecording = async () => {
     setStatus('Transcribing...');
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
     chunksRef.current = [];
@@ -96,17 +139,26 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
   return (
     <div className="mb-2">
       <div className="flex mb-2 space-x-2">
-        <button className={`${buttonStyle.base} ${buttonStyle.green}`} onClick={addTreeStructure}>
+        <button 
+          className={`${buttonStyle.base} ${buttonStyle.green}`} 
+          onClick={addTreeStructure}
+          title="Add Tree Structure (⌘,)"
+        >
           <Trees className="mr-2" size={20} />
           <span>Tree</span>
         </button>
-        <button className={`${buttonStyle.base} ${buttonStyle.red}`} onClick={clearPrompt}>
+        <button 
+          className={`${buttonStyle.base} ${buttonStyle.red}`} 
+          onClick={clearPrompt}
+          title="Clear Prompt (⌘.)"
+        >
           <Trash2 className="mr-2" size={20} />
           <span>Clear</span>
         </button>
         <button
           className={`${buttonStyle.base} ${isRecording ? buttonStyle.red : buttonStyle.blue}`}
-          onClick={isRecording ? stopRecording : startRecording}
+          onClick={isRecording ? handleStopRecording : handleStartRecording}
+          title={`${isRecording ? 'Stop' : 'Start'} Recording (⌘/)`}
         >
           {isRecording ? <Square className="mr-2" size={20} /> : <Mic className="mr-2" size={20} />}
           <span>{isRecording ? 'Stop' : 'Record'}</span>
@@ -114,6 +166,7 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
         <button 
           className={`${buttonStyle.base} ${buttonStyle.purple}`}
           onClick={copyToClipboard}
+          title="Copy to Clipboard (⌘Shift)"
         >
           {copied ? <Check className="mr-2" size={20} /> : <Copy className="mr-2" size={20} />}
           <span>Copy</span>
@@ -122,6 +175,7 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
           className={`${buttonStyle.base} ${isPromptEmpty ? buttonStyle.disabled : buttonStyle.orange}`}
           onClick={handleGoToLLM}
           disabled={isPromptEmpty}
+          title="Go to LLM (⌘↵)"
         >
           <ArrowRight className="mr-2" size={20} />
           <span>Go</span>
