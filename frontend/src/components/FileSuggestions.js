@@ -39,11 +39,13 @@ const FileSuggestions = ({ suggestions, onBatchAdd, onBatchRemove, addedBatches 
             {isBatchAdded ? <FiMinus size={16} /> : <FiPlus size={16} />}
           </button>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2">
           {files.map(({ file, reason }) => (
-            <div key={file} className="flex items-center text-sm">
-              <span className="font-mono text-gray-900 dark:text-gray-100 truncate">{file}</span>
-              <span className="text-xs text-gray-600 dark:text-gray-400 block ml-4 truncate">
+            <div key={file} className="flex flex-col">
+              <span className="font-mono text-sm text-gray-900 dark:text-gray-100 break-all whitespace-pre-wrap">
+                {file}
+              </span>
+              <span className="text-xs text-gray-600 dark:text-gray-400 mt-1 ml-4 truncate">
                 {reason}
               </span>
             </div>
