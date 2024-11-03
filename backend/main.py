@@ -347,6 +347,7 @@ Guidelines:
 - Each category can be empty but must exist in the JSON
 - Keep reason explanations brief and specific
 - Focus on code files over documentation/configuration files unless explicitly relevant
+- It is preferable to over-suggest files than to under-suggest them
 """
     }, {
         "role": "user",
