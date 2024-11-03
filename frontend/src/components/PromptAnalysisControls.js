@@ -4,7 +4,7 @@ import { FiSearch, FiLoader } from 'react-icons/fi';
 
 const PromptAnalysisControls = ({ 
   promptLength, 
-  minLength = 50,
+  minLength = 25,
   isAnalyzing, 
   isAutoAnalyzeEnabled, 
   onToggleAutoAnalyze,
