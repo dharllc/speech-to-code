@@ -11,6 +11,8 @@ from typing import List
 from datetime import datetime
 import uuid
 from llm_interaction import handle_llm_interaction, get_available_models
+from utils.context_map import generate_context_map,save_context_map,load_context_map
+import os.path as osp
 
 load_dotenv()
 REPO_PATH = os.getenv("REPO_PATH")
@@ -30,6 +32,8 @@ app.add_middleware(
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # Define the path to system_prompts.json
 SYSTEM_PROMPTS_FILE = os.path.join(SCRIPT_DIR, "system_prompts.json")
+# Define the path to context maps
+CONTEXT_MAPS_DIR = osp.join(SCRIPT_DIR,"context_maps")
 
 # Ensure the system_prompts.json file exists
 if not os.path.exists(SYSTEM_PROMPTS_FILE):
@@ -271,6 +275,122 @@ async def update_env_var(env_var: dict):
     set_key(env_file, key, value)
     os.environ[key] = value
     return {"message": f"{key} updated successfully"}
+
+@app.post("/repository-context/{repository}/initialize")
+async def initialize_context_map(repository:str):
+    repo_path=osp.join(REPO_PATH,repository)
+    if not osp.exists(repo_path):
+        raise HTTPException(status_code=404,detail=f"Repository '{repository}' not found")
+    try:
+        context_map=generate_context_map(repo_path,repository)
+        save_context_map(context_map,CONTEXT_MAPS_DIR)
+        return{"message":"Context map initialized successfully","repositoryId":repository}
+    except Exception as e:
+        raise HTTPException(status_code=500,detail=f"Failed to initialize context map: {str(e)}")
+
+@app.post("/repository-context/{repository}/refresh")
+async def refresh_context_map(repository:str):
+    repo_path=osp.join(REPO_PATH,repository)
+    if not osp.exists(repo_path):
+        raise HTTPException(status_code=404,detail=f"Repository '{repository}' not found")
+    try:
+        context_map=generate_context_map(repo_path,repository)
+        save_context_map(context_map,CONTEXT_MAPS_DIR)
+        return{"message":"Context map refreshed successfully","repositoryId":repository}
+    except Exception as e:
+        raise HTTPException(status_code=500,detail=f"Failed to refresh context map: {str(e)}")
+
+@app.get("/repository-context/{repository}")
+async def get_context_map(repository:str):
+    context_map=load_context_map(repository,CONTEXT_MAPS_DIR)
+    if not context_map:
+        raise HTTPException(status_code=404,detail=f"Context map for repository '{repository}' not found")
+    return context_map
+
+class AnalyzePromptRequest(BaseModel):
+    repository: str
+    prompt: str
+
+@app.post("/analyze-prompt")
+async def analyze_prompt(request: AnalyzePromptRequest):
+    context_map = load_context_map(request.repository, CONTEXT_MAPS_DIR)
+    if not context_map:
+        raise HTTPException(status_code=404, detail=f"Context map for repository '{request.repository}' not found")
+
+    files_json = json.dumps({k: v['summary'] for k, v in context_map['files'].items()}, indent=2)
+    
+    messages = [{
+        "role": "system",
+        "content": """You are an expert at analyzing code repository structures and context maps to identify relevant files for code changes. Given a user's description and a repository's file listings with summaries, suggest files that are most relevant to the described task.
+
+Your response must be a valid JSON object with this exact structure:
+{
+  "high_confidence": [
+    {"file": "path/to/file", "reason": "brief explanation"},
+    ...
+  ],
+  "medium_confidence": [
+    {"file": "path/to/file", "reason": "brief explanation"},
+    ...
+  ],
+  "low_confidence": [
+    {"file": "path/to/file", "reason": "brief explanation"},
+    ...
+  ]
+}
+
+Guidelines:
+- Only suggest files that exist in the provided file listing
+- Put files you're very certain about in high_confidence
+- Put files you think might be relevant in medium_confidence
+- Put files that could potentially be useful for context in low_confidence
+- Each category can be empty but must exist in the JSON
+- Keep reason explanations brief and specific
+- Focus on code files over documentation/configuration files unless explicitly relevant
+- It is preferable to over-suggest files than to under-suggest them
+"""
+    }, {
+        "role": "user",
+        "content": f"""Repository files with summaries:
+{files_json}
+
+User prompt:
+{request.prompt}
+
+Provide file suggestions in the specified JSON format."""
+    }]
+
+    try:
+        response = await handle_llm_interaction({
+            "model": "claude-3-5-sonnet-20241022",
+            "messages": messages,
+            "temperature": 0.1
+        })
+        
+        suggestions = json.loads(response["response"])
+        
+        # Validate response structure
+        required_keys = {"high_confidence", "medium_confidence", "low_confidence"}
+        if not all(key in suggestions for key in required_keys):
+            raise ValueError("Invalid response structure")
+            
+        # Validate all files exist in context map
+        all_files = context_map['files'].keys()
+        for confidence in required_keys:
+            for item in suggestions[confidence]:
+                if item["file"] not in all_files:
+                    suggestions[confidence].remove(item)
+        
+        return {
+            "suggestions": suggestions,
+            "tokenCounts": response["tokenCounts"],
+            "cost": response["cost"]
+        }
+        
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid JSON response from LLM")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn

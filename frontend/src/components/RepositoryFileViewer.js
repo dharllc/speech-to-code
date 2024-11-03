@@ -58,10 +58,12 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
 
   const handleFileClick = (node, path, event) => {
     const cleanPath = path.replace(new RegExp(`^/${selectedRepository}/`), '');
+    
     if (node.type === 'directory') {
       toggleFolder(path);
-    } else if (event.detail === 2) {
-      onFileSelect({ ...node, path: cleanPath }, false);
+    } else {
+      const isCurrentlySelected = selectedFiles.some(file => file.path === cleanPath);
+      onFileSelect({ ...node, path: cleanPath }, !isCurrentlySelected);
     }
   };
 

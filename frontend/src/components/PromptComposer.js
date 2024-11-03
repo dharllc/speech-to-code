@@ -1,12 +1,16 @@
 // File: frontend/src/components/PromptComposer.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
+import { FiLoader } from 'react-icons/fi';
 import PromptActions from './PromptActions';
 import PromptTextArea from './PromptTextArea';
 import TranscriptionDisplay from './TranscriptionDisplay';
 import FileChip from './FileChip';
+import { analyzePromptForFiles } from '../services/llmService';
+import FileSuggestions from './FileSuggestions';
+import PromptAnalysisControls from './PromptAnalysisControls';
 
-const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUserPrompt }) => {
+const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUserPrompt, onFileSelectionChange }) => {
   const [basePrompt, setBasePrompt] = useState('');
   const [fileContents, setFileContents] = useState({});
   const [transcriptionHistory, setTranscriptionHistory] = useState([]);
@@ -15,6 +19,11 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   const [isTreeAdded, setIsTreeAdded] = useState(false);
   const [treeTokenCount, setTreeTokenCount] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [fileSuggestions, setFileSuggestions] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isAutoAnalyzeEnabled, setIsAutoAnalyzeEnabled] = useState(false);
+  const [addedBatches, setAddedBatches] = useState([]); // Track added batches
+  const MIN_PROMPT_LENGTH = 50;
 
   useEffect(() => {
     if (selectedRepository) {
@@ -99,7 +108,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       .map(([path, { content }]) => `File: ${path}\n\n${content}\n\n`)
       .join('');
     const treeContent = isTreeAdded ? `[Repository Structure for ${selectedRepository}]\n${treeStructure}\n\n` : '';
-    return `${treeContent}${basePrompt}\n${filesContent}`.trim();
+    return `${basePrompt}\n${treeContent}${filesContent}`.trim();
   };
 
   const clearAll = () => {
@@ -108,7 +117,9 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     setTranscriptionHistory([]);
     setIsTreeAdded(false);
     setTreeTokenCount(0);
+    setFileSuggestions(null);
     selectedFiles.forEach(file => onFileRemove(file.path));
+    setAddedBatches([]); // Reset added batches
     setHasUnsavedChanges(false);
   };
 
@@ -170,13 +181,70 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     setHasUnsavedChanges(true);
   };
 
+  const analyzePrompt = async (prompt) => {
+    if (prompt.length < MIN_PROMPT_LENGTH || !selectedRepository || isAnalyzing) return;
+
+    setIsAnalyzing(true);
+    setStatus('Analyzing prompt for relevant files...');
+    try {
+      const response = await analyzePromptForFiles(selectedRepository, prompt);
+      setFileSuggestions(response.suggestions);
+    } catch (error) {
+      console.error('Error getting file suggestions:', error);
+      setStatus('Error analyzing prompt');
+    } finally {
+      setIsAnalyzing(false);
+      setStatus('');
+    }
+  };
+
+  const debouncedAnalyzePrompt = useCallback(
+    debounce(analyzePrompt, 2000),
+    [selectedRepository, isAnalyzing]
+  );
+
+  useEffect(() => {
+    return () => {
+      debouncedAnalyzePrompt.cancel();
+    };
+  }, [debouncedAnalyzePrompt]);
+
   const handleBasePromptChange = (newPrompt) => {
     setBasePrompt(newPrompt);
     setHasUnsavedChanges(true);
+    if (isAutoAnalyzeEnabled) {
+      debouncedAnalyzePrompt(newPrompt);
+    }
   };
 
   const sortedFileContents = Object.entries(fileContents)
     .sort(([, a], [, b]) => b.tokenCount - a.tokenCount);
+
+  // Function to handle adding a batch
+  const handleBatchAdd = (batchKey) => {
+    if (!fileSuggestions || !fileSuggestions[batchKey]) return;
+    const filesToAdd = fileSuggestions[batchKey].map(item => item.file);
+    filesToAdd.forEach(filePath => {
+      if (!selectedFiles.some(file => file.path === filePath)) {
+        onFileSelectionChange({ path: filePath }, true);
+      }
+    });
+    setAddedBatches(prev => [...prev, batchKey]);
+    setHasUnsavedChanges(true);
+  };
+
+  // Function to handle removing a batch
+  const handleBatchRemove = (batchKey) => {
+    if (!fileSuggestions || !fileSuggestions[batchKey]) return;
+    const filesToRemove = fileSuggestions[batchKey].map(item => item.file);
+    filesToRemove.forEach(filePath => {
+      if (selectedFiles.some(file => file.path === filePath)) {
+        onFileRemove(filePath);
+      }
+    });
+    setAddedBatches(prev => prev.filter(key => key !== batchKey));
+    setHasUnsavedChanges(true);
+  };
 
   return (
     <div className="p-2">
@@ -219,7 +287,33 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         setPrompt={handleBasePromptChange}
         additionalTokenCount={treeTokenCount + Object.values(fileContents).reduce((sum, { tokenCount }) => sum + tokenCount, 0)}
       />
+      <PromptAnalysisControls
+        promptLength={basePrompt.length}
+        minLength={MIN_PROMPT_LENGTH}
+        isAnalyzing={isAnalyzing}
+        isAutoAnalyzeEnabled={isAutoAnalyzeEnabled}
+        onToggleAutoAnalyze={() => setIsAutoAnalyzeEnabled(prev => !prev)}
+        onManualAnalyze={() => analyzePrompt(basePrompt)}
+        disabled={!selectedRepository}
+      />
       {status && <div className="mb-1 text-xs text-gray-600">{status}</div>}
+      {isAnalyzing && (
+        <div className="flex items-center justify-center p-4 text-gray-500">
+          <FiLoader className="animate-spin mr-2" />
+        </div>
+      )}
+      {fileSuggestions && (
+        <FileSuggestions
+          suggestions={{
+            high_confidence: fileSuggestions.high_confidence,
+            medium_confidence: fileSuggestions.medium_confidence,
+            low_confidence: fileSuggestions.low_confidence
+          }}
+          onBatchAdd={handleBatchAdd}
+          onBatchRemove={handleBatchRemove}
+          addedBatches={addedBatches}
+        />
+      )}
       <TranscriptionDisplay
         transcriptionHistory={transcriptionHistory}
         addToPrompt={(text) => {
@@ -229,6 +323,17 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       />
     </div>
   );
+};
+
+const debounce = (func, wait) => {
+  let timeout;
+  const debouncedFunc = (...args) => {
+    const context = this;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), wait);
+  };
+  debouncedFunc.cancel = () => clearTimeout(timeout);
+  return debouncedFunc;
 };
 
 export default PromptComposer;

@@ -1,26 +1,30 @@
-// Filename: TwoColumnLayout.js
+// File: frontend/src/components/TwoColumnLayout.js
+
 import React, { useState } from 'react';
 import PromptComposer from './PromptComposer';
 import RepositoryFileViewer from './RepositoryFileViewer';
 
-const TwoColumnLayout = ({ selectedRepository, setUserPrompt, onFileSelectionChange, onClearAllFiles }) => {
+const TwoColumnLayout = ({ selectedRepository, setUserPrompt, onClearAllFiles }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
 
-  const handleFileSelect = (file) => {
+  const handleFileSelect = (file, isSelected) => {
     setSelectedFiles(prev => {
-      const isAlreadySelected = prev.some(f => f.path === file.path);
-      if (isAlreadySelected) {
-        return prev.filter(f => f.path !== file.path);
+      if (isSelected) {
+        // Add file if not already present
+        if (!prev.some(f => f.path === file.path)) {
+          return [...prev, file];
+        }
       } else {
-        return [...prev, file];
+        // Remove file if present
+        return prev.filter(f => f.path !== file.path);
       }
+      return prev;
     });
-    onFileSelectionChange(file, !selectedFiles.some(f => f.path === file.path));
   };
 
   const handleFileRemove = (filePath) => {
     setSelectedFiles(prev => prev.filter(f => f.path !== filePath));
-    onFileSelectionChange({ path: filePath }, false);
+    // No additional actions needed here unless required
   };
 
   return (
@@ -30,6 +34,7 @@ const TwoColumnLayout = ({ selectedRepository, setUserPrompt, onFileSelectionCha
           selectedRepository={selectedRepository}
           selectedFiles={selectedFiles}
           onFileRemove={handleFileRemove}
+          onFileSelectionChange={handleFileSelect}
           setUserPrompt={setUserPrompt}
         />
       </div>

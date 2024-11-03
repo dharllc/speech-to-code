@@ -26,3 +26,16 @@ export const getAvailableModels = async () => {
     throw error;
   }
 };
+
+export const analyzePromptForFiles = async (repository, prompt) => {
+  try {
+    const response = await axios.post(`${API_URL}/analyze-prompt`, {
+      repository,
+      prompt
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error analyzing prompt:', error);
+    throw error;
+  }
+};
