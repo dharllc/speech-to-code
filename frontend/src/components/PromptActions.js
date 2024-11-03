@@ -33,7 +33,7 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
               handleStartRecording();
             }
             break;
-          case 'shift':
+          case ';':
             if (!e.target.closest('input, textarea')) {
               e.preventDefault();
               copyToClipboard();
@@ -166,7 +166,7 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
         <button 
           className={`${buttonStyle.base} ${buttonStyle.purple}`}
           onClick={copyToClipboard}
-          title="Copy to Clipboard (⌘Shift)"
+          title="Copy to Clipboard (⌘;)"
         >
           {copied ? <Check className="mr-2" size={20} /> : <Copy className="mr-2" size={20} />}
           <span>Copy</span>
