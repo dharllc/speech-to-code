@@ -1,7 +1,7 @@
-// Filename: frontend/src/services/llmService.js
 import axios from 'axios';
+import config from '../config/config.json';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = `http://localhost:${config.backend.port}`;
 
 export const sendLLMRequest = async (messages, temperature, model) => {
   try {

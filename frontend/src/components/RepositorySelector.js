@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_URL } from '../config/api';
 
 const RepositorySelector = ({ onSelect, selectedRepository }) => {
   const [directories, setDirectories] = useState([]);
@@ -10,7 +11,7 @@ const RepositorySelector = ({ onSelect, selectedRepository }) => {
   useEffect(() => {
     const fetchDirectories = async () => {
       try {
-        const response = await axios.get('http://localhost:8000/directories');
+        const response = await axios.get(`${API_URL}/directories`);
         setDirectories(response.data.directories);
       } catch (error) {
         console.error('Failed to fetch directories:', error);
@@ -23,7 +24,7 @@ const RepositorySelector = ({ onSelect, selectedRepository }) => {
     const checkContextMap = async () => {
       if (!selectedRepository) return;
       try {
-        const response = await axios.get(`http://localhost:8000/repository-context/${selectedRepository}`);
+        const response = await axios.get(`${API_URL}/repository-context/${selectedRepository}`);
         setContextMapStatus('exists');
         setLastUpdated(response.data.lastUpdated);
       } catch {
@@ -43,7 +44,7 @@ const RepositorySelector = ({ onSelect, selectedRepository }) => {
     if (!selectedRepository) return;
     setIsLoading(true);
     try {
-      const response = await axios.post(`http://localhost:8000/repository-context/${selectedRepository}/${action}`);
+      const response = await axios.post(`${API_URL}/repository-context/${selectedRepository}/${action}`);
       setContextMapStatus('exists');
       setLastUpdated(response.data.lastUpdated);
     } catch (error) {

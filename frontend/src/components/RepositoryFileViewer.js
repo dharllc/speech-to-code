@@ -1,7 +1,7 @@
-// RepositoryFileViewer.js
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { FiFolder, FiFile, FiCode, FiFileText, FiCheck, FiSquare } from 'react-icons/fi';
+import { API_URL } from '../config/api';
 
 const getFileIcon = (type, name) => {
   if (type === 'directory') return FiFolder;
@@ -17,7 +17,7 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
 
   const fetchTreeStructure = useCallback(async (repo) => {
     try {
-      const response = await axios.get(`http://localhost:8000/tree?repository=${repo}`);
+      const response = await axios.get(`${API_URL}/tree?repository=${repo}`);
       const parsedTree = JSON.parse(response.data.tree);
       const sortedTree = sortTreeStructure(parsedTree);
       setTreeStructure(sortedTree);

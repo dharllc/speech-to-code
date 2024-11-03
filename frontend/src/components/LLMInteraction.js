@@ -1,4 +1,3 @@
-// Filename: LLMInteraction.js
 import React, { useState, useEffect, useRef } from 'react';
 import { sendLLMRequest, getAvailableModels } from '../services/llmService';
 import axios from 'axios';
@@ -8,6 +7,7 @@ import LanguageModelSelector from './LanguageModelSelector';
 import ConversationDisplay from './ConversationDisplay';
 import CostDisplay from './CostDisplay';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { API_URL } from '../config/api';
 
 const LLMInteraction = ({ initialPrompt }) => {
   const [steps, setSteps] = useState([]);
@@ -72,7 +72,7 @@ const LLMInteraction = ({ initialPrompt }) => {
 
   const fetchSteps = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/system_prompts');
+      const response = await axios.get(`${API_URL}/system_prompts`);
       setSteps(
         response.data.sort(
           (a, b) =>
@@ -95,7 +95,7 @@ const LLMInteraction = ({ initialPrompt }) => {
 
   const countTokens = async (text, setTokens) => {
     try {
-      const response = await axios.post('http://localhost:8000/count_tokens', {
+      const response = await axios.post(`${API_URL}/count_tokens`, {
         text: text,
         model: 'gpt-3.5-turbo'
       });

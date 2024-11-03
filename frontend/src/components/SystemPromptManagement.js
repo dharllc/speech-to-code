@@ -1,7 +1,7 @@
-// Filename: frontend/src/components/SystemPromptManagement.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import CopyButton from './CopyButton';
+import { API_URL } from '../config/api';
 
 const SystemPromptManagement = () => {
   const [prompts, setPrompts] = useState([]);
@@ -15,7 +15,7 @@ const SystemPromptManagement = () => {
 
   const fetchPrompts = async () => {
     try {
-      const response = await axios.get('http://localhost:8000/system_prompts');
+      const response = await axios.get(`${API_URL}/system_prompts`);
       setPrompts(response.data);
       setError('');
     } catch (err) {
@@ -38,9 +38,9 @@ const SystemPromptManagement = () => {
         is_default: false
       };
       if (editingPrompt) {
-        await axios.put(`http://localhost:8000/system_prompts/${editingPrompt.id}`, promptData);
+        await axios.put(`${API_URL}/system_prompts/${editingPrompt.id}`, promptData);
       } else {
-        await axios.post('http://localhost:8000/system_prompts', promptData);
+        await axios.post(`${API_URL}/system_prompts`, promptData);
       }
       fetchPrompts();
       setNewPrompt({ name: '', step: '', content: '', is_default: false });
@@ -64,7 +64,7 @@ const SystemPromptManagement = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:8000/system_prompts/${id}`);
+      await axios.delete(`${API_URL}/system_prompts/${id}`);
       fetchPrompts();
       setError('');
     } catch (err) {
@@ -152,4 +152,3 @@ const SystemPromptManagement = () => {
 };
 
 export default SystemPromptManagement;
-// End of file: frontend/src/components/SystemPromptManagement.js

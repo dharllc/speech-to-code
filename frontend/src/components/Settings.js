@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import RepositorySelector from './RepositorySelector';
 import { Eye, EyeOff, Save } from 'lucide-react';
+import { API_URL } from '../config/api';
 
 const Settings = ({ selectedRepository, onRepositorySelect }) => {
   const [envVars, setEnvVars] = useState({});
@@ -14,7 +15,7 @@ const Settings = ({ selectedRepository, onRepositorySelect }) => {
 
   const fetchEnvVars = async () => {
     try {
-      const response = await fetch('http://localhost:8000/env_vars');
+      const response = await fetch(`${API_URL}/env_vars`);
       const data = await response.json();
       setEnvVars(data);
       setEditedEnvVars(data);
@@ -29,7 +30,7 @@ const Settings = ({ selectedRepository, onRepositorySelect }) => {
 
   const handleSave = async () => {
     try {
-      const response = await fetch('http://localhost:8000/env_vars', {
+      const response = await fetch(`${API_URL}/env_vars`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
