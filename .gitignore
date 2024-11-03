@@ -63,5 +63,5 @@ ehthumbs.db
 Thumbs.db
 todo.txt
 
-# Context maps, specific to user's usage
+# Context maps, specific to user
 /backend/context_maps
