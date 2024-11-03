@@ -1,4 +1,3 @@
-// File: frontend/src/components/PromptComposer.js
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { FiLoader } from 'react-icons/fi';
@@ -9,6 +8,7 @@ import FileChip from './FileChip';
 import { analyzePromptForFiles } from '../services/llmService';
 import FileSuggestions from './FileSuggestions';
 import PromptAnalysisControls from './PromptAnalysisControls';
+import { API_URL } from '../config/api';
 
 const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUserPrompt, onFileSelectionChange }) => {
   const [basePrompt, setBasePrompt] = useState('');
@@ -56,7 +56,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       for (const file of selectedFiles) {
         if (!newContents[file.path]) {
           try {
-            const response = await axios.get(`http://localhost:8000/file_content?repository=${selectedRepository}&path=${file.path}`);
+            const response = await axios.get(`${API_URL}/file_content?repository=${selectedRepository}&path=${file.path}`);
             newContents[file.path] = {
               content: response.data.content,
               tokenCount: response.data.token_count
@@ -95,7 +95,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
 
   const fetchTreeStructure = async (repo) => {
     try {
-      const response = await axios.get(`http://localhost:8000/tree?repository=${repo}`);
+      const response = await axios.get(`${API_URL}/tree?repository=${repo}`);
       const formattedTree = formatTreeStructure(JSON.parse(response.data.tree));
       setTreeStructure(formattedTree);
     } catch (error) {
@@ -189,7 +189,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   const addTreeStructure = async () => {
     if (!isTreeAdded) {
       try {
-        const response = await axios.post('http://localhost:8000/count_tokens', {
+        const response = await axios.post(`${API_URL}/count_tokens`, {
           text: treeStructure,
           model: 'gpt-3.5-turbo'
         });

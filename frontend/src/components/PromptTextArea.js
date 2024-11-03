@@ -1,6 +1,6 @@
-// Filename: PromptTextArea.js
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { API_URL } from '../config/api';
 
 const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount }) => {
   const [tokenCount, setTokenCount] = useState(0);
@@ -17,7 +17,7 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount }) => {
 
   const updateTokenCount = async (text) => {
     try {
-      const response = await axios.post('http://localhost:8000/count_tokens', {
+      const response = await axios.post(`${API_URL}/count_tokens`, {
         text: text,
         model: 'gpt-3.5-turbo'
       });
@@ -62,4 +62,3 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount }) => {
 };
 
 export default PromptTextArea;
-// End of file: PromptTextArea.js

@@ -1,6 +1,3 @@
-# source venv/bin/activate
-# uvicorn main:app --reload --log-level debug
-
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from utils.tree_structure import get_tree_structure
@@ -14,7 +11,19 @@ from llm_interaction import handle_llm_interaction, get_available_models
 from utils.context_map import generate_context_map,save_context_map,load_context_map
 import os.path as osp
 
+# Load config first
+try:
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    with open(os.path.join(root_dir, 'config.json'), 'r') as f:
+        config = json.load(f)
+        BACKEND_PORT = config['backend']['port']
+        FRONTEND_PORT = config['frontend']['port']
+except Exception as e:
+    raise RuntimeError(f"Failed to load config.json: {str(e)}")
+
+# Load environment variables
 load_dotenv()
+
 REPO_PATH = os.getenv("REPO_PATH")
 if REPO_PATH is None:
     raise ValueError("REPO_PATH environment variable is not set")
@@ -22,7 +31,7 @@ if REPO_PATH is None:
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=[f"http://localhost:{FRONTEND_PORT}"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -172,7 +181,7 @@ async def get_system_prompts():
         try:
             return int(x['step'].split()[-1])
         except (ValueError, IndexError):
-            return float('inf')  # Put invalid steps at the end
+            return float('inf')
     return sorted(prompts, key=safe_sort_key)
 
 @app.post("/system_prompts", response_model=SystemPrompt)
@@ -180,7 +189,6 @@ async def create_system_prompt(prompt: SystemPromptCreate):
     try:
         prompts = load_system_prompts()
         
-        # Ensure step is in the format "Step X" where X is a number
         if not prompt.step.startswith("Step "):
             prompt.step = f"Step {prompt.step}"
         
@@ -233,7 +241,7 @@ async def update_system_prompt(prompt_id: str, prompt: SystemPromptCreate):
             updated_prompt = SystemPrompt(
                 id=prompt_id,
                 name=prompt.name,
-                step=p['step'],  # Keep the original step
+                step=p['step'],
                 content=prompt.content,
                 is_default=prompt.is_default,
                 timestamp=datetime.now().isoformat(),
@@ -362,7 +370,8 @@ Provide file suggestions in the specified JSON format."""
 
     try:
         response = await handle_llm_interaction({
-            "model": "claude-3-5-sonnet-20241022",
+            # "model": "claude-3-5-sonnet-20241022",
+            "model": "claude-3-haiku-20240307",
             "messages": messages,
             "temperature": 0.1
         })
@@ -394,4 +403,4 @@ Provide file suggestions in the specified JSON format."""
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=BACKEND_PORT)

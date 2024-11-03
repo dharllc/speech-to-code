@@ -58,13 +58,25 @@ To install Speech-to-Code, follow these steps:
 
 To run Speech-to-Code, follow these steps:
 
-1. Start the frontend:
+1. Configure ports (optional):
+Edit `config.json` in the root directory to set custom ports. If you need to change the port numbers for the frontend or backend, do it from the root config.json file. 
+```json
+{
+    "frontend": {
+        "port": 3000 
+    },
+    "backend": {
+        "port": 8000 
+    }
+}
+
+2. Start the frontend:
    ```
    cd frontend
    npm start
    ```
 
-2. In a new terminal, start the backend:
+3. In a new terminal, start the backend:
    ```
    cd backend
    source venv/bin/activate
@@ -83,14 +95,16 @@ speech-to-code/
 │   ├── llm_interaction.py
 │   ├── model_config.py
 │   ├── system_prompts.json
+│   ├── context_maps/
+│   ├── utils/
 ├── frontend/
 │   ├── public/
 │   ├── src/
 │   │   ├── components/
 │   │   ├── services/
+│   │   ├── config/
 │   ├── .env
 │   ├── .gitignore
-│   ├── README.md
 │   ├── package-lock.json
 │   ├── package.json
 │   ├── postcss.config.js
