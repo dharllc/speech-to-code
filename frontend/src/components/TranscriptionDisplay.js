@@ -1,11 +1,20 @@
-// File: frontend/src/components/TranscriptionDisplay.js
+// TranscriptionDisplay.js
 import React, { useState } from 'react';
 import CopyButton from './CopyButton';
+import { Check, ToggleLeft, ToggleRight } from 'lucide-react';
 
-const TranscriptionDisplay = ({ transcriptionHistory, addToPrompt }) => {
+const TranscriptionDisplay = ({ 
+  transcriptionHistory, 
+  addToPrompt,
+  autoAddEnabled,
+  setAutoAddEnabled,
+  preferEnhanced,
+  setPreferEnhanced
+}) => {
   const [addedToPrompt, setAddedToPrompt] = useState({});
 
   const handleAddToPrompt = (text, index) => {
+    if (!text) return;
     addToPrompt(text);
     setAddedToPrompt(prev => ({ ...prev, [index]: true }));
     setTimeout(() => {
@@ -18,57 +27,129 @@ const TranscriptionDisplay = ({ transcriptionHistory, addToPrompt }) => {
     return date.toLocaleString();
   };
 
+  const Toggle = ({ enabled, onToggle, label }) => (
+    <button
+      onClick={onToggle}
+      className={`
+        flex items-center gap-2 px-3 py-1.5 rounded-full
+        transition-all duration-300 ease-in-out
+        ${enabled 
+          ? 'bg-blue-500 hover:bg-blue-600' 
+          : 'bg-gray-400 hover:bg-gray-500'
+        }
+      `}
+    >
+      {enabled ? (
+        <ToggleRight className="w-5 h-5 text-white transition-transform duration-300 transform" />
+      ) : (
+        <ToggleLeft className="w-5 h-5 text-white transition-transform duration-300 transform" />
+      )}
+      <span className="text-white text-sm font-medium">{label}</span>
+    </button>
+  );
+
   const TranscriptionSection = ({ title, text, index, isEnhanced, timestamp }) => (
     text && (
-      <div className={`mb-4 p-2 rounded ${isEnhanced ? 'bg-green-50 dark:bg-green-900' : 'bg-gray-100 dark:bg-gray-800'}`}>
-        <h3 className="font-bold">{title}</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">{formatTimestamp(timestamp)}</p>
-        <div className="flex items-start">
-          <p className="flex-grow mr-2">{text}</p>
-          <div className="flex-shrink-0 flex flex-col items-end">
+      <div className={`
+        mb-4 p-4 rounded-lg shadow-lg
+        ${isEnhanced 
+          ? 'bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-800' 
+          : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700'
+        }
+        transform transition-all duration-300 hover:scale-[1.01]
+      `}>
+        <div className="flex justify-between items-start mb-2">
+          <div>
+            <h3 className="font-bold text-gray-900 dark:text-gray-100">{title}</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{formatTimestamp(timestamp)}</p>
+          </div>
+          <div className="flex items-center gap-2">
             <CopyButton textToCopy={text} />
-            <button
-              className={`mt-2 px-3 py-1 text-white rounded text-sm whitespace-nowrap ${
-                addedToPrompt[index] ? 'bg-green-500' : 'bg-blue-500'
-              }`}
-              onClick={() => handleAddToPrompt(text, index)}
-            >
-              {addedToPrompt[index] ? 'Added!' : 'Add'}
-            </button>
+            {!autoAddEnabled && (
+              <button
+                onClick={() => handleAddToPrompt(text, index)}
+                className={`
+                  flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium
+                  transition-all duration-300 transform
+                  ${addedToPrompt[index]
+                    ? 'bg-green-500 text-white'
+                    : 'bg-blue-500 hover:bg-blue-600 text-white'
+                  }
+                `}
+              >
+                {addedToPrompt[index] ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>Added</span>
+                  </>
+                ) : (
+                  <span>Add</span>
+                )}
+              </button>
+            )}
           </div>
         </div>
+        <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{text}</p>
       </div>
     )
   );
 
+  const uniqueTranscriptions = transcriptionHistory.reduce((acc, item) => {
+    const existingEntry = acc.find(entry => 
+      entry.timestamp === item.timestamp && 
+      entry.raw === item.raw
+    );
+    
+    if (!existingEntry) {
+      acc.push(item);
+    }
+    return acc;
+  }, []);
+
   return (
-    <div className="mt-4">
-      <h3 className="font-bold mb-2">Transcription History</h3>
-      {transcriptionHistory.map((item, index) => {
-        const transcriptionNumber = Math.floor(transcriptionHistory.length / 2) - Math.floor(index / 2);
-        return (
-          <div key={index}>
-            {index % 2 === 0 && (
+    <div className="mt-6">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">Transcription History</h3>
+        <div className="flex gap-3">
+          <Toggle
+            enabled={autoAddEnabled}
+            onToggle={() => setAutoAddEnabled(!autoAddEnabled)}
+            label="Auto-add"
+          />
+          {autoAddEnabled && (
+            <Toggle
+              enabled={preferEnhanced}
+              onToggle={() => setPreferEnhanced(!preferEnhanced)}
+              label={preferEnhanced ? "Enhanced" : "Raw"}
+            />
+          )}
+        </div>
+      </div>
+      
+      <div className="space-y-4">
+        {uniqueTranscriptions.map((item, index) => (
+          <div key={`${item.timestamp}-${index}`}>
+            {item.raw && (
               <TranscriptionSection 
-                title={`Raw Transcription ${transcriptionNumber}`} 
-                text={item.raw} 
-                index={`raw-${index}`} 
-                isEnhanced={false} 
+                title={`Raw Transcription ${uniqueTranscriptions.length - index}`}
+                text={item.raw}
+                index={`raw-${index}`}
+                isEnhanced={false}
                 timestamp={item.timestamp}
               />
             )}
             {item.enhanced && (
               <TranscriptionSection 
-                title={`Enhanced Transcription ${transcriptionNumber}`} 
-                text={item.enhanced} 
-                index={`enhanced-${index}`} 
-                isEnhanced={true} 
+                title={`Enhanced Transcription ${uniqueTranscriptions.length - index}`}
+                text={item.enhanced}
+                index={`enhanced-${index}`}
+                isEnhanced={true}
                 timestamp={item.timestamp}
               />
             )}
           </div>
-        );
-      })}
+        ))}
+      </div>
     </div>
   );
 };
