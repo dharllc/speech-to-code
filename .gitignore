@@ -62,3 +62,4 @@ wheels/
 ehthumbs.db
 Thumbs.db
 todo.txt
+backend/context_maps/*
