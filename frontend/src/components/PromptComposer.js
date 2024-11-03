@@ -22,8 +22,22 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   const [fileSuggestions, setFileSuggestions] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isAutoAnalyzeEnabled, setIsAutoAnalyzeEnabled] = useState(false);
-  const [addedBatches, setAddedBatches] = useState([]); // Track added batches
-  const MIN_PROMPT_LENGTH = 50;
+  const [addedBatches, setAddedBatches] = useState([]);
+  const [autoAddEnabled, setAutoAddEnabled] = useState(() => 
+    JSON.parse(localStorage.getItem('autoAddEnabled') || 'false')
+  );
+  const [preferEnhanced, setPreferEnhanced] = useState(() => 
+    JSON.parse(localStorage.getItem('preferEnhanced') || 'true')
+  );
+  const MIN_PROMPT_LENGTH = 25;
+
+  useEffect(() => {
+    localStorage.setItem('autoAddEnabled', JSON.stringify(autoAddEnabled));
+  }, [autoAddEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('preferEnhanced', JSON.stringify(preferEnhanced));
+  }, [preferEnhanced]);
 
   useEffect(() => {
     if (selectedRepository) {
@@ -67,11 +81,17 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
+
+  const addToPrompt = (text) => {
+    if (!text || typeof text !== 'string') return;
+    setBasePrompt(prev => {
+      const newText = `${prev}\n${text}`.trim();
+      return newText;
+    });
+    setHasUnsavedChanges(true);
+  };
 
   const fetchTreeStructure = async (repo) => {
     try {
@@ -119,11 +139,13 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     setTreeTokenCount(0);
     setFileSuggestions(null);
     selectedFiles.forEach(file => onFileRemove(file.path));
-    setAddedBatches([]); // Reset added batches
+    setAddedBatches([]);
     setHasUnsavedChanges(false);
   };
 
   const enhanceTranscription = async (text) => {
+    if (!text || typeof text !== 'string') return;
+    
     setStatus('Enhancing transcription...');
     try {
       const response = await axios.post('https://api.openai.com/v1/chat/completions', {
@@ -146,13 +168,18 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       });
 
       const enhancedText = response.data.choices[0].message.content;
+      
       setTranscriptionHistory(prev => [{
         timestamp: new Date().toISOString(),
         raw: text,
         enhanced: enhancedText
       }, ...prev]);
+      
+      if (autoAddEnabled && preferEnhanced) {
+        addToPrompt(enhancedText);
+      }
+
       setStatus('Transcription ready');
-      setHasUnsavedChanges(true);
     } catch (error) {
       console.error('Error enhancing transcription:', error);
       setStatus('Error enhancing transcription');
@@ -199,7 +226,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   };
 
   const debouncedAnalyzePrompt = useCallback(
-    debounce(analyzePrompt, 2000),
+    debounce(analyzePrompt, 1000),
     [selectedRepository, isAnalyzing]
   );
 
@@ -220,7 +247,6 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   const sortedFileContents = Object.entries(fileContents)
     .sort(([, a], [, b]) => b.tokenCount - a.tokenCount);
 
-  // Function to handle adding a batch
   const handleBatchAdd = (batchKey) => {
     if (!fileSuggestions || !fileSuggestions[batchKey]) return;
     const filesToAdd = fileSuggestions[batchKey].map(item => item.file);
@@ -233,7 +259,6 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     setHasUnsavedChanges(true);
   };
 
-  // Function to handle removing a batch
   const handleBatchRemove = (batchKey) => {
     if (!fileSuggestions || !fileSuggestions[batchKey]) return;
     const filesToRemove = fileSuggestions[batchKey].map(item => item.file);
@@ -252,11 +277,19 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       <PromptActions
         addTreeStructure={addTreeStructure}
         clearPrompt={clearAll}
-        setTranscription={(text) => setTranscriptionHistory(prev => [{
-          timestamp: new Date().toISOString(),
-          raw: text,
-          enhanced: ''
-        }, ...prev])}
+        setTranscription={(text) => {
+          if (!text || typeof text !== 'string') return;
+          
+          setTranscriptionHistory(prev => [{
+            timestamp: new Date().toISOString(),
+            raw: text,
+            enhanced: ''
+          }, ...prev]);
+          
+          if (autoAddEnabled && !preferEnhanced) {
+            addToPrompt(text);
+          }
+        }}
         enhanceTranscription={enhanceTranscription}
         setStatus={setStatus}
         prompt={getFullPrompt()}
@@ -316,10 +349,11 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       )}
       <TranscriptionDisplay
         transcriptionHistory={transcriptionHistory}
-        addToPrompt={(text) => {
-          setBasePrompt(prev => `${prev}\n${text}`.trim());
-          setHasUnsavedChanges(true);
-        }}
+        addToPrompt={addToPrompt}
+        autoAddEnabled={autoAddEnabled}
+        setAutoAddEnabled={setAutoAddEnabled}
+        preferEnhanced={preferEnhanced}
+        setPreferEnhanced={setPreferEnhanced}
       />
     </div>
   );
