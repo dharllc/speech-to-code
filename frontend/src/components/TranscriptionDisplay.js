@@ -1,7 +1,6 @@
-// TranscriptionDisplay.js
 import React, { useState } from 'react';
-import CopyButton from './CopyButton';
 import { Check, ToggleLeft, ToggleRight } from 'lucide-react';
+import CopyButton from './CopyButton';
 
 const TranscriptionDisplay = ({ 
   transcriptionHistory, 
@@ -94,18 +93,6 @@ const TranscriptionDisplay = ({
     )
   );
 
-  const uniqueTranscriptions = transcriptionHistory.reduce((acc, item) => {
-    const existingEntry = acc.find(entry => 
-      entry.timestamp === item.timestamp && 
-      entry.raw === item.raw
-    );
-    
-    if (!existingEntry) {
-      acc.push(item);
-    }
-    return acc;
-  }, []);
-
   return (
     <div className="mt-6">
       <div className="flex justify-between items-center mb-4">
@@ -127,28 +114,29 @@ const TranscriptionDisplay = ({
       </div>
       
       <div className="space-y-4">
-        {uniqueTranscriptions.map((item, index) => (
-          <div key={`${item.timestamp}-${index}`}>
-            {item.raw && (
+        {transcriptionHistory.map((item, index) => {
+          const displayIndex = transcriptionHistory.length - index;
+          return (
+            <div key={`${item.timestamp}-${index}`}>
               <TranscriptionSection 
-                title={`Raw Transcription ${uniqueTranscriptions.length - index}`}
+                title={`Raw Transcription ${displayIndex}`}
                 text={item.raw}
                 index={`raw-${index}`}
                 isEnhanced={false}
                 timestamp={item.timestamp}
               />
-            )}
-            {item.enhanced && (
-              <TranscriptionSection 
-                title={`Enhanced Transcription ${uniqueTranscriptions.length - index}`}
-                text={item.enhanced}
-                index={`enhanced-${index}`}
-                isEnhanced={true}
-                timestamp={item.timestamp}
-              />
-            )}
-          </div>
-        ))}
+              {item.enhanced && (
+                <TranscriptionSection 
+                  title={`Enhanced Transcription ${displayIndex}`}
+                  text={item.enhanced}
+                  index={`enhanced-${index}`}
+                  isEnhanced={true}
+                  timestamp={item.timestamp}
+                />
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
