@@ -138,53 +138,55 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
 
   return (
     <div className="mb-2">
-      <div className="flex mb-2 space-x-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
         <button 
-          className={`${buttonStyle.base} ${buttonStyle.green}`} 
+          className={`${buttonStyle.base} ${buttonStyle.green} min-w-0`} 
           onClick={addTreeStructure}
           title="Add Tree Structure (⌘,)"
         >
           <Trees className="mr-2" size={20} />
-          <span>Tree</span>
+          <span className="truncate">Tree</span>
         </button>
         <button 
-          className={`${buttonStyle.base} ${buttonStyle.red}`} 
+          className={`${buttonStyle.base} ${buttonStyle.red} min-w-0`} 
           onClick={clearPrompt}
           title="Clear Prompt (⌘.)"
         >
           <Trash2 className="mr-2" size={20} />
-          <span>Clear</span>
+          <span className="truncate">Clear</span>
         </button>
         <button
-          className={`${buttonStyle.base} ${isRecording ? buttonStyle.red : buttonStyle.blue}`}
+          className={`${buttonStyle.base} ${isRecording ? buttonStyle.red : buttonStyle.blue} min-w-0`}
           onClick={isRecording ? handleStopRecording : handleStartRecording}
           title={`${isRecording ? 'Stop' : 'Start'} Recording (⌘/)`}
         >
           {isRecording ? <Square className="mr-2" size={20} /> : <Mic className="mr-2" size={20} />}
-          <span>{isRecording ? 'Stop' : 'Record'}</span>
+          <span className="truncate">{isRecording ? 'Stop' : 'Record'}</span>
         </button>
         <button 
-          className={`${buttonStyle.base} ${buttonStyle.purple}`}
+          className={`${buttonStyle.base} ${buttonStyle.purple} min-w-0`}
           onClick={copyToClipboard}
           title="Copy to Clipboard (⌘;)"
         >
           {copied ? <Check className="mr-2" size={20} /> : <Copy className="mr-2" size={20} />}
-          <span>Copy</span>
+          <span className="truncate">{copied ? 'Copied!' : 'Copy'}</span>
         </button>
         <button 
-          className={`${buttonStyle.base} ${isPromptEmpty ? buttonStyle.disabled : buttonStyle.orange}`}
+          className={`${buttonStyle.base} ${isPromptEmpty ? buttonStyle.disabled : buttonStyle.orange} min-w-0 sm:col-span-2 md:col-span-1`}
           onClick={handleGoToLLM}
           disabled={isPromptEmpty}
           title="Go to LLM (⌘↵)"
         >
           <ArrowRight className="mr-2" size={20} />
-          <span>Go</span>
+          <span className="truncate">Go</span>
         </button>
       </div>
       {isRecording && (
-        <div className="mb-2">
+        <div className="mt-2">
           <AudioVisualizer isRecording={isRecording} />
-          <div className="text-center">{Math.floor(currentDuration / 60)}:{(currentDuration % 60).toString().padStart(2, '0')}</div>
+          <div className="text-center">
+            {Math.floor(currentDuration / 60)}:{(currentDuration % 60).toString().padStart(2, '0')}
+          </div>
         </div>
       )}
     </div>
@@ -192,3 +194,4 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
 };
 
 export default PromptActions;
+

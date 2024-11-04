@@ -1,5 +1,3 @@
-// File: frontend/src/components/TwoColumnLayout.js
-
 import React, { useState } from 'react';
 import PromptComposer from './PromptComposer';
 import RepositoryFileViewer from './RepositoryFileViewer';
@@ -9,41 +7,41 @@ const TwoColumnLayout = ({ selectedRepository, setUserPrompt, onClearAllFiles })
 
   const handleFileSelect = (file, isSelected) => {
     setSelectedFiles(prev => {
-      if (isSelected) {
-        // Add file if not already present
-        if (!prev.some(f => f.path === file.path)) {
-          return [...prev, file];
-        }
-      } else {
-        // Remove file if present
-        return prev.filter(f => f.path !== file.path);
+      if (isSelected && !prev.some(f => f.path === file.path)) {
+        return [...prev, file];
       }
-      return prev;
+      return prev.filter(f => f.path !== file.path);
     });
   };
 
   const handleFileRemove = (filePath) => {
     setSelectedFiles(prev => prev.filter(f => f.path !== filePath));
-    // No additional actions needed here unless required
   };
 
   return (
-    <div className="flex flex-row w-full mt-2">
-      <div className="w-1/2 pr-2 overflow-auto">
-        <PromptComposer
-          selectedRepository={selectedRepository}
-          selectedFiles={selectedFiles}
-          onFileRemove={handleFileRemove}
-          onFileSelectionChange={handleFileSelect}
-          setUserPrompt={setUserPrompt}
-        />
+    <div className="flex flex-col lg:flex-row w-full gap-4">
+      {/* Prompt section - takes full width on mobile, half on desktop */}
+      <div className="w-full lg:w-1/2 min-w-0">
+        <div className="bg-gray-800 dark:bg-gray-900 rounded-lg p-4">
+          <PromptComposer
+            selectedRepository={selectedRepository}
+            selectedFiles={selectedFiles}
+            onFileRemove={handleFileRemove}
+            onFileSelectionChange={handleFileSelect}
+            setUserPrompt={setUserPrompt}
+          />
+        </div>
       </div>
-      <div className="w-1/2 pl-2 border-l border-gray-300 dark:border-gray-700">
-        <RepositoryFileViewer
-          selectedRepository={selectedRepository}
-          onFileSelect={handleFileSelect}
-          selectedFiles={selectedFiles}
-        />
+
+      {/* Repository section - takes full width on mobile, half on desktop */}
+      <div className="w-full lg:w-1/2 min-w-0">
+        <div className="bg-gray-800 dark:bg-gray-900 rounded-lg p-4">
+          <RepositoryFileViewer
+            selectedRepository={selectedRepository}
+            onFileSelect={handleFileSelect}
+            selectedFiles={selectedFiles}
+          />
+        </div>
       </div>
     </div>
   );
