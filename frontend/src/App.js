@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, Routes, NavLink } from 'react-router-dom';
-import { MenuIcon, XIcon } from 'lucide-react';
+import { MenuIcon, HomeIcon, SlidersIcon, TerminalIcon, Settings2Icon } from 'lucide-react';
 import RepositorySelector from './components/RepositorySelector';
 import TwoColumnLayout from './components/TwoColumnLayout';
 import DarkModeToggle from './components/DarkModeToggle';
@@ -12,19 +12,11 @@ function App() {
   const [selectedRepository, setSelectedRepository] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [userPrompt, setUserPrompt] = useState('');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(window.innerWidth >= 768);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const storedRepo = localStorage.getItem('selectedRepository');
     if (storedRepo) setSelectedRepository(storedRepo);
-
-    const handleResize = () => {
-      const isWide = window.innerWidth >= 768;
-      setIsSidebarOpen(isWide);
-    };
-
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
   const handleRepositorySelect = (repo) => {
@@ -42,63 +34,67 @@ function App() {
 
   const handleClearAllFiles = () => setSelectedFiles([]);
 
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+
+  const NavItem = ({ to, icon: Icon, label }) => (
+    <NavLink
+      to={to}
+      className={({ isActive }) => `
+        flex items-center px-4 py-3 gap-3
+        ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}
+        transition-colors duration-150 ease-in-out
+      `}
+      end
+    >
+      <Icon size={20} />
+      <span className="text-sm font-medium">{label}</span>
+    </NavLink>
+  );
 
   return (
     <Router>
       <div className="flex h-screen bg-white dark:bg-gray-900">
-        <button 
-          onClick={toggleSidebar}
-          className="fixed top-4 left-4 z-50 p-2 rounded bg-gray-200 dark:bg-gray-700 md:hidden"
-          aria-label={isSidebarOpen ? 'Close menu' : 'Open menu'}
-        >
-          {isSidebarOpen ? <XIcon size={20} /> : <MenuIcon size={20} />}
-        </button>
-
+        {/* Sidebar */}
         <div 
-          className={`fixed md:relative w-64 h-full bg-gray-100 dark:bg-gray-800 shadow-lg transition-all duration-300 ease-in-out z-40
-            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+          className={`
+            h-full bg-gray-100 dark:bg-gray-800 
+            transition-all duration-300 ease-in-out
+            border-r border-gray-200 dark:border-gray-700
+            ${isSidebarOpen ? 'w-64' : 'w-0'}
+            overflow-hidden
+          `}
         >
-          <nav className="mt-16 md:mt-5">
-            <ul className="space-y-1">
-              <li>
-                <NavLink to="/" className={({ isActive }) => 
-                  `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
-                } end>
-                  Prompt Composer
-                </NavLink>
-              </li>
-              <li>
-                <NavLink to="/system-prompt" className={({ isActive }) => 
-                  `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
-                }>
-                  System Prompts
-                </NavLink>
-              </li>
-              <li>
-                <NavLink to="/llm-interaction" className={({ isActive }) => 
-                  `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
-                }>
-                  Prompt UI
-                </NavLink>
-              </li>
-              <li>
-                <NavLink to="/settings" className={({ isActive }) => 
-                  `block py-2 px-4 ${isActive ? 'bg-blue-500 text-white' : 'text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700'}`
-                }>
-                  Settings
-                </NavLink>
-              </li>
-            </ul>
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <span className="text-lg font-semibold text-gray-800 dark:text-white">Navigation</span>
+          </div>
+          <nav className="space-y-1 mt-2">
+            <NavItem to="/" icon={HomeIcon} label="Prompt Composer" />
+            <NavItem to="/system-prompt" icon={SlidersIcon} label="System Prompts" />
+            <NavItem to="/llm-interaction" icon={TerminalIcon} label="Prompt UI" />
+            <NavItem to="/settings" icon={Settings2Icon} label="Settings" />
           </nav>
         </div>
 
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <header className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-800">
-            <h1 className="text-xl md:text-2xl font-bold text-gray-800 dark:text-white ml-12 md:ml-0">Speech-to-Code</h1>
-            <DarkModeToggle />
+        {/* Main content */}
+        <div className="flex-1 flex flex-col overflow-hidden transition-all duration-300">
+          <header className="flex items-center p-4 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+            <button 
+              onClick={toggleSidebar}
+              className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-all duration-300"
+              aria-label="Toggle navigation menu"
+            >
+              <MenuIcon 
+                size={24} 
+                className={`
+                  text-gray-600 dark:text-gray-300 transform transition-transform duration-300
+                  ${isSidebarOpen ? 'rotate-90' : 'rotate-0'}
+                `}
+              />
+            </button>
+            <h1 className="ml-4 text-xl font-bold text-gray-800 dark:text-white">Speech-to-Code</h1>
+            <div className="ml-auto">
+              <DarkModeToggle />
+            </div>
           </header>
           <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900">
             <div className="p-4">
