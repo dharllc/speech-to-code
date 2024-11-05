@@ -171,9 +171,9 @@ const LLMInteraction = ({ initialPrompt }) => {
   };
 
   const getFeasibilityScoreColor = (score) => {
-    if (score >= 90) return 'text-green-500';
-    if (score >= 50) return 'text-yellow-500';
-    return 'text-red-500';
+    if (score >= 90) return 'text-green-500 dark:text-green-400';
+    if (score >= 50) return 'text-yellow-500 dark:text-yellow-400';
+    return 'text-red-500 dark:text-red-400';
   };
 
   const handleUserPromptChange = (newPrompt) => {
@@ -182,13 +182,13 @@ const LLMInteraction = ({ initialPrompt }) => {
   };
 
   const buttonStyle = {
-    base: "px-3 py-2 text-white rounded flex items-center justify-center shadow-md transition-all duration-300 hover:shadow-lg",
-    gray: "bg-gradient-to-r from-gray-400 to-gray-600",
-    blue: "bg-gradient-to-r from-blue-400 to-blue-600"
+    base: "px-3 py-2 rounded flex items-center justify-center shadow-md transition-all duration-300 hover:shadow-lg",
+    gray: "bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200",
+    blue: "bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white"
   };
 
   return (
-    <div className="container mx-auto p-6 bg-gray-900 text-white min-h-screen">
+    <div className="container mx-auto p-6 bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
       <h2 className="text-3xl font-bold mb-6">LLM Interaction - Step {currentStepIndex + 1}</h2>
       <CostDisplay totalCost={totalCost} totalTokens={totalTokens} />
       <SystemPromptDisplay content={steps[currentStepIndex]?.content || ''} tokenCount={systemPromptTokens} />
@@ -203,7 +203,7 @@ const LLMInteraction = ({ initialPrompt }) => {
       {questions.length > 0 && (
         <div className="mb-4">
           <h3 className="text-xl font-semibold">Questions:</h3>
-          <ul className="list-disc pl-5">
+          <ul className="list-disc pl-5 text-gray-800 dark:text-gray-200">
             {questions.map((question, index) => (
               <li key={index}>{question}</li>
             ))}
@@ -236,7 +236,7 @@ const LLMInteraction = ({ initialPrompt }) => {
       </div>
 
       <div className="mb-4">
-        <label htmlFor="temperature" className="block text-sm font-medium text-gray-300 mb-2">
+        <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Temperature: {temperature}
         </label>
         <div className="relative w-1/4 h-8 bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-full overflow-hidden">
@@ -275,9 +275,9 @@ const LLMInteraction = ({ initialPrompt }) => {
         </div>
       </div>
       {loading && (
-        <div className="mt-4 p-4 bg-blue-900 rounded-lg shadow-lg">
-          <p className="text-lg font-semibold">Request in progress...</p>
-          <p className="text-xl font-bold">{elapsedTime.toFixed(1)} seconds</p>
+        <div className="mt-4 p-4 bg-blue-100 dark:bg-blue-900 rounded-lg shadow-lg">
+          <p className="text-lg font-semibold text-blue-700 dark:text-blue-200">Request in progress...</p>
+          <p className="text-xl font-bold text-blue-800 dark:text-blue-100">{elapsedTime.toFixed(1)} seconds</p>
         </div>
       )}
       <ConversationDisplay conversationHistory={conversationHistory} />
