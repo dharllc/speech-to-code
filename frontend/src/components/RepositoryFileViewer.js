@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { FiFolder, FiFile, FiCode, FiFileText, FiCheck, FiSquare, FiSearch, FiPlus, FiMinus } from 'react-icons/fi';
+import { FiFolder, FiFile, FiCode, FiFileText, FiSearch, FiPlus, FiMinus } from 'react-icons/fi';
 import { API_URL } from '../config/api';
 
 const getFileIcon = (type, name) => {
@@ -53,8 +53,21 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     }
   };
 
-  const toggleFolder = (path) => {
-    setExpandedFolders(prev => ({ ...prev, [path]: !prev[path] }));
+  const getFolderStats = (node) => {
+    let totalTokens = 0;
+    let fileCount = 0;
+
+    const processNode = (n) => {
+      if (n.type === 'file') {
+        totalTokens += n.token_count || 0;
+        fileCount++;
+      } else if (n.children) {
+        n.children.forEach(processNode);
+      }
+    };
+
+    processNode(node);
+    return { total: totalTokens, fileCount };
   };
 
   const selectFolder = (node, path) => {
@@ -72,13 +85,29 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     };
 
     const files = getAllFiles(node, path);
+    const cleanFolderPath = path.replace(new RegExp(`^/${selectedRepository}/`), '');
     const isFolderSelected = files.every(file => 
       selectedFiles.some(selectedFile => selectedFile.path === file.path)
     );
 
-    files.forEach(file => {
-      onFileSelect(file, !isFolderSelected);
-    });
+    if (!isFolderSelected) {
+      const stats = getFolderStats(node);
+      onFileSelect({
+        path: `${cleanFolderPath}/*`,
+        type: 'directory',
+        name: node.name,
+        token_count: stats,
+        files
+      }, true);
+    } else {
+      files.forEach(file => {
+        onFileSelect(file, false);
+      });
+    }
+  };
+
+  const toggleFolder = (path) => {
+    setExpandedFolders(prev => ({ ...prev, [path]: !prev[path] }));
   };
 
   useEffect(() => {
@@ -125,14 +154,26 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     return filteredPaths.has(path) || node.name.toLowerCase().includes(searchTerm.toLowerCase());
   };
 
+  const handleFileClick = (node, path, event) => {
+    const cleanPath = path.replace(new RegExp(`^/${selectedRepository}/`), '');
+    if (node.type === 'directory') {
+      toggleFolder(path);
+    } else {
+      const isCurrentlySelected = selectedFiles.some(file => file.path === cleanPath);
+      onFileSelect({ ...node, path: cleanPath }, !isCurrentlySelected);
+    }
+  };
+
   const renderTree = (node, path = '', depth = 0) => {
     if (!node) return null;
     const currentPath = `${path}/${node.name}`;
     const cleanPath = currentPath.replace(new RegExp(`^/${selectedRepository}/`), '');
-    const isSelected = selectedFiles.some(file => file.path === cleanPath);
+    const isSelected = node.type === 'directory' 
+      ? selectedFiles.some(file => file.path === `${cleanPath}/*`)
+      : selectedFiles.some(file => file.path === cleanPath);
     const isExpanded = expandedFolders[currentPath];
     const Icon = getFileIcon(node.type, node.name);
-    
+
     if (!shouldShowNode(node, currentPath)) return null;
 
     return (
@@ -152,7 +193,7 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
               }}
               className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
             >
-              {selectedFiles.some(file => file.path.startsWith(cleanPath)) ? (
+              {isSelected ? (
                 <FiMinus size={12} className="text-gray-500 dark:text-gray-400" />
               ) : (
                 <FiPlus size={12} className="text-gray-500 dark:text-gray-400" />
@@ -172,16 +213,6 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
         )}
       </div>
     );
-  };
-
-  const handleFileClick = (node, path) => {
-    const cleanPath = path.replace(new RegExp(`^/${selectedRepository}/`), '');
-    if (node.type === 'directory') {
-      toggleFolder(path);
-    } else {
-      const isCurrentlySelected = selectedFiles.some(file => file.path === cleanPath);
-      onFileSelect({ ...node, path: cleanPath }, !isCurrentlySelected);
-    }
   };
 
   return (
