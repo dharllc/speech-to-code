@@ -77,7 +77,7 @@ const Settings = ({ selectedRepository, onRepositorySelect }) => {
   };
 
   return (
-    <div className="container mx-auto p-4 text-white">
+    <div className="container mx-auto p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-white">
       <h2 className="text-2xl font-bold mb-4">Settings</h2>
       <div className="max-w-md">
         <RepositorySelector onSelect={onRepositorySelect} selectedRepository={selectedRepository} />
@@ -88,7 +88,7 @@ const Settings = ({ selectedRepository, onRepositorySelect }) => {
       {Object.entries(envVars).map(([key, value]) => renderEnvVar(key, value))}
       <button 
         onClick={handleSave} 
-        className="mt-4 bg-blue-500 text-white px-4 py-2 rounded flex items-center"
+        className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center transition-colors duration-200"
       >
         <Save size={20} className="mr-2" />
         Save Settings
