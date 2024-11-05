@@ -15,17 +15,18 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
 
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.metaKey || e.ctrlKey) {
+      // Handle Control key shortcuts
+      if (e.ctrlKey && !e.metaKey) {
         switch(e.key.toLowerCase()) {
-          case ',':
+          case 't':
             e.preventDefault();
             addTreeStructure();
             break;
-          case '.':
+          case 'z':
             e.preventDefault();
             clearPrompt();
             break;
-          case '/':
+          case 'r':
             e.preventDefault();
             if (isRecording) {
               handleStopRecording();
@@ -33,19 +34,20 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
               handleStartRecording();
             }
             break;
-          case ';':
+          case 'c':
+            e.preventDefault();
             if (!e.target.closest('input, textarea')) {
-              e.preventDefault();
               copyToClipboard();
             }
-            break;
-          case 'enter':
-            e.preventDefault();
-            if (!isPromptEmpty) handleGoToLLM();
             break;
           default:
             break;
         }
+      }
+      // Handle Command+Enter separately
+      if ((e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!isPromptEmpty) handleGoToLLM();
       }
     };
 
@@ -141,7 +143,7 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
         <button 
           className={`${buttonStyle.base} ${buttonStyle.green} min-w-0`} 
           onClick={addTreeStructure}
-          title="Add Tree Structure (⌘,)"
+          title="Add Tree Structure (^T)"
         >
           <Trees className="mr-2" size={20} />
           <span className="truncate">Tree</span>
@@ -149,7 +151,7 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
         <button 
           className={`${buttonStyle.base} ${buttonStyle.red} min-w-0`} 
           onClick={clearPrompt}
-          title="Clear Prompt (⌘.)"
+          title="Clear Prompt (^Z)"
         >
           <Trash2 className="mr-2" size={20} />
           <span className="truncate">Clear</span>
@@ -157,7 +159,7 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
         <button
           className={`${buttonStyle.base} ${isRecording ? buttonStyle.red : buttonStyle.blue} min-w-0`}
           onClick={isRecording ? handleStopRecording : handleStartRecording}
-          title={`${isRecording ? 'Stop' : 'Start'} Recording (⌘/)`}
+          title={`${isRecording ? 'Stop' : 'Start'} Recording (^R)`}
         >
           {isRecording ? <Square className="mr-2" size={20} /> : <Mic className="mr-2" size={20} />}
           <span className="truncate">{isRecording ? 'Stop' : 'Record'}</span>
@@ -165,7 +167,7 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
         <button 
           className={`${buttonStyle.base} ${buttonStyle.purple} min-w-0`}
           onClick={copyToClipboard}
-          title="Copy to Clipboard (⌘;)"
+          title="Copy to Clipboard (^C)"
         >
           {copied ? <Check className="mr-2" size={20} /> : <Copy className="mr-2" size={20} />}
           <span className="truncate">{copied ? 'Copied!' : 'Copy'}</span>
@@ -193,4 +195,3 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
 };
 
 export default PromptActions;
-
