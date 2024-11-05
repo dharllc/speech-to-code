@@ -126,18 +126,18 @@ const UserPromptInput = ({ value, onChange, tokenCount }) => {
       {isRecording && (
         <div className="mb-2">
           <AudioVisualizer isRecording={isRecording} />
-          <div className="text-center text-white">
+          <div className="text-center text-gray-900 dark:text-white">
             {Math.floor(currentDuration / 60)}:{(currentDuration % 60).toString().padStart(2, '0')}
           </div>
         </div>
       )}
       <textarea
-        className="w-full h-32 p-2 bg-gray-800 text-white rounded-lg resize-none"
+        className="w-full h-32 p-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg resize-none border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         value={value}
         onChange={handleInputChange}
         placeholder="Enter your prompt here..."
       />
-      <div className="text-right mt-1 text-sm text-gray-400">
+      <div className="text-right mt-1 text-sm text-gray-600 dark:text-gray-400">
         Tokens: {tokenCount}
       </div>
     </div>
