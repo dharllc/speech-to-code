@@ -92,14 +92,24 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
  }, [treeStructure, selectedRepository]);
 
  const handleTypeSelect = (ext, files) => {
-   const isTypeSelected = files.every(file => 
-     selectedFiles.some(selected => selected.path === file.path)
-   );
+  const filesOfType = files.map(f => f.path);
+  const selectedOfType = selectedFiles.filter(f => filesOfType.includes(f.path));
+  const isTypeFullySelected = selectedOfType.length === files.length;
 
-   files.forEach(file => {
-     onFileSelect(file, !isTypeSelected);
-   });
- };
+  if (isTypeFullySelected) {
+    // Remove all files of this type
+    files.forEach(file => {
+      onFileSelect(file, false);
+    });
+  } else {
+    // Add all files of this type that aren't already selected
+    files.forEach(file => {
+      if (!selectedFiles.some(f => f.path === file.path)) {
+        onFileSelect(file, true);
+      }
+    });
+  }
+};
 
  const fetchTreeStructure = useCallback(async (repo) => {
    try {
