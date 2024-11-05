@@ -49,14 +49,7 @@ const TranscriptionDisplay = ({
 
   const TranscriptionSection = ({ title, text, index, isEnhanced, timestamp }) => (
     text && (
-      <div className={`
-        mb-4 p-4 rounded-lg shadow-lg
-        ${isEnhanced 
-          ? 'bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-800' 
-          : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700'
-        }
-        transform transition-all duration-300 hover:scale-[1.01]
-      `}>
+      <div className={`mb-4 p-4 rounded-lg shadow-lg ${isEnhanced ? 'bg-green-50 dark:bg-green-900/50 border border-green-200 dark:border-green-800' : 'bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700'} transform transition-all duration-300 hover:scale-[1.01]`}>
         <div className="flex justify-between items-start mb-2">
           <div>
             <h3 className="font-bold text-gray-900 dark:text-gray-100">{title}</h3>
@@ -65,25 +58,8 @@ const TranscriptionDisplay = ({
           <div className="flex items-center gap-2">
             <CopyButton textToCopy={text} />
             {!autoAddEnabled && (
-              <button
-                onClick={() => handleAddToPrompt(text, index)}
-                className={`
-                  flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium
-                  transition-all duration-300 transform
-                  ${addedToPrompt[index]
-                    ? 'bg-green-500 text-white'
-                    : 'bg-blue-500 hover:bg-blue-600 text-white'
-                  }
-                `}
-              >
-                {addedToPrompt[index] ? (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>Added</span>
-                  </>
-                ) : (
-                  <span>Add</span>
-                )}
+              <button onClick={() => handleAddToPrompt(text, index)} className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-300 transform ${addedToPrompt[index] ? 'bg-green-500 text-white' : 'bg-blue-500 hover:bg-blue-600 text-white'}`}>
+                {addedToPrompt[index] ? (<><Check className="w-4 h-4" /><span>Added</span></>) : (<span>Add</span>)}
               </button>
             )}
           </div>

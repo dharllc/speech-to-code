@@ -87,12 +87,12 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
     setStatus('Transcribing...');
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
     chunksRef.current = [];
-
+  
     try {
       const formData = new FormData();
       formData.append('file', audioBlob, 'audio.wav');
       formData.append('model', 'whisper-1');
-
+  
       const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
         method: 'POST',
         headers: {
@@ -100,10 +100,9 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
         },
         body: formData
       });
-
+  
       const data = await response.json();
       setTranscription(data.text);
-      enhanceTranscription(data.text);
     } catch (error) {
       console.error('Error transcribing audio:', error);
       setStatus('Error transcribing audio');
