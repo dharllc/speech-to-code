@@ -44,7 +44,8 @@ const RepositorySelector = ({ onSelect, selectedRepository }) => {
     if (!selectedRepository) return;
     setIsLoading(true);
     try {
-      const response = await axios.post(`${API_URL}/repository-context/${selectedRepository}/${action}`);
+      await axios.post(`${API_URL}/repository-context/${selectedRepository}/${action}`);
+      const response = await axios.get(`${API_URL}/repository-context/${selectedRepository}`);
       setContextMapStatus('exists');
       setLastUpdated(response.data.lastUpdated);
     } catch (error) {
@@ -80,11 +81,13 @@ const RepositorySelector = ({ onSelect, selectedRepository }) => {
               </option>
             ))}
           </select>
-          {lastUpdated && (
-            <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              Last updated: {formatDate(lastUpdated)}
-            </div>
-          )}
+          {selectedRepository && <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {isLoading 
+              ? 'Updating context map...'
+              : lastUpdated 
+                ? `Last updated: ${formatDate(lastUpdated)}`
+                : 'Context map not initialized'}
+          </div>}
         </div>
         {selectedRepository && contextMapStatus && (
           <button
