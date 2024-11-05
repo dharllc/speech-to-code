@@ -52,11 +52,17 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
 
   const handleStartRecording = async () => {
     try {
+      chunksRef.current = [];
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
-      mediaRecorderRef.current.ondataavailable = e => e.data.size > 0 && chunksRef.current.push(e.data);
-      mediaRecorderRef.current.onstop = handleStopRecording;
-      mediaRecorderRef.current.start();
+      
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.start(100); // Record in 100ms chunks
       setIsRecording(true);
       setStatus('Recording...');
       timerRef.current = setInterval(() => setCurrentDuration(prev => prev + 1), 1000);
@@ -67,29 +73,45 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
   };
 
   const handleStopRecording = () => {
-    if (mediaRecorderRef.current?.state !== 'inactive') {
+    const duration = currentDuration;
+    
+    if (mediaRecorderRef.current?.state === 'recording') {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+      clearInterval(timerRef.current);
+      setCurrentDuration(0);
+
+      if (duration < 2) {
+        setStatus('Recording must be at least 2 seconds');
+        setTimeout(() => setStatus(''), 3000);
+        chunksRef.current = [];
+        return;
+      }
+
+      setTimeout(() => processRecording(), 100); // Give time for final chunks
     }
-    setIsRecording(false);
-    clearInterval(timerRef.current);
-    setCurrentDuration(0);
-    processRecording();
   };
 
   const processRecording = async () => {
+    if (chunksRef.current.length === 0) return;
+    
     setStatus('Transcribing...');
-    const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
+    const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' }); // Changed to webm
     chunksRef.current = [];
+    
     try {
       const formData = new FormData();
-      formData.append('file', audioBlob, 'audio.wav');
+      formData.append('file', audioBlob, 'audio.webm');
       formData.append('model', 'whisper-1');
+      
       const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}` },
         body: formData
       });
+      
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       setTranscription(data.text);
     } catch (error) {
