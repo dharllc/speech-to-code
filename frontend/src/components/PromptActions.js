@@ -82,7 +82,8 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
       clearInterval(timerRef.current);
       setCurrentDuration(0);
 
-      if (duration < 2) {
+      // Change 1.75 to another value to set a minimum audio file length to process a transcription
+      if (duration < 1.75) {
         setStatus('Recording must be at least 2 seconds');
         setTimeout(() => setStatus(''), 3000);
         chunksRef.current = [];
