@@ -1,6 +1,6 @@
 {
   "repositoryId": "speech-to-code",
-  "lastUpdated": "2024-11-05T15:05:59.978609",
+  "lastUpdated": "2024-11-05T15:55:00.731122",
   "files": {
     "todo.txt": {
       "type": "txt",
@@ -138,8 +138,8 @@
     },
     "frontend/src/App.js": {
       "type": "js",
-      "size": 5112,
-      "lastModified": "2024-11-05T11:52:41.681708",
+      "size": 5567,
+      "lastModified": "2024-11-05T15:54:03.882071",
       "key_elements": [
         "MenuIcon, HomeIcon, SlidersIcon, TerminalIcon, Settings2Icon ",
         "TwoColumnLayout",
@@ -150,13 +150,14 @@
         "NavItem",
         "Settings",
         "handleRepositorySelect",
+        "handleResize",
         "toggleSidebar",
         "handleClearAllFiles",
         "handleFileSelectionChange",
         "SystemPromptManagement",
         "LLMInteraction"
       ],
-      "summary": "Function containing 14 key elements"
+      "summary": "Function containing 15 key elements"
     },
     "frontend/src/config/config.json": {
       "type": "json",
@@ -289,8 +290,8 @@
     },
     "frontend/src/components/RepositoryFileViewer.js": {
       "type": "js",
-      "size": 11005,
-      "lastModified": "2024-11-05T11:39:33.583788",
+      "size": 11359,
+      "lastModified": "2024-11-05T15:40:21.542587",
       "key_elements": [
         "axios",
         "handleTypeSelect",
@@ -365,20 +366,18 @@
     },
     "frontend/src/components/PromptActions.js": {
       "type": "js",
-      "size": 6947,
-      "lastModified": "2024-11-05T12:50:18.321523",
+      "size": 7143,
+      "lastModified": "2024-11-05T15:38:19.412928",
       "key_elements": [
         "Trees, Trash2, Mic, Square, Copy, Check, ArrowRight ",
         "ondataavailable",
-        "copyToClipboard",
         "useNavigate ",
         "handleGoToLLM",
         "PromptActions",
         "AudioVisualizer",
-        "handleKeyDown",
         "handleStopRecording"
       ],
-      "summary": "Function containing 9 key elements"
+      "summary": "Function containing 7 key elements"
     },
     "frontend/src/components/SystemPromptDisplay.js": {
       "type": "js",
@@ -418,8 +417,8 @@
     },
     "frontend/src/components/PromptComposer.js": {
       "type": "js",
-      "size": 13995,
-      "lastModified": "2024-11-05T10:37:46.127929",
+      "size": 13404,
+      "lastModified": "2024-11-05T15:11:38.581343",
       "key_elements": [
         "axios",
         "handleBatchRemove",
@@ -595,7 +594,7 @@
     "backend/context_maps/speech-to-code.json": {
       "type": "json",
       "size": 18913,
-      "lastModified": "2024-11-05T15:05:57.590369",
+      "lastModified": "2024-11-05T15:06:00.172841",
       "key_elements": [],
       "summary": "File containing 0 key elements"
     },
