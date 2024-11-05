@@ -1,6 +1,6 @@
 {
   "repositoryId": "speech-to-code",
-  "lastUpdated": "2024-11-05T12:49:16.039233",
+  "lastUpdated": "2024-11-05T15:05:59.978609",
   "files": {
     "todo.txt": {
       "type": "txt",
@@ -222,8 +222,8 @@
     },
     "frontend/src/components/RepositorySelector.js": {
       "type": "js",
-      "size": 3719,
-      "lastModified": "2024-11-03T12:16:34.496613",
+      "size": 3927,
+      "lastModified": "2024-11-05T15:05:52.341574",
       "key_elements": [
         "axios",
         "RepositorySelector",
@@ -366,7 +366,7 @@
     "frontend/src/components/PromptActions.js": {
       "type": "js",
       "size": 6947,
-      "lastModified": "2024-11-05T12:48:27.544068",
+      "lastModified": "2024-11-05T12:50:18.321523",
       "key_elements": [
         "Trees, Trash2, Mic, Square, Copy, Check, ArrowRight ",
         "ondataavailable",
@@ -595,7 +595,7 @@
     "backend/context_maps/speech-to-code.json": {
       "type": "json",
       "size": 18913,
-      "lastModified": "2024-11-05T12:17:01.074083",
+      "lastModified": "2024-11-05T15:05:57.590369",
       "key_elements": [],
       "summary": "File containing 0 key elements"
     },
