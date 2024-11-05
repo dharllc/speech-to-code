@@ -6,11 +6,11 @@ import CopyButton from './CopyButton';
 const ConversationDisplay = ({ conversationHistory }) => {
   const renderCodeBlock = (code, language) => (
     <div className="relative my-1 rounded-md overflow-hidden">
-      <div className="sticky top-0 z-10 bg-gray-700 p-1 flex justify-between items-center">
-        <span className="text-white text-xs">{language}</span>
+      <div className="sticky top-0 z-10 bg-gray-200 dark:bg-gray-700 p-1 flex justify-between items-center">
+        <span className="text-gray-700 dark:text-white text-xs">{language}</span>
         <CopyButton
           textToCopy={code}
-          className="bg-gray-600 text-white p-1 rounded text-xs hover:bg-gray-500 transition-colors duration-200"
+          className="bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-white p-1 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors duration-200"
         />
       </div>
       <div className="max-h-80 overflow-y-auto">
@@ -18,7 +18,7 @@ const ConversationDisplay = ({ conversationHistory }) => {
           language={language}
           style={vscDarkPlus}
           className="p-2 text-xs rounded-md"
-          customStyle={{margin: 0, background: '#1E1E1E'}}
+          customStyle={{margin: 0, background: 'rgb(30, 30, 30)'}}
         >
           {code}
         </SyntaxHighlighter>
@@ -47,7 +47,7 @@ const ConversationDisplay = ({ conversationHistory }) => {
 
     return parts.map((part, index) =>
       typeof part === 'string' ? (
-        <p key={index} className="my-0.5 whitespace-pre-wrap text-xs">{part}</p>
+        <p key={index} className="my-0.5 whitespace-pre-wrap text-xs text-gray-800 dark:text-gray-200">{part}</p>
       ) : (
         React.cloneElement(part, { key: index })
       )
@@ -56,20 +56,22 @@ const ConversationDisplay = ({ conversationHistory }) => {
 
   return (
     <div className="mt-2">
-      <h3 className="text-lg font-bold mb-1">Conversation:</h3>
-      <div className="bg-gray-800 p-2 rounded-lg max-h-[calc(100vh-150px)] overflow-y-auto">
+      <h3 className="text-lg font-bold mb-1 text-gray-900 dark:text-white">Conversation:</h3>
+      <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg max-h-[calc(100vh-150px)] overflow-y-auto">
         {conversationHistory.map((message, index) => (
           <div key={index} className="mb-1">
             <div className={`p-1 rounded-lg ${
-              message.role === 'user' ? 'bg-blue-800' : 'bg-green-800'
+              message.role === 'user' 
+                ? 'bg-blue-100 dark:bg-blue-800' 
+                : 'bg-green-100 dark:bg-green-800'
             }`}>
               <div className="flex justify-between items-center mb-0.5">
-                <strong className="text-xs font-semibold">
+                <strong className="text-xs font-semibold text-gray-900 dark:text-white">
                   {message.role === 'user' ? 'User:' : 'Assistant:'}
                 </strong>
                 <CopyButton
                   textToCopy={message.content}
-                  className="bg-gray-700 text-white p-0.5 rounded text-xs hover:bg-gray-600 transition-colors duration-200"
+                  className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white p-0.5 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
                 />
               </div>
               <div className={`text-xs ${message.role === 'user' ? 'max-h-20 overflow-y-auto' : ''}`}>
