@@ -1,3 +1,4 @@
+// Filename: frontend/src/components/Settings.js
 import React, { useState, useEffect } from 'react';
 import RepositorySelector from './RepositorySelector';
 import { Eye, EyeOff, Save } from 'lucide-react';
@@ -64,10 +65,13 @@ const Settings = ({ selectedRepository, onRepositorySelect }) => {
             type={showApiKeys[key] ? "text" : "password"}
             value={editedEnvVars[key]}
             onChange={(e) => setEditedEnvVars(prev => ({ ...prev, [key]: e.target.value }))}
-            className="border rounded px-2 py-1 mr-2 flex-grow bg-gray-700 text-white"
+            className="border rounded px-2 py-1 mr-2 flex-grow bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600"
           />
           {isApiKey && (
-            <button onClick={() => toggleShowApiKey(key)} className="p-1 text-white">
+            <button 
+              onClick={() => toggleShowApiKey(key)} 
+              className="p-1 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
               {showApiKeys[key] ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           )}
