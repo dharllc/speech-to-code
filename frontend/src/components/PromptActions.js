@@ -1,4 +1,3 @@
-// Filename: frontend/src/components/PromptActions.js
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trees, Trash2, Mic, Square, Copy, Check, ArrowRight } from 'lucide-react';
@@ -11,59 +10,59 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
+  const keyHandlerBusyRef = useRef(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Handle Control key shortcuts
+    const handleKeyDown = async (e) => {
+      if (keyHandlerBusyRef.current) return;
       if (e.ctrlKey && !e.metaKey) {
-        switch(e.key.toLowerCase()) {
-          case 't':
-            e.preventDefault();
-            addTreeStructure();
-            break;
-          case 'z':
-            e.preventDefault();
-            clearPrompt();
-            break;
-          case 'r':
-            e.preventDefault();
-            if (isRecording) {
-              handleStopRecording();
-            } else {
-              handleStartRecording();
-            }
-            break;
-          case 'c':
-            e.preventDefault();
-            if (!e.target.closest('input, textarea')) {
-              copyToClipboard();
-            }
-            break;
-          default:
-            break;
+        keyHandlerBusyRef.current = true;
+        try {
+          switch(e.key.toLowerCase()) {
+            case 't':
+              e.preventDefault();
+              await addTreeStructure();
+              break;
+            case 'z':
+              e.preventDefault();
+              clearPrompt();
+              break;
+            case 'r':
+              e.preventDefault();
+              isRecording ? handleStopRecording() : handleStartRecording();
+              break;
+            case 'c':
+              e.preventDefault();
+              if (!e.target.closest('input, textarea')) await copyToClipboard();
+              break;
+          }
+        } finally {
+          keyHandlerBusyRef.current = false;
         }
-      }
-      // Handle Command+Enter separately
-      if ((e.metaKey) && e.key === 'Enter') {
+      } else if (e.metaKey && e.key === 'Enter') {
         e.preventDefault();
-        if (!isPromptEmpty) handleGoToLLM();
+        prompt.trim() && handleGoToLLM();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isRecording, prompt]);
+  }, [isRecording, prompt, addTreeStructure, clearPrompt]);
 
   const handleStartRecording = async () => {
     try {
+      chunksRef.current = [];
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
-      mediaRecorderRef.current.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
+      
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
       };
-      mediaRecorderRef.current.onstop = handleStopRecording;
-      mediaRecorderRef.current.start();
+
+      mediaRecorderRef.current.start(100); // Record in 100ms chunks
       setIsRecording(true);
       setStatus('Recording...');
       timerRef.current = setInterval(() => setCurrentDuration(prev => prev + 1), 1000);
@@ -74,35 +73,46 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
   };
 
   const handleStopRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+    const duration = currentDuration;
+    
+    if (mediaRecorderRef.current?.state === 'recording') {
       mediaRecorderRef.current.stop();
-      const tracks = mediaRecorderRef.current.stream.getTracks();
-      tracks.forEach(track => track.stop());
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+      clearInterval(timerRef.current);
+      setCurrentDuration(0);
+
+      // Change 1.75 to another value to set a minimum audio file length to process a transcription
+      if (duration < 1.75) {
+        setStatus('Recording must be at least 2 seconds');
+        setTimeout(() => setStatus(''), 3000);
+        chunksRef.current = [];
+        return;
+      }
+
+      setTimeout(() => processRecording(), 100); // Give time for final chunks
     }
-    setIsRecording(false);
-    clearInterval(timerRef.current);
-    setCurrentDuration(0);
-    processRecording();
   };
 
   const processRecording = async () => {
+    if (chunksRef.current.length === 0) return;
+    
     setStatus('Transcribing...');
-    const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
+    const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' }); // Changed to webm
     chunksRef.current = [];
-  
+    
     try {
       const formData = new FormData();
-      formData.append('file', audioBlob, 'audio.wav');
+      formData.append('file', audioBlob, 'audio.webm');
       formData.append('model', 'whisper-1');
-  
+      
       const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}`,
-        },
+        headers: { 'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_API_KEY}` },
         body: formData
       });
-  
+      
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       setTranscription(data.text);
     } catch (error) {
@@ -111,15 +121,14 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
     }
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(prompt).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+  const copyToClipboard = async () => {
+    await navigator.clipboard.writeText(prompt);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleGoToLLM = () => {
-    if (prompt.trim().length > 0) {
+    if (prompt.trim()) {
       setUserPrompt(prompt.trim());
       navigate('/llm-interaction');
     }
@@ -135,59 +144,29 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
     disabled: "bg-gray-400 cursor-not-allowed"
   };
 
-  const isPromptEmpty = prompt.trim().length === 0;
-
   return (
     <div className="mb-2">
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
-        <button 
-          className={`${buttonStyle.base} ${buttonStyle.green} min-w-0`} 
-          onClick={addTreeStructure}
-          title="Add Tree Structure (^T)"
-        >
-          <Trees className="mr-2" size={20} />
-          <span className="truncate">Tree</span>
+        <button className={`${buttonStyle.base} ${buttonStyle.green} min-w-0`} onClick={addTreeStructure} title="Add Tree Structure (^T)">
+          <Trees className="mr-2" size={20} /><span className="truncate">Tree</span>
         </button>
-        <button 
-          className={`${buttonStyle.base} ${buttonStyle.red} min-w-0`} 
-          onClick={clearPrompt}
-          title="Clear Prompt (^Z)"
-        >
-          <Trash2 className="mr-2" size={20} />
-          <span className="truncate">Clear</span>
+        <button className={`${buttonStyle.base} ${buttonStyle.red} min-w-0`} onClick={clearPrompt} title="Clear Prompt (^Z)">
+          <Trash2 className="mr-2" size={20} /><span className="truncate">Clear</span>
         </button>
-        <button
-          className={`${buttonStyle.base} ${isRecording ? buttonStyle.red : buttonStyle.blue} min-w-0`}
-          onClick={isRecording ? handleStopRecording : handleStartRecording}
-          title={`${isRecording ? 'Stop' : 'Start'} Recording (^R)`}
-        >
-          {isRecording ? <Square className="mr-2" size={20} /> : <Mic className="mr-2" size={20} />}
-          <span className="truncate">{isRecording ? 'Stop' : 'Record'}</span>
+        <button className={`${buttonStyle.base} ${isRecording ? buttonStyle.red : buttonStyle.blue} min-w-0`} onClick={isRecording ? handleStopRecording : handleStartRecording} title={`${isRecording ? 'Stop' : 'Start'} Recording (^R)`}>
+          {isRecording ? <Square className="mr-2" size={20} /> : <Mic className="mr-2" size={20} />}<span className="truncate">{isRecording ? 'Stop' : 'Record'}</span>
         </button>
-        <button 
-          className={`${buttonStyle.base} ${buttonStyle.purple} min-w-0`}
-          onClick={copyToClipboard}
-          title="Copy to Clipboard (^C)"
-        >
-          {copied ? <Check className="mr-2" size={20} /> : <Copy className="mr-2" size={20} />}
-          <span className="truncate">{copied ? 'Copied!' : 'Copy'}</span>
+        <button className={`${buttonStyle.base} ${buttonStyle.purple} min-w-0`} onClick={copyToClipboard} title="Copy to Clipboard (^C)">
+          {copied ? <Check className="mr-2" size={20} /> : <Copy className="mr-2" size={20} />}<span className="truncate">{copied ? 'Copied!' : 'Copy'}</span>
         </button>
-        <button 
-          className={`${buttonStyle.base} ${isPromptEmpty ? buttonStyle.disabled : buttonStyle.orange} min-w-0 sm:col-span-2 md:col-span-1`}
-          onClick={handleGoToLLM}
-          disabled={isPromptEmpty}
-          title="Go to LLM (⌘↵)"
-        >
-          <ArrowRight className="mr-2" size={20} />
-          <span className="truncate">Go</span>
+        <button className={`${buttonStyle.base} ${!prompt.trim() ? buttonStyle.disabled : buttonStyle.orange} min-w-0 sm:col-span-2 md:col-span-1`} onClick={handleGoToLLM} disabled={!prompt.trim()} title="Go to LLM (⌘↵)">
+          <ArrowRight className="mr-2" size={20} /><span className="truncate">Go</span>
         </button>
       </div>
       {isRecording && (
         <div className="mt-2">
           <AudioVisualizer isRecording={isRecording} />
-          <div className="text-center">
-            {Math.floor(currentDuration / 60)}:{(currentDuration % 60).toString().padStart(2, '0')}
-          </div>
+          <div className="text-center">{Math.floor(currentDuration / 60)}:{(currentDuration % 60).toString().padStart(2, '0')}</div>
         </div>
       )}
     </div>
