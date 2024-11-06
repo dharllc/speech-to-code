@@ -1,6 +1,6 @@
 {
   "repositoryId": "speech-to-code",
-  "lastUpdated": "2024-11-05T15:55:00.731122",
+  "lastUpdated": "2024-11-05T16:03:05.123103",
   "files": {
     "todo.txt": {
       "type": "txt",
@@ -392,7 +392,7 @@
     "frontend/src/components/PromptAnalysisControls.js": {
       "type": "js",
       "size": 3483,
-      "lastModified": "2024-11-02T17:18:01.027780",
+      "lastModified": "2024-11-05T15:56:51.831796",
       "key_elements": [
         "FiSearch, FiLoader ",
         "PromptAnalysisControls",
@@ -417,8 +417,8 @@
     },
     "frontend/src/components/PromptComposer.js": {
       "type": "js",
-      "size": 13404,
-      "lastModified": "2024-11-05T15:11:38.581343",
+      "size": 13396,
+      "lastModified": "2024-11-05T16:01:53.017354",
       "key_elements": [
         "axios",
         "handleBatchRemove",
@@ -593,8 +593,8 @@
     },
     "backend/context_maps/speech-to-code.json": {
       "type": "json",
-      "size": 18913,
-      "lastModified": "2024-11-05T15:06:00.172841",
+      "size": 18885,
+      "lastModified": "2024-11-05T15:55:01.186718",
       "key_elements": [],
       "summary": "File containing 0 key elements"
     },
