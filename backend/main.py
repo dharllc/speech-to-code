@@ -1,15 +1,28 @@
+import os
+import os.path as osp
+import json
+import uuid
+import tiktoken
+from datetime import datetime
+from typing import List
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from utils.tree_structure import get_tree_structure
-import os, json, tiktoken
-from dotenv import load_dotenv, set_key
 from pydantic import BaseModel
-from typing import List
-from datetime import datetime
-import uuid
+from dotenv import load_dotenv, set_key
 from llm_interaction import handle_llm_interaction, get_available_models
-from utils.context_map import generate_context_map,save_context_map,load_context_map
-import os.path as osp
+from utils.context_map import generate_context_map, save_context_map, load_context_map
+from utils.file_watcher import WatcherManager
+from utils.tree_structure import get_tree_structure
+
+# Get the directory of the current script
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Define paths
+SYSTEM_PROMPTS_FILE = os.path.join(SCRIPT_DIR, "system_prompts.json")
+CONTEXT_MAPS_DIR = osp.join(SCRIPT_DIR, "context_maps")
+
+# Initialize the watcher manager
+watcher_manager = WatcherManager(CONTEXT_MAPS_DIR)
 
 # Load config first
 try:
@@ -26,28 +39,30 @@ load_dotenv()
 
 REPO_PATH = os.getenv("REPO_PATH")
 if REPO_PATH is None:
-    raise ValueError("REPO_PATH environment variable is not set")
+    raise RuntimeError("REPO_PATH environment variable is not set")
 
 app = FastAPI()
+
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[f"http://localhost:{FRONTEND_PORT}"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Get the directory of the current script
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-# Define the path to system_prompts.json
-SYSTEM_PROMPTS_FILE = os.path.join(SCRIPT_DIR, "system_prompts.json")
-# Define the path to context maps
-CONTEXT_MAPS_DIR = osp.join(SCRIPT_DIR,"context_maps")
+@app.on_event("shutdown")
+async def shutdown_event():
+    # Stop all file watchers when the application shuts down
+    watcher_manager.stop_all()
+
+
 
 # Ensure the system_prompts.json file exists
 if not os.path.exists(SYSTEM_PROMPTS_FILE):
     with open(SYSTEM_PROMPTS_FILE, 'w') as f:
-        json.dump([], f)
+        json.dump({}, f)
 
 class TokenRequest(BaseModel):
     text: str
@@ -285,28 +300,32 @@ async def update_env_var(env_var: dict):
     return {"message": f"{key} updated successfully"}
 
 @app.post("/repository-context/{repository}/initialize")
-async def initialize_context_map(repository:str):
-    repo_path=osp.join(REPO_PATH,repository)
+async def initialize_context_map(repository: str):
+    repo_path = osp.join(REPO_PATH, repository)
     if not osp.exists(repo_path):
-        raise HTTPException(status_code=404,detail=f"Repository '{repository}' not found")
+        raise HTTPException(status_code=404, detail=f"Repository '{repository}' not found")
     try:
-        context_map=generate_context_map(repo_path,repository)
-        save_context_map(context_map,CONTEXT_MAPS_DIR)
-        return{"message":"Context map initialized successfully","repositoryId":repository}
+        context_map = generate_context_map(repo_path, repository)
+        save_context_map(context_map, CONTEXT_MAPS_DIR)
+        # Start watching the repository for changes
+        watcher_manager.start_watching(repo_path, repository)
+        return {"message": "Context map initialized successfully", "repositoryId": repository}
     except Exception as e:
-        raise HTTPException(status_code=500,detail=f"Failed to initialize context map: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/repository-context/{repository}/refresh")
-async def refresh_context_map(repository:str):
-    repo_path=osp.join(REPO_PATH,repository)
+async def refresh_context_map(repository: str):
+    repo_path = osp.join(REPO_PATH, repository)
     if not osp.exists(repo_path):
-        raise HTTPException(status_code=404,detail=f"Repository '{repository}' not found")
+        raise HTTPException(status_code=404, detail=f"Repository '{repository}' not found")
     try:
-        context_map=generate_context_map(repo_path,repository)
-        save_context_map(context_map,CONTEXT_MAPS_DIR)
-        return{"message":"Context map refreshed successfully","repositoryId":repository}
+        context_map = generate_context_map(repo_path, repository)
+        save_context_map(context_map, CONTEXT_MAPS_DIR)
+        # Ensure the repository is being watched
+        watcher_manager.start_watching(repo_path, repository)
+        return {"message": "Context map refreshed successfully", "repositoryId": repository}
     except Exception as e:
-        raise HTTPException(status_code=500,detail=f"Failed to refresh context map: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/repository-context/{repository}")
 async def get_context_map(repository:str):
@@ -398,6 +417,17 @@ Provide file suggestions in the specified JSON format."""
         
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="Invalid JSON response from LLM")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Add a new endpoint to stop watching a repository
+@app.post("/repository-context/{repository}/stop-watching")
+async def stop_watching_repository(repository: str):
+    try:
+        if watcher_manager.stop_watching(repository):
+            return {"message": f"Stopped watching repository '{repository}'"}
+        else:
+            raise HTTPException(status_code=404, detail=f"Repository '{repository}' is not being watched")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
