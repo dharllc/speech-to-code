@@ -8,7 +8,9 @@ const TranscriptionDisplay = ({
   autoAddEnabled,
   setAutoAddEnabled,
   preferEnhanced,
-  setPreferEnhanced
+  setPreferEnhanced,
+  enhancementDisabled = false,
+  setEnhancementDisabled
 }) => {
   const [addedToPrompt, setAddedToPrompt] = useState({});
 
@@ -71,22 +73,31 @@ const TranscriptionDisplay = ({
 
   return (
     <div className="mt-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">Transcription History</h3>
-        <div className="flex gap-3">
-          <Toggle
-            enabled={autoAddEnabled}
-            onToggle={() => setAutoAddEnabled(!autoAddEnabled)}
-            label="Auto-add"
-          />
-          {autoAddEnabled && (
+      <div className="flex flex-col gap-4 mb-4">
+        <div className="flex justify-between items-center">
+          <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">Transcription History</h3>
+          <div className="flex gap-3">
+            <Toggle
+              enabled={!enhancementDisabled}
+              onToggle={() => setEnhancementDisabled(!enhancementDisabled)}
+              label="Enhancement"
+            />
+            <Toggle
+              enabled={autoAddEnabled}
+              onToggle={() => setAutoAddEnabled(!autoAddEnabled)}
+              label="Auto-add"
+            />
+          </div>
+        </div>
+        {autoAddEnabled && !enhancementDisabled && (
+          <div className="flex justify-end">
             <Toggle
               enabled={preferEnhanced}
               onToggle={() => setPreferEnhanced(!preferEnhanced)}
               label={preferEnhanced ? "Enhanced" : "Raw"}
             />
-          )}
-        </div>
+          </div>
+        )}
       </div>
       
       <div className="space-y-4">
@@ -101,7 +112,7 @@ const TranscriptionDisplay = ({
                 isEnhanced={false}
                 timestamp={item.timestamp}
               />
-              {item.enhanced && (
+              {!enhancementDisabled && item.enhanced && (
                 <TranscriptionSection 
                   title={`Enhanced Transcription ${displayIndex}`}
                   text={item.enhanced}

@@ -1,4 +1,3 @@
-// Filename: frontend/src/components/PromptComposer.js
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { FiLoader } from 'react-icons/fi';
@@ -32,6 +31,9 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   const [preferEnhanced, setPreferEnhanced] = useState(() => 
     JSON.parse(localStorage.getItem('preferEnhanced') || 'true')
   );
+  const [enhancementDisabled, setEnhancementDisabled] = useState(() => 
+    JSON.parse(localStorage.getItem('enhancementDisabled') || 'false')
+  );
   const MIN_PROMPT_LENGTH = 25;
   const lastPromptRef = useRef(basePrompt);
   const treeOperationRef = useRef(false);
@@ -43,7 +45,8 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   useEffect(() => {
     localStorage.setItem('autoAddEnabled', JSON.stringify(autoAddEnabled));
     localStorage.setItem('preferEnhanced', JSON.stringify(preferEnhanced));
-  }, [autoAddEnabled, preferEnhanced]);
+    localStorage.setItem('enhancementDisabled', JSON.stringify(enhancementDisabled));
+  }, [autoAddEnabled, preferEnhanced, enhancementDisabled]);
 
   useEffect(() => {
     if (selectedRepository) fetchTreeStructure(selectedRepository);
@@ -183,6 +186,16 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     if (!text) return;
     const timestamp = new Date().toISOString();
     setTranscriptionHistory(prev => [{timestamp, raw: text, enhanced: ''}, ...prev]);
+
+    if (autoAddEnabled && (!preferEnhanced || enhancementDisabled)) {
+      addToPrompt(text);
+    }
+
+    if (enhancementDisabled) {
+      setStatus('Transcription ready');
+      return;
+    }
+
     setStatus('Enhancing transcription...');
     
     try {
@@ -213,9 +226,8 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         return prev.map((item, i) => i === index ? {...item, enhanced: enhancedText} : item);
       });
 
-      if (autoAddEnabled) {
-        const textToAdd = preferEnhanced ? enhancedText : text;
-        addToPrompt(textToAdd);
+      if (autoAddEnabled && preferEnhanced && !enhancementDisabled) {
+        addToPrompt(enhancedText);
       }
 
       setStatus('Transcription ready');
@@ -257,26 +269,22 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
 
   const handleBatchAdd = (batchKey) => {
     if (!fileSuggestions || !fileSuggestions[batchKey]) return;
-    
     fileSuggestions[batchKey].forEach(item => {
       if (!selectedFiles.some(file => file.path === item.file)) {
         onFileSelectionChange({ path: item.file }, true);
       }
     });
-    
     setAddedBatches(prev => [...prev, batchKey]);
     setHasUnsavedChanges(true);
   };
 
   const handleBatchRemove = (batchKey) => {
     if (!fileSuggestions || !fileSuggestions[batchKey]) return;
-    
     fileSuggestions[batchKey].forEach(item => {
       if (selectedFiles.some(file => file.path === item.file)) {
         onFileRemove(item.file);
       }
     });
-    
     setAddedBatches(prev => prev.filter(key => key !== batchKey));
     setHasUnsavedChanges(true);
   };
@@ -369,15 +377,17 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         />
       )}
       <TranscriptionDisplay
-        transcriptionHistory={transcriptionHistory}
-        addToPrompt={addToPrompt}
-        autoAddEnabled={autoAddEnabled}
-        setAutoAddEnabled={setAutoAddEnabled}
-        preferEnhanced={preferEnhanced}
-        setPreferEnhanced={setPreferEnhanced}
-      />
-    </div>
-  );
+       transcriptionHistory={transcriptionHistory}
+       addToPrompt={addToPrompt}
+       autoAddEnabled={autoAddEnabled}
+       setAutoAddEnabled={setAutoAddEnabled}
+       preferEnhanced={preferEnhanced}
+       setPreferEnhanced={setPreferEnhanced}
+       enhancementDisabled={enhancementDisabled}
+       setEnhancementDisabled={setEnhancementDisabled}
+     />
+   </div>
+ );
 };
 
 export default PromptComposer;
