@@ -69,6 +69,7 @@ Edit `config.json` in the root directory to set custom ports. If you need to cha
         "port": 8000 
     }
 }
+```
 
 2. Start the frontend:
    ```
@@ -83,7 +84,7 @@ Edit `config.json` in the root directory to set custom ports. If you need to cha
    uvicorn main:app --reload --log-level debug
    ```
 
-The application should now be running. Access the frontend at `http://localhost:3000` in your web browser.
+The application should now be running. Access the frontend at `http://localhost:3000` in your web browser, or the port set in the config.json file. 
 
 ## Project Structure
 
@@ -134,7 +135,7 @@ speech-to-code/
 
 - Prompt Composer: Craft and edit prompts for code generation
 - System Prompt Management: Manage and customize system prompts
-- LLM Interaction: Interact with various Large Language Models
+- Prompt UI: Interact with various Large Language Models
 - Settings: Configure environment variables and repository settings
 - Dark Mode: Toggle between light and dark themes
 
