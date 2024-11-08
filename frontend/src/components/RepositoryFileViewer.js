@@ -97,12 +97,10 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
   const isTypeFullySelected = selectedOfType.length === files.length;
 
   if (isTypeFullySelected) {
-    // Remove all files of this type
     files.forEach(file => {
       onFileSelect(file, false);
     });
   } else {
-    // Add all files of this type that aren't already selected
     files.forEach(file => {
       if (!selectedFiles.some(f => f.path === file.path)) {
         onFileSelect(file, true);
@@ -131,10 +129,10 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
 
  const sortTreeStructure = (node) => {
    if (node.type === 'directory' && node.children) {
-     node.children = node.children.sort((a, b) => {
-       if (a.type === 'directory' && b.type !== 'directory') return -1;
-       if (a.type !== 'directory' && b.type === 'directory') return 1;
-       return a.name.localeCompare(b.name);
+     node.children.sort((a, b) => {
+       const aTokens = a.token_count || 0;
+       const bTokens = b.token_count || 0;
+       return bTokens - aTokens;
      });
      node.children.forEach(sortTreeStructure);
    }
