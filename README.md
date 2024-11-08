@@ -84,7 +84,13 @@ Edit `config.json` in the root directory to set custom ports. If you need to cha
    uvicorn main:app --reload --log-level debug
    ```
 
-The application should now be running. Access the frontend at `http://localhost:3000` in your web browser, or the port set in the config.json file. 
+The application should now be running. Access the frontend at `http://localhost:3000` in your web browser, or the port set in the config.json file. Create a unique python virtual environment for this repository and install the required packages using:
+
+```
+pip install -r requirements.text
+```
+
+This command should be executed in the /backend folder.
 
 ## Project Structure
 
