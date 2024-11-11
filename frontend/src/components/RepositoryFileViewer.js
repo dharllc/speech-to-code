@@ -1,6 +1,11 @@
+// Filename: frontend/src/components/RepositoryFileViewer.js
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import { FiFolder, FiFile, FiCode, FiFileText, FiSearch, FiPlus, FiMinus, FiAlertTriangle, FiEye, FiEyeOff } from 'react-icons/fi';
+import { 
+  FiFolder, FiFile, FiCode, FiFileText, FiSearch, 
+  FiPlus, FiMinus, FiAlertTriangle, FiEye, FiEyeOff, FiX 
+} from 'react-icons/fi';
 import { API_URL } from '../config/api';
 
 const CORE_FILE_TYPES = [
@@ -246,8 +251,10 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
         const parts = path.split('/');
         let currentPath = '';
         parts.forEach(part => {
-          currentPath += `${part}/`;
-          newExpandedFolders[currentPath.slice(0, -1)] = true;
+          if (part) {
+            currentPath += `/${part}`;
+            newExpandedFolders[currentPath] = true;
+          }
         });
       });
       setExpandedFolders(prev => ({ ...prev, ...newExpandedFolders }));
@@ -325,6 +332,7 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
                 selectFolder(node, currentPath);
               }}
               className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+              aria-label={selectedFiles.some(file => file.path === `${cleanPath}/*`) ? "Deselect All" : "Select All"}
             >
               {selectedFiles.some(file => file.path === `${cleanPath}/*`) ? (
                 <FiMinus size={12} className="text-gray-500 dark:text-gray-400" />
@@ -346,61 +354,73 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
             {node.children.map(child => renderTree(child, currentPath, depth + 1))}
           </div>
         )}
-        </div>
-      );
-    };
-  
-    return (
-      <div className="h-full overflow-auto pr-2">
-        <div className="sticky top-0 bg-white dark:bg-gray-800 z-10">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-base font-bold">Repository Structure</h3>
-            <button
-              onClick={() => setShowWarnedFiles(!showWarnedFiles)}
-              className="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-            >
-              {showWarnedFiles ? (
-                <>
-                  <FiEyeOff size={14} />
-                  Hide Excluded Files
-                </>
-              ) : (
-                <>
-                  <FiEye size={14} />
-                  Show Excluded Files
-                </>
-              )}
-            </button>
-          </div>
-          <div className="space-y-3 pb-3 border-b dark:border-gray-700">
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search files..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 pr-10 text-sm border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <FiSearch className="absolute right-3 top-2.5 text-gray-400" size={16} />
-            </div>
-            {Object.keys(fileTypes).length > 0 && (
-              <FileTypeButtons
-                fileTypes={fileTypes}
-                selectedFiles={selectedFiles}
-                onTypeSelect={handleTypeSelect}
-              />
-            )}
-          </div>
-        </div>
-        <div className="mt-3">
-          {treeStructure ? renderTree(treeStructure) : (
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              Loading repository structure...
-            </p>
-          )}
-        </div>
       </div>
     );
   };
-  
-  export default RepositoryFileViewer;
+
+  return (
+    <div className="h-full overflow-auto pr-2">
+      <div className="sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <div className="flex justify-between items-center mb-2">
+          <h3 className="text-base font-bold">Repository Structure</h3>
+          <button
+            onClick={() => setShowWarnedFiles(!showWarnedFiles)}
+            className="flex items-center gap-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            aria-label={showWarnedFiles ? "Hide Excluded Files" : "Show Excluded Files"}
+          >
+            {showWarnedFiles ? (
+              <>
+                <FiEyeOff size={14} />
+                Hide Excluded Files
+              </>
+            ) : (
+              <>
+                <FiEye size={14} />
+                Show Excluded Files
+              </>
+            )}
+          </button>
+        </div>
+        <div className="space-y-3 pb-3 border-b dark:border-gray-700">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search files..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full px-3 py-2 pr-14 text-sm border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {/* Clear (X) Button - Visible Only When There is Text */}
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-7 top-2.5 text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100"
+                aria-label="Clear Search"
+              >
+                <FiX size={18} />
+              </button>
+            )}
+            {/* Search (Magnifying Glass) Icon */}
+            <FiSearch className="absolute right-3 top-2.5 text-gray-400" size={16} />
+          </div>
+          {Object.keys(fileTypes).length > 0 && (
+            <FileTypeButtons
+              fileTypes={fileTypes}
+              selectedFiles={selectedFiles}
+              onTypeSelect={handleTypeSelect}
+            />
+          )}
+        </div>
+      </div>
+      <div className="mt-3">
+        {treeStructure ? renderTree(treeStructure) : (
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Loading repository structure...
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default RepositoryFileViewer;

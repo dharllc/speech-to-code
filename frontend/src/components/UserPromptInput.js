@@ -1,4 +1,5 @@
 // Filename: frontend/src/components/UserPromptInput.js
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Mic, Square, Trash2, Copy, Check } from 'lucide-react';
 import AudioVisualizer from './AudioVisualizer';
@@ -12,6 +13,7 @@ const UserPromptInput = ({ value, onChange, tokenCount }) => {
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
 
+  // Warn user before leaving if there is unsaved input
   useEffect(() => {
     const handleBeforeUnload = (e) => {
       if (value) {
@@ -27,10 +29,12 @@ const UserPromptInput = ({ value, onChange, tokenCount }) => {
     };
   }, [value]);
 
+  // Handle changes in the textarea
   const handleInputChange = (e) => {
     onChange(e.target.value);
   };
 
+  // Start audio recording
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -47,6 +51,7 @@ const UserPromptInput = ({ value, onChange, tokenCount }) => {
     }
   };
 
+  // Stop audio recording
   const stopRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop();
@@ -56,6 +61,7 @@ const UserPromptInput = ({ value, onChange, tokenCount }) => {
     setCurrentDuration(0);
   };
 
+  // Handle the transcription once recording stops
   const handleStopRecording = async () => {
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
     chunksRef.current = [];
@@ -73,23 +79,29 @@ const UserPromptInput = ({ value, onChange, tokenCount }) => {
       });
 
       const transcribedText = response.data.text;
-      onChange(prevValue => (prevValue ? prevValue + ' ' : '') + transcribedText);
+      // Corrected onChange usage: directly concatenate the transcribed text
+      onChange((value ? value + ' ' : '') + transcribedText);
     } catch (error) {
       console.error('Error transcribing audio:', error);
     }
   };
 
+  // Clear the input field
   const clearInput = () => {
     onChange('');
   };
 
+  // Copy the current prompt to the clipboard
   const copyToClipboard = () => {
     navigator.clipboard.writeText(value).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+    }).catch(err => {
+      console.error('Failed to copy text:', err);
     });
   };
 
+  // Define button styles
   const buttonStyle = {
     base: "px-3 py-2 text-white rounded flex items-center justify-center shadow-md transition-all duration-300 hover:shadow-lg",
     red: "bg-gradient-to-r from-red-400 to-red-600",
@@ -100,7 +112,9 @@ const UserPromptInput = ({ value, onChange, tokenCount }) => {
 
   return (
     <div className="mb-4">
+      {/* Action Buttons */}
       <div className="flex mb-2 space-x-2">
+        {/* Record/Stop Button */}
         <button
           className={`${buttonStyle.base} ${isRecording ? buttonStyle.red : buttonStyle.blue}`}
           onClick={isRecording ? stopRecording : startRecording}
@@ -108,6 +122,8 @@ const UserPromptInput = ({ value, onChange, tokenCount }) => {
           {isRecording ? <Square className="mr-2" size={20} /> : <Mic className="mr-2" size={20} />}
           <span>{isRecording ? 'Stop' : 'Record'}</span>
         </button>
+
+        {/* Clear Button */}
         <button
           className={`${buttonStyle.base} ${buttonStyle.gray}`}
           onClick={clearInput}
@@ -115,6 +131,8 @@ const UserPromptInput = ({ value, onChange, tokenCount }) => {
           <Trash2 className="mr-2" size={20} />
           <span>Clear</span>
         </button>
+
+        {/* Copy Button */}
         <button 
           className={`${buttonStyle.base} ${buttonStyle.purple}`}
           onClick={copyToClipboard}
@@ -123,6 +141,8 @@ const UserPromptInput = ({ value, onChange, tokenCount }) => {
           <span>{copied ? 'Copied!' : 'Copy'}</span>
         </button>
       </div>
+
+      {/* Audio Visualizer and Timer */}
       {isRecording && (
         <div className="mb-2">
           <AudioVisualizer isRecording={isRecording} />
@@ -131,12 +151,16 @@ const UserPromptInput = ({ value, onChange, tokenCount }) => {
           </div>
         </div>
       )}
+
+      {/* Textarea for Prompt Input */}
       <textarea
         className="w-full h-32 p-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-lg resize-none border border-gray-300 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         value={value}
         onChange={handleInputChange}
         placeholder="Enter your prompt here..."
       />
+
+      {/* Token Count Display */}
       <div className="text-right mt-1 text-sm text-gray-600 dark:text-gray-400">
         Tokens: {tokenCount}
       </div>

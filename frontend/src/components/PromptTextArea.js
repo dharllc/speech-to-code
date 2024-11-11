@@ -1,6 +1,9 @@
+// File: frontend/src/components/PromptTextArea.js
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_URL } from '../config/api';
+import PropTypes from 'prop-types';
 
 const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt }) => {
   const [tokenCount, setTokenCount] = useState(0);
@@ -10,7 +13,13 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt })
 
   useEffect(() => {
     if (autoCopy && fullPrompt) {
-      navigator.clipboard.writeText(fullPrompt);
+      navigator.clipboard.writeText(fullPrompt)
+        .then(() => {
+          console.log('Prompt copied to clipboard');
+        })
+        .catch(err => {
+          console.error('Failed to copy prompt:', err);
+        });
     }
   }, [fullPrompt, autoCopy]);
 
@@ -40,9 +49,8 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt })
   const debounce = (func, wait) => {
     let timeout;
     const debouncedFunc = (...args) => {
-      const context = this;
       clearTimeout(timeout);
-      timeout = setTimeout(() => func.apply(context, args), wait);
+      timeout = setTimeout(() => func(...args), wait);
     };
     debouncedFunc.cancel = () => clearTimeout(timeout);
     return debouncedFunc;
@@ -93,6 +101,13 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt })
       </div>
     </div>
   );
+};
+
+PromptTextArea.propTypes = {
+  prompt: PropTypes.string.isRequired,
+  setPrompt: PropTypes.func.isRequired,
+  additionalTokenCount: PropTypes.number.isRequired,
+  fullPrompt: PropTypes.string.isRequired
 };
 
 export default PromptTextArea;
