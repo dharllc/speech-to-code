@@ -130,16 +130,17 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
  }, [selectedRepository, fetchTreeStructure]);
 
  const sortTreeStructure = (node) => {
-   if (node.type === 'directory' && node.children) {
-     node.children = node.children.sort((a, b) => {
-       if (a.type === 'directory' && b.type !== 'directory') return -1;
-       if (a.type !== 'directory' && b.type === 'directory') return 1;
-       return a.name.localeCompare(b.name);
-     });
-     node.children.forEach(sortTreeStructure);
-   }
-   return node;
- };
+  if (node.type === 'directory' && node.children) {
+    node.children = node.children.sort((a, b) => {
+      const aTokens = a.type === 'directory' ? (a.token_count?.total || 0) : (a.token_count || 0);
+      const bTokens = b.type === 'directory' ? (b.token_count?.total || 0) : (b.token_count || 0);
+      if (aTokens !== bTokens) return bTokens - aTokens;
+      return a.name.localeCompare(b.name);
+    });
+    node.children.forEach(sortTreeStructure);
+  }
+  return node;
+};
 
  const initializeExpandedFolders = (node, path = '') => {
    if (node.type === 'directory') {

@@ -39,6 +39,14 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount }) => {
     return debouncedFunc;
   };
 
+  const getTokenCountColor = (total) => {
+    if (total >= 100000) return 'text-red-500 dark:text-red-400 font-semibold';
+    if (total >= 50000) return 'text-yellow-500 dark:text-yellow-400 font-semibold';
+    return 'text-gray-500 dark:text-gray-400';
+  };
+
+  const totalTokens = tokenCount + additionalTokenCount;
+
   return (
     <div className="mb-4">
       <textarea
@@ -54,8 +62,10 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount }) => {
         onChange={handlePromptChange}
         placeholder="Compose your prompt here..."
       />
-      <div className="text-right mt-1 text-sm text-gray-500 dark:text-gray-400">
-        Tokens: {tokenCount + additionalTokenCount}
+      <div className="text-right mt-1 text-sm">
+        <span className={getTokenCountColor(totalTokens)}>
+          Tokens: {totalTokens}
+        </span>
       </div>
     </div>
   );
