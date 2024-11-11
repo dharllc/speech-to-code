@@ -290,27 +290,34 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   };
 
   const getFileChips = () => {
-    return selectedFiles.map(file => {
-      if (file.type === 'directory') {
+    return selectedFiles
+      .sort((a, b) => {
+        const aTokens = a.type === 'directory' ? (a.token_count?.total || 0) : (fileContents[a.path]?.tokenCount || 0);
+        const bTokens = b.type === 'directory' ? (b.token_count?.total || 0) : (fileContents[b.path]?.tokenCount || 0);
+        if (aTokens !== bTokens) return bTokens - aTokens;
+        return a.path.localeCompare(b.path);
+      })
+      .map(file => {
+        if (file.type === 'directory') {
+          return (
+            <FileChip
+              key={file.path}
+              fileName={file.path}
+              tokenCount={file.token_count}
+              onRemove={() => removeFile(file.path)}
+            />
+          );
+        }
+        const tokenCount = fileContents[file.path]?.tokenCount || 0;
         return (
           <FileChip
             key={file.path}
             fileName={file.path}
-            tokenCount={file.token_count}
+            tokenCount={tokenCount}
             onRemove={() => removeFile(file.path)}
           />
         );
-      }
-      const tokenCount = fileContents[file.path]?.tokenCount || 0;
-      return (
-        <FileChip
-          key={file.path}
-          fileName={file.path}
-          tokenCount={tokenCount}
-          onRemove={() => removeFile(file.path)}
-        />
-      );
-    });
+      });
   };
 
   return (
