@@ -1,3 +1,5 @@
+// File: frontend/src/components/PromptComposer.js
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { FiLoader } from 'react-icons/fi';
@@ -155,13 +157,13 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     setHasUnsavedChanges(true);
   };
 
-  const getFullPrompt = () => {
+  const getFullPrompt = useCallback(() => {
     const filesContent = Object.entries(fileContents)
       .map(([path, { content }]) => `File: ${path}\n\n${content}\n\n`)
       .join('');
     const treeContent = isTreeAdded ? `[Repository Structure for ${selectedRepository}]\n${treeStructure}\n\n` : '';
     return `${basePrompt}\n${treeContent}${filesContent}`.trim();
-  };
+  }, [basePrompt, fileContents, isTreeAdded, treeStructure, selectedRepository]);
 
   const clearAll = () => {
     setBasePrompt('');
@@ -355,6 +357,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
             return sum + (fileContents[file.path]?.tokenCount || 0);
           }, 0)
         }
+        fullPrompt={getFullPrompt()}
       />
       <PromptAnalysisControls
         promptLength={basePrompt.length}
@@ -384,17 +387,17 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         />
       )}
       <TranscriptionDisplay
-       transcriptionHistory={transcriptionHistory}
-       addToPrompt={addToPrompt}
-       autoAddEnabled={autoAddEnabled}
-       setAutoAddEnabled={setAutoAddEnabled}
-       preferEnhanced={preferEnhanced}
-       setPreferEnhanced={setPreferEnhanced}
-       enhancementDisabled={enhancementDisabled}
-       setEnhancementDisabled={setEnhancementDisabled}
-     />
-   </div>
- );
+        transcriptionHistory={transcriptionHistory}
+        addToPrompt={addToPrompt}
+        autoAddEnabled={autoAddEnabled}
+        setAutoAddEnabled={setAutoAddEnabled}
+        preferEnhanced={preferEnhanced}
+        setPreferEnhanced={setPreferEnhanced}
+        enhancementDisabled={enhancementDisabled}
+        setEnhancementDisabled={setEnhancementDisabled}
+      />
+    </div>
+  );
 };
 
 export default PromptComposer;
