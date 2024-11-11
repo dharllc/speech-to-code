@@ -2,8 +2,17 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_URL } from '../config/api';
 
-const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount }) => {
+const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt }) => {
   const [tokenCount, setTokenCount] = useState(0);
+  const [autoCopy, setAutoCopy] = useState(() => 
+    JSON.parse(localStorage.getItem('autoCopyEnabled') || 'false')
+  );
+
+  useEffect(() => {
+    if (autoCopy && fullPrompt) {
+      navigator.clipboard.writeText(fullPrompt);
+    }
+  }, [fullPrompt, autoCopy]);
 
   useEffect(() => {
     const debouncedUpdateTokenCount = debounce(updateTokenCount, 300);
@@ -62,10 +71,25 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount }) => {
         onChange={handlePromptChange}
         placeholder="Compose your prompt here..."
       />
-      <div className="text-right mt-1 text-sm">
-        <span className={getTokenCountColor(totalTokens)}>
+      <div className="flex justify-between items-center mt-1">
+        <div className="flex items-center">
+          <input
+            type="checkbox"
+            id="autoCopy"
+            checked={autoCopy}
+            onChange={(e) => {
+              setAutoCopy(e.target.checked);
+              localStorage.setItem('autoCopyEnabled', JSON.stringify(e.target.checked));
+            }}
+            className="mr-2"
+          />
+          <label htmlFor="autoCopy" className="text-sm text-gray-600 dark:text-gray-400">
+            Auto Copy
+          </label>
+        </div>
+        <div className={getTokenCountColor(totalTokens)}>
           Tokens: {totalTokens}
-        </span>
+        </div>
       </div>
     </div>
   );
