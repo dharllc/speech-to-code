@@ -1,44 +1,58 @@
-import React, { useMemo } from 'react';
-import { FiFolder, FiFileText } from 'react-icons/fi';
+import React from 'react';
+import { FiX, FiAlertTriangle } from 'react-icons/fi';
+import { shouldWarnAboutFile } from '../utils/fileWarnings';
 
 const FileChip = ({ fileName, tokenCount, onRemove }) => {
-  const { isFolder, displayName, fileCount } = useMemo(() => {
-    if (fileName.includes('/*')) {
-      const folderName = fileName.replace('/*', '');
-      return {
-        isFolder: true,
-        displayName: folderName,
-        fileCount: tokenCount.fileCount
-      };
+  const { warn, reason, tokenWarning } = shouldWarnAboutFile(fileName, tokenCount);
+
+  const getChipStyle = () => {
+    if (warn && !tokenWarning) {
+      return 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
     }
-    return {
-      isFolder: false,
-      displayName: fileName.split('/').pop(),
-      fileCount: null
-    };
-  }, [fileName, tokenCount]);
+    if (tokenCount > 100000) {
+      return 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
+    }
+    if (tokenCount > 50000) {
+      return 'bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800';
+    }
+    return 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300';
+  };
+
+  const getTokenStyle = () => {
+    if (tokenCount > 100000) {
+      return 'text-red-500 dark:text-red-400 font-semibold';
+    }
+    if (tokenCount > 50000) {
+      return 'text-yellow-600 dark:text-yellow-400 font-semibold';
+    }
+    return 'text-gray-500 dark:text-gray-400';
+  };
 
   return (
-    <div className="inline-flex items-center bg-blue-100 dark:bg-blue-900 rounded-full px-3 py-1 text-sm font-semibold text-blue-700 dark:text-blue-200 mr-2 mb-2">
-      {isFolder ? (
-        <>
-          <FiFolder className="mr-1" size={12} />
-          <span>{displayName}/*</span>
-          <span className="ml-1 text-xs">({fileCount} files, {tokenCount.total} tokens)</span>
-        </>
-      ) : (
-        <>
-          <FiFileText className="mr-1" size={12} />
-          <span>{displayName}</span>
-          <span className="ml-1 text-xs">({tokenCount} tokens)</span>
-        </>
+    <div className={`
+      inline-flex items-center m-1 px-2 py-1 rounded-full text-sm
+      ${getChipStyle()}
+    `}>
+      <span className="truncate max-w-xs">{fileName}</span>
+      {warn && (
+        <FiAlertTriangle 
+          className={`ml-1 ${tokenWarning ? getTokenStyle() : 'text-red-500 dark:text-red-400'}`}
+          size={14}
+          title={reason}
+        />
       )}
-      <button 
-        onClick={onRemove} 
-        className="ml-2 text-blue-500 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-100 transition-colors duration-150"
-        aria-label={`Remove ${displayName}`}
+      <span className={`mx-1 ${getTokenStyle()}`}>
+        ({tokenCount.toLocaleString()})
+      </span>
+      <button
+        onClick={onRemove}
+        className={`
+          ml-1 p-0.5 rounded-full hover:bg-red-200 dark:hover:bg-red-800
+          ${warn ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'}
+        `}
+        aria-label="Remove file"
       >
-        ×
+        <FiX size={14} />
       </button>
     </div>
   );
