@@ -156,7 +156,25 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
       const parsedTree = JSON.parse(response.data.tree);
       const sortedTree = sortTreeStructure(parsedTree);
       setTreeStructure(sortedTree);
-      initializeExpandedFolders(sortedTree);
+      
+      // Load saved state or initialize all folders as expanded
+      const savedState = localStorage.getItem(`expandedFolders-${repo}`);
+      if (savedState) {
+        setExpandedFolders(JSON.parse(savedState));
+      } else {
+        const initialState = {};
+        const initializeFolders = (node, path = '') => {
+          if (node.type === 'directory') {
+            initialState[path] = true;
+            node.children?.forEach(child => 
+              initializeFolders(child, `${path}/${node.name}`)
+            );
+          }
+        };
+        initializeFolders(sortedTree);
+        setExpandedFolders(initialState);
+        localStorage.setItem(`expandedFolders-${repo}`, JSON.stringify(initialState));
+      }
     } catch (error) {
       console.error('Failed to fetch tree structure:', error);
     }
@@ -168,28 +186,25 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     }
   }, [selectedRepository, fetchTreeStructure]);
 
+  const toggleFolder = (path) => {
+    const newState = {
+      ...expandedFolders,
+      [path]: !expandedFolders[path]
+    };
+    setExpandedFolders(newState);
+    localStorage.setItem(`expandedFolders-${selectedRepository}`, JSON.stringify(newState));
+  };
+
   const sortTreeStructure = (node) => {
     if (node.type === 'directory' && node.children) {
       node.children = node.children.sort((a, b) => {
-        const aTokens = a.type === 'directory' ? (a.token_count?.total || 0) : (a.token_count || 0);
-        const bTokens = b.type === 'directory' ? (b.token_count?.total || 0) : (b.token_count || 0);
-        if (aTokens !== bTokens) return bTokens - aTokens;
-        return a.name.localeCompare(b.name);
+        const aTokens = a.token_count || 0;
+        const bTokens = b.token_count || 0;
+        return bTokens - aTokens;
       });
       node.children.forEach(sortTreeStructure);
     }
     return node;
-  };
-
-  const initializeExpandedFolders = (node, path = '') => {
-    if (node.type === 'directory') {
-      setExpandedFolders(prev => ({ ...prev, [path]: true }));
-      node.children.forEach(child => initializeExpandedFolders(child, `${path}/${node.name}`));
-    }
-  };
-
-  const toggleFolder = (path) => {
-    setExpandedFolders(prev => ({ ...prev, [path]: !prev[path] }));
   };
 
   const selectFolder = (node, path) => {

@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trees, Trash2, Mic, Square, Copy, Check, ArrowRight } from 'lucide-react';
+import { Trees, Trash2, Mic, Square, Copy, Check, ArrowRight, Files } from 'lucide-react';
 import AudioVisualizer from './AudioVisualizer';
 
-const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanceTranscription, setStatus, prompt, setUserPrompt }) => {
+const PromptActions = ({ addTreeStructure, clearPrompt, clearFiles, setTranscription, enhanceTranscription, setStatus, prompt, setUserPrompt }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [currentDuration, setCurrentDuration] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -146,12 +146,15 @@ const PromptActions = ({ addTreeStructure, clearPrompt, setTranscription, enhanc
 
   return (
     <div className="mb-2">
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
         <button className={`${buttonStyle.base} ${buttonStyle.green} min-w-0`} onClick={addTreeStructure} title="Add Tree Structure (^T)">
           <Trees className="mr-2" size={20} /><span className="truncate">Tree</span>
         </button>
-        <button className={`${buttonStyle.base} ${buttonStyle.red} min-w-0`} onClick={clearPrompt} title="Clear Prompt (^Z)">
-          <Trash2 className="mr-2" size={20} /><span className="truncate">Clear</span>
+        <button className={`${buttonStyle.base} ${buttonStyle.red} min-w-0`} onClick={clearFiles} title="Clear Files">
+          <Files className="mr-2" size={20} /><span className="truncate">Files</span>
+        </button>
+        <button className={`${buttonStyle.base} ${buttonStyle.red} min-w-0`} onClick={clearPrompt} title="Clear All (^Z)">
+          <Trash2 className="mr-2" size={20} /><span className="truncate">All</span>
         </button>
         <button className={`${buttonStyle.base} ${isRecording ? buttonStyle.red : buttonStyle.blue} min-w-0`} onClick={isRecording ? handleStopRecording : handleStartRecording} title={`${isRecording ? 'Stop' : 'Start'} Recording (^R)`}>
           {isRecording ? <Square className="mr-2" size={20} /> : <Mic className="mr-2" size={20} />}<span className="truncate">{isRecording ? 'Stop' : 'Record'}</span>

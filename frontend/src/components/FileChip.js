@@ -2,7 +2,7 @@ import React from 'react';
 import { FiX, FiAlertTriangle } from 'react-icons/fi';
 import { shouldWarnAboutFile } from '../utils/fileWarnings';
 
-const FileChip = ({ fileName, tokenCount, onRemove }) => {
+const FileChip = ({ fileName, tokenCount, onRemove, isRepositoryTree }) => {
   const { warn, reason, tokenWarning } = shouldWarnAboutFile(fileName, tokenCount);
 
   const getChipStyle = () => {
@@ -14,6 +14,9 @@ const FileChip = ({ fileName, tokenCount, onRemove }) => {
     }
     if (tokenCount > 50000) {
       return 'bg-yellow-50 text-yellow-700 border border-yellow-200 dark:bg-yellow-900/20 dark:text-yellow-300 dark:border-yellow-800';
+    }
+    if (isRepositoryTree) {
+      return 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300';
     }
     return 'bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-300';
   };
