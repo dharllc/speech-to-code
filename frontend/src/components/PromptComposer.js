@@ -178,6 +178,16 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     lastPromptRef.current = '';
   };
 
+  const clearFiles = () => {
+    setFileContents({});
+    setIsTreeAdded(false);
+    setTreeTokenCount(0);
+    setFileSuggestions(null);
+    selectedFiles.forEach(file => onFileRemove(file.path));
+    setAddedBatches([]);
+    setHasUnsavedChanges(true);
+  };
+
   const addToPrompt = useCallback((text) => {
     if (!text) return;
     setBasePrompt(prev => prev ? `${prev}\n${text}` : text);
@@ -328,6 +338,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       <PromptActions
         addTreeStructure={addTreeStructure}
         clearPrompt={clearAll}
+        clearFiles={clearFiles}
         setTranscription={text => text && enhanceTranscription(text)}
         enhanceTranscription={enhanceTranscription}
         setStatus={setStatus}
