@@ -354,6 +354,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
             fileName="Repository Structure"
             tokenCount={treeTokenCount}
             onRemove={removeTreeStructure}
+            isRepositoryTree={true}
           />
         )}
         {getFileChips()}
