@@ -11,6 +11,8 @@ const PromptActions = ({ addTreeStructure, clearPrompt, clearFiles, setTranscrip
   const chunksRef = useRef([]);
   const timerRef = useRef(null);
   const keyHandlerBusyRef = useRef(false);
+  const durationRef = useRef(0);
+  const startTimeRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -53,6 +55,8 @@ const PromptActions = ({ addTreeStructure, clearPrompt, clearFiles, setTranscrip
   const handleStartRecording = async () => {
     try {
       chunksRef.current = [];
+      durationRef.current = 0;
+      startTimeRef.current = Date.now();
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
       
@@ -65,7 +69,11 @@ const PromptActions = ({ addTreeStructure, clearPrompt, clearFiles, setTranscrip
       mediaRecorderRef.current.start(100); // Record in 100ms chunks
       setIsRecording(true);
       setStatus('Recording...');
-      timerRef.current = setInterval(() => setCurrentDuration(prev => prev + 1), 1000);
+      timerRef.current = setInterval(() => {
+        const newDuration = Math.floor((Date.now() - startTimeRef.current) / 1000);
+        durationRef.current = newDuration;
+        setCurrentDuration(newDuration);
+      }, 100);
     } catch (err) {
       console.error("Error accessing microphone:", err);
       setStatus('Error accessing microphone');
@@ -73,9 +81,13 @@ const PromptActions = ({ addTreeStructure, clearPrompt, clearFiles, setTranscrip
   };
 
   const handleStopRecording = () => {
-    const duration = currentDuration;
+    if (!mediaRecorderRef.current || mediaRecorderRef.current.state !== 'recording') return;
+
+    const duration = (Date.now() - startTimeRef.current) / 1000;
+    console.log('Actual recording duration:', duration);
     
-    if (mediaRecorderRef.current?.state === 'recording') {
+    // Add a small delay before stopping to ensure we have enough data
+    setTimeout(() => {
       mediaRecorderRef.current.stop();
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       setIsRecording(false);
@@ -84,21 +96,34 @@ const PromptActions = ({ addTreeStructure, clearPrompt, clearFiles, setTranscrip
 
       // Change 1.75 to another value to set a minimum audio file length to process a transcription
       if (duration < 1.75) {
+        console.log('Recording too short. Duration:', duration);
         setStatus('Recording must be at least 2 seconds');
         setTimeout(() => setStatus(''), 3000);
         chunksRef.current = [];
         return;
       }
 
-      setTimeout(() => processRecording(), 100); // Give time for final chunks
-    }
+      // Add a longer delay for processing to ensure all chunks are collected
+      setTimeout(() => {
+        if (chunksRef.current.length === 0) {
+          console.log('No audio chunks available after recording');
+          return;
+        }
+        console.log('Processing recording with', chunksRef.current.length, 'chunks');
+        processRecording();
+      }, 300); // Increased from 100ms to 300ms
+    }, 100);
   };
 
   const processRecording = async () => {
-    if (chunksRef.current.length === 0) return;
+    if (chunksRef.current.length === 0) {
+      console.log('No audio chunks available for processing');
+      return;
+    }
     
     setStatus('Transcribing...');
     const audioBlob = new Blob(chunksRef.current, { type: 'audio/webm' }); // Changed to webm
+    console.log('Audio blob size:', audioBlob.size);
     chunksRef.current = [];
     
     try {
@@ -112,7 +137,11 @@ const PromptActions = ({ addTreeStructure, clearPrompt, clearFiles, setTranscrip
         body: formData
       });
       
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        const error = await response.text();
+        console.error('Transcription error:', error);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
       setTranscription(data.text);
     } catch (error) {
