@@ -63,10 +63,10 @@ const SettingsPanel = ({
         onClick={e => e.stopPropagation()}
       >
         <Toggle
-          enabled={isAutoAnalyzeEnabled}
-          onToggle={onToggleAutoAnalyze}
-          label="Auto-analyze prompt"
-          description="Search for files in the selected repository that are relevant to your prompt"
+          enabled={isAutoAddEnabled}
+          onToggle={onToggleAutoAdd}
+          label="Auto-add transcriptions"
+          description="Automatically add new transcriptions to the prompt text"
         />
         <Toggle
           enabled={isAutoCopyEnabled}
@@ -75,16 +75,16 @@ const SettingsPanel = ({
           description="Copy the prompt to your clipboard every time it's updated"
         />
         <Toggle
+          enabled={isAutoAnalyzeEnabled}
+          onToggle={onToggleAutoAnalyze}
+          label="Auto-analyze prompt"
+          description="Search for files in the selected repository that are relevant to your prompt"
+        />
+        <Toggle
           enabled={isEnhancementEnabled}
           onToggle={onToggleEnhancement}
           label="Enhance transcriptions"
           description="Improve the readability of transcriptions"
-        />
-        <Toggle
-          enabled={isAutoAddEnabled}
-          onToggle={onToggleAutoAdd}
-          label="Auto-add transcriptions"
-          description="Automatically add new transcriptions to the prompt text"
         />
       </div>
     </div>,
