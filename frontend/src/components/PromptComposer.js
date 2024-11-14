@@ -26,10 +26,16 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   const [isAutoAnalyzeEnabled, setIsAutoAnalyzeEnabled] = useState(() => 
     JSON.parse(localStorage.getItem('autoAnalyzeEnabled') || 'false')
   );
-  const [addedBatches, setAddedBatches] = useState([]);
-  const [autoAddEnabled, setAutoAddEnabled] = useState(() => 
+  const [isAutoCopyEnabled, setIsAutoCopyEnabled] = useState(() => 
+    JSON.parse(localStorage.getItem('autoCopyEnabled') || 'false')
+  );
+  const [isEnhancementEnabled, setIsEnhancementEnabled] = useState(() => 
+    !JSON.parse(localStorage.getItem('enhancementDisabled') || 'false')
+  );
+  const [isAutoAddEnabled, setIsAutoAddEnabled] = useState(() => 
     JSON.parse(localStorage.getItem('autoAddEnabled') || 'false')
   );
+  const [addedBatches, setAddedBatches] = useState([]);
   const [preferEnhanced, setPreferEnhanced] = useState(() => 
     JSON.parse(localStorage.getItem('preferEnhanced') || 'true')
   );
@@ -42,13 +48,22 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
 
   useEffect(() => {
     localStorage.setItem('autoAnalyzeEnabled', JSON.stringify(isAutoAnalyzeEnabled));
-  }, [isAutoAnalyzeEnabled]);
+    localStorage.setItem('autoCopyEnabled', JSON.stringify(isAutoCopyEnabled));
+    localStorage.setItem('enhancementDisabled', JSON.stringify(!isEnhancementEnabled));
+    localStorage.setItem('isAutoAddEnabled', JSON.stringify(isAutoAddEnabled));
+  }, [isAutoAnalyzeEnabled, isAutoCopyEnabled, isEnhancementEnabled, isAutoAddEnabled]);
 
   useEffect(() => {
-    localStorage.setItem('autoAddEnabled', JSON.stringify(autoAddEnabled));
+    if (isAutoCopyEnabled && basePrompt) {
+      navigator.clipboard.writeText(basePrompt).catch(console.error);
+    }
+  }, [basePrompt, isAutoCopyEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('isAutoAddEnabled', JSON.stringify(isAutoAddEnabled));
     localStorage.setItem('preferEnhanced', JSON.stringify(preferEnhanced));
     localStorage.setItem('enhancementDisabled', JSON.stringify(enhancementDisabled));
-  }, [autoAddEnabled, preferEnhanced, enhancementDisabled]);
+  }, [isAutoAddEnabled, preferEnhanced, enhancementDisabled]);
 
   useEffect(() => {
     if (selectedRepository) fetchTreeStructure(selectedRepository);
@@ -199,20 +214,23 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     const timestamp = new Date().toISOString();
     setTranscriptionHistory(prev => [{timestamp, raw: text, enhanced: ''}, ...prev]);
 
-    if (autoAddEnabled && (!preferEnhanced || enhancementDisabled)) {
+    // Add raw text immediately if auto-add is on and enhancement is off
+    if (isAutoAddEnabled && !isEnhancementEnabled) {
       addToPrompt(text);
+      setStatus('Transcription ready');
+      return;
     }
 
-    if (enhancementDisabled) {
+    // Return if enhancement is disabled
+    if (!isEnhancementEnabled) {
       setStatus('Transcription ready');
       return;
     }
 
     setStatus('Enhancing transcription...');
-    
     try {
       const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-        model: 'gpt-4',
+        model: 'gpt-4o-mini',
         messages: [
           {
             role: 'system',
@@ -231,14 +249,15 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       });
 
       const enhancedText = response.data.choices[0].message.content;
-      
+
       setTranscriptionHistory(prev => {
         const index = prev.findIndex(item => item.timestamp === timestamp);
         if (index === -1) return prev;
         return prev.map((item, i) => i === index ? {...item, enhanced: enhancedText} : item);
       });
 
-      if (autoAddEnabled && preferEnhanced && !enhancementDisabled) {
+      // Add enhanced text if auto-add is on and enhancement is on
+      if (isAutoAddEnabled && isEnhancementEnabled) {
         addToPrompt(enhancedText);
       }
 
@@ -246,6 +265,11 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     } catch (error) {
       console.error('Error enhancing transcription:', error);
       setStatus('Error enhancing transcription');
+      
+      // Fallback to raw text if enhancement fails and auto-add is on
+      if (isAutoAddEnabled) {
+        addToPrompt(text);
+      }
     }
   };
 
@@ -377,6 +401,12 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         isAnalyzing={isAnalyzing}
         isAutoAnalyzeEnabled={isAutoAnalyzeEnabled}
         onToggleAutoAnalyze={() => setIsAutoAnalyzeEnabled(prev => !prev)}
+        isAutoCopyEnabled={isAutoCopyEnabled}
+        onToggleAutoCopy={() => setIsAutoCopyEnabled(prev => !prev)}
+        isEnhancementEnabled={isEnhancementEnabled}
+        onToggleEnhancement={() => setIsEnhancementEnabled(prev => !prev)}
+        isAutoAddEnabled={isAutoAddEnabled}
+        onToggleAutoAdd={() => setIsAutoAddEnabled(prev => !prev)}
         onManualAnalyze={() => analyzePrompt(basePrompt)}
         disabled={!selectedRepository}
       />
@@ -401,12 +431,12 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       <TranscriptionDisplay
         transcriptionHistory={transcriptionHistory}
         addToPrompt={addToPrompt}
-        autoAddEnabled={autoAddEnabled}
-        setAutoAddEnabled={setAutoAddEnabled}
+        isAutoAddEnabled={isAutoAddEnabled}
+        setIsAutoAddEnabled={setIsAutoAddEnabled}
         preferEnhanced={preferEnhanced}
         setPreferEnhanced={setPreferEnhanced}
-        enhancementDisabled={enhancementDisabled}
-        setEnhancementDisabled={setEnhancementDisabled}
+        enhancementDisabled={!isEnhancementEnabled}
+        setEnhancementDisabled={setIsEnhancementEnabled}
       />
     </div>
   );
