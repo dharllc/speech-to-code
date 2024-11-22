@@ -94,7 +94,16 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
             if (!newContents[subFile.path]) {
               try {
                 const response = await axios.get(`${API_URL}/file_content?repository=${selectedRepository}&path=${subFile.path}`);
-                newContents[subFile.path] = { content: response.data.content, tokenCount: response.data.token_count };
+                if (response.data.is_binary) {
+                  console.log(`Skipping binary file: ${subFile.path}`);
+                  newContents[subFile.path] = { content: '', tokenCount: 0, isBinary: true };
+                } else {
+                  newContents[subFile.path] = { 
+                    content: response.data.content, 
+                    tokenCount: response.data.token_count,
+                    isBinary: false 
+                  };
+                }
               } catch (error) {
                 console.error(`Failed to fetch content for ${subFile.path}:`, error);
               }
@@ -103,7 +112,16 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         } else if (!newContents[file.path]) {
           try {
             const response = await axios.get(`${API_URL}/file_content?repository=${selectedRepository}&path=${file.path}`);
-            newContents[file.path] = { content: response.data.content, tokenCount: response.data.token_count };
+            if (response.data.is_binary) {
+              console.log(`Skipping binary file: ${file.path}`);
+              newContents[file.path] = { content: '', tokenCount: 0, isBinary: true };
+            } else {
+              newContents[file.path] = { 
+                content: response.data.content, 
+                tokenCount: response.data.token_count,
+                isBinary: false 
+              };
+            }
           } catch (error) {
             console.error(`Failed to fetch content for ${file.path}:`, error);
           }

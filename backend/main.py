@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
-from utils.tree_structure import get_tree_structure
+from utils.tree_structure import get_tree_structure, should_skip_token_count
 import os, json, tiktoken
 from dotenv import load_dotenv, set_key
 from pydantic import BaseModel
@@ -89,23 +89,56 @@ async def root():
     return {"message": "Welcome to Speech-to-Code!"}
 
 def count_tokens_for_file(file_path):
+    # Import the should_skip_token_count function
+    from utils.tree_structure import should_skip_token_count
+    
+    # First check if we should skip this file
+    if should_skip_token_count(file_path):
+        print(f"Skipping token count for binary/media file: {file_path}")
+        return 0
+        
+    # Only try to read the file if it's not a binary/media file
     try:
+        # Try to read a small portion first to verify it's text
+        with open(file_path, 'rb') as f:
+            sample = f.read(1024)  # Read first 1KB
+            try:
+                sample.decode('utf-8')
+            except UnicodeDecodeError:
+                print(f"File appears to be binary, skipping: {file_path}")
+                return 0
+        
+        # If we get here, it's probably a text file
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
             content = file.read()
-        encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
-        return len(encoding.encode(content))
+            if not content.strip():  # Skip empty files
+                return 0
+            encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
+            return len(encoding.encode(content))
     except Exception as e:
         print(f"Error counting tokens for {file_path}: {str(e)}")
         return 0
 
 def update_token_counts(node, base_path):
     full_path = os.path.join(base_path, node['path'])
+    
+    # First check if this is a file we should skip
+    if node['type'] == 'file' and should_skip_token_count(full_path):
+        node['token_count'] = 0
+        node['skip_token_count'] = True
+        print(f"Skipping file: {full_path}")
+        return
+        
     if node['type'] == 'file':
         node['token_count'] = count_tokens_for_file(full_path)
+        node['skip_token_count'] = False
     else:
+        total_tokens = 0
         for child in node.get('children', []):
             update_token_counts(child, base_path)
-        node['token_count'] = sum(child['token_count'] for child in node.get('children', []))
+            if not child.get('skip_token_count', False):
+                total_tokens += child.get('token_count', 0)
+        node['token_count'] = total_tokens
 
 @app.get("/tree")
 async def get_tree(background_tasks: BackgroundTasks, repository: str = Query(..., description="The name of the repository")):
@@ -132,15 +165,35 @@ async def get_directories():
 async def get_file_content(repository: str = Query(...), path: str = Query(...)):
     file_path = os.path.join(REPO_PATH, repository, path)
     print(f"Attempting to read file: {file_path}")
+    
     if not os.path.exists(file_path):
         print(f"File not found: {file_path}")
         raise HTTPException(status_code=404, detail=f"File not found: {path}")
+    
+    # Check if this is a binary/media file
+    if should_skip_token_count(file_path):
+        print(f"Binary/media file, returning without counting tokens: {file_path}")
+        return {"content": "", "token_count": 0, "is_binary": True}
+    
     try:
+        # Try to read a small portion first to verify it's text
+        with open(file_path, 'rb') as f:
+            sample = f.read(1024)  # Read first 1KB
+            try:
+                sample.decode('utf-8')
+            except UnicodeDecodeError:
+                print(f"File appears to be binary, skipping: {file_path}")
+                return {"content": "", "token_count": 0, "is_binary": True}
+        
+        # If we get here, it's probably a text file
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
             content = file.read()
-        token_count = len(tiktoken.encoding_for_model("gpt-3.5-turbo").encode(content))
-        print(f"Successfully read file: {file_path}")
-        return {"content": content, "token_count": token_count}
+            if not content.strip():  # Empty file
+                return {"content": "", "token_count": 0}
+                
+            token_count = len(tiktoken.encoding_for_model("gpt-3.5-turbo").encode(content))
+            print(f"Successfully read file: {file_path}")
+            return {"content": content, "token_count": token_count}
     except Exception as e:
         print(f"Error reading file {file_path}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
