@@ -28,18 +28,22 @@ const WARNING_PATTERNS = {
   ]
 };
 
+const formatNumber = (num) => {
+  return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+};
+
 const shouldWarnAboutFile = (name, type, tokenCount = 0) => {
   if (tokenCount > 100000) {
-    return { warn: true, reason: 'Large file (>100k tokens)' };
+    return { warn: true, reason: 'Large file (>100k tokens)', tokenWarning: true };
   }
   
   if (type === 'file') {
     if (WARNING_PATTERNS.files.includes(name)) {
-      return { warn: true, reason: 'System/Configuration file' };
+      return { warn: true, reason: 'System/Configuration file', skipTokenCount: true };
     }
     const ext = name.includes('.') ? '.' + name.split('.').pop().toLowerCase() : null;
     if (ext && WARNING_PATTERNS.extensions.includes(ext)) {
-      return { warn: true, reason: 'Binary/Media file' };
+      return { warn: true, reason: 'Binary/Media file', skipTokenCount: true };
     }
   }
   
@@ -360,8 +364,8 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
             warning.warn ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-gray-400'
           }`}>
             {node.type === 'directory' 
-              ? `${node.item_count || 0} items${node.token_count ? `, ${node.token_count} tokens` : ''}`
-              : node.token_count ? `${node.token_count} tokens` : ''}
+              ? `${formatNumber(node.item_count || 0)} items${node.token_count && !node.skip_token_count ? `, ${formatNumber(node.token_count)} tokens` : ''}`
+              : node.token_count && !node.skip_token_count ? `${formatNumber(node.token_count)} tokens` : ''}
           </span>
         </div>
         {node.type === 'directory' && isExpanded && (

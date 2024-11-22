@@ -2,10 +2,13 @@ import React from 'react';
 import { FiX, FiAlertTriangle } from 'react-icons/fi';
 import { shouldWarnAboutFile } from '../utils/fileWarnings';
 
-const FileChip = ({ fileName, tokenCount, onRemove, isRepositoryTree }) => {
+const FileChip = ({ fileName, tokenCount, onRemove, isRepositoryTree, isBinary }) => {
   const { warn, reason, tokenWarning } = shouldWarnAboutFile(fileName, tokenCount);
 
   const getChipStyle = () => {
+    if (isBinary) {
+      return 'bg-gray-50 text-gray-700 border border-gray-200 dark:bg-gray-900/20 dark:text-gray-300 dark:border-gray-800';
+    }
     if (warn && !tokenWarning) {
       return 'bg-red-50 text-red-700 border border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800';
     }
@@ -22,6 +25,9 @@ const FileChip = ({ fileName, tokenCount, onRemove, isRepositoryTree }) => {
   };
 
   const getTokenStyle = () => {
+    if (isBinary) {
+      return 'text-gray-500 dark:text-gray-400';
+    }
     if (tokenCount > 100000) {
       return 'text-red-500 dark:text-red-400 font-semibold';
     }
@@ -37,7 +43,7 @@ const FileChip = ({ fileName, tokenCount, onRemove, isRepositoryTree }) => {
       ${getChipStyle()}
     `}>
       <span className="truncate max-w-xs">{fileName}</span>
-      {warn && (
+      {warn && !isBinary && (
         <FiAlertTriangle 
           className={`ml-1 ${tokenWarning ? getTokenStyle() : 'text-red-500 dark:text-red-400'}`}
           size={14}
@@ -45,7 +51,7 @@ const FileChip = ({ fileName, tokenCount, onRemove, isRepositoryTree }) => {
         />
       )}
       <span className={`mx-1 ${getTokenStyle()}`}>
-        ({tokenCount.toLocaleString()})
+        {isBinary ? '(binary)' : `(${tokenCount.toLocaleString()})`}
       </span>
       <button
         onClick={onRemove}
