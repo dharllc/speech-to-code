@@ -157,8 +157,12 @@ async def get_tree(background_tasks: BackgroundTasks, repository: str = Query(..
 @app.get("/directories")
 async def get_directories():
     try:
-        return {"directories": [d for d in os.listdir(REPO_PATH) if os.path.isdir(os.path.join(REPO_PATH, d))]}
+        directories = [d for d in os.listdir(REPO_PATH) if os.path.isdir(os.path.join(REPO_PATH, d))]
+        print(f"REPO_PATH: {REPO_PATH}")
+        print(f"Found directories: {directories}")
+        return {"directories": directories}
     except Exception as e:
+        print(f"Error in get_directories: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.get("/file_content")
