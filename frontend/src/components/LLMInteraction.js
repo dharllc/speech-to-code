@@ -1,89 +1,69 @@
+// Filename: frontend/src/components/LLMInteraction.js
+
 import React, { useState, useEffect, useRef } from 'react';
-import { sendLLMRequest, getAvailableModels } from '../services/llmService';
 import axios from 'axios';
+import { sendLLMRequest, getAvailableModels } from '../services/llmService';
+import { API_URL } from '../config/api';
+
+import SystemPromptSelector from './SystemPromptSelector';
 import SystemPromptDisplay from './SystemPromptDisplay';
 import UserPromptInput from './UserPromptInput';
 import LanguageModelSelector from './LanguageModelSelector';
 import ConversationDisplay from './ConversationDisplay';
 import CostDisplay from './CostDisplay';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { API_URL } from '../config/api';
 
 const LLMInteraction = ({ initialPrompt }) => {
-  const [steps, setSteps] = useState([]);
-  const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  const [userPrompt, setUserPrompt] = useState(initialPrompt || '');
-  const [temperature, setTemperature] = useState(0.7);
-  const [conversationHistory, setConversationHistory] = useState([]);
-  const [loading, setLoading] = useState(false);
+  // 1) System Prompt-Related State
+  const [prompts, setPrompts] = useState([]);               // fetched from /system_prompts
+  const [activePromptId, setActivePromptId] = useState(null); // which prompt is in use?
+
+  // 2) Model + LLM-Related State
   const [availableModels, setAvailableModels] = useState({});
+  const [temperature, setTemperature] = useState(0.7);
+
+  // 3) Conversation State
+  const [conversationHistory, setConversationHistory] = useState([]);
+  const [userPrompt, setUserPrompt] = useState(initialPrompt || '');
+  const [loading, setLoading] = useState(false);
+
+  // 4) Token + Cost Tracking
   const [totalCost, setTotalCost] = useState(0);
   const [totalTokens, setTotalTokens] = useState({ input: 0, output: 0 });
-  const [elapsedTime, setElapsedTime] = useState(0);
   const [systemPromptTokens, setSystemPromptTokens] = useState(0);
   const [userPromptTokens, setUserPromptTokens] = useState(0);
+
+  // 5) Misc
+  const [elapsedTime, setElapsedTime] = useState(0);
   const [feasibilityScore, setFeasibilityScore] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const timerRef = useRef(null);
 
+  // =====================
+  //    INITIAL LOAD
+  // =====================
   useEffect(() => {
-    fetchSteps();
+    fetchPrompts();
     fetchAvailableModels();
   }, []);
 
-  useEffect(() => {
-    if (loading) {
-      timerRef.current = setInterval(() => {
-        setElapsedTime((prevTime) => prevTime + 0.1);
-      }, 100);
-    } else {
-      clearInterval(timerRef.current);
-      setElapsedTime(0);
-    }
-
-    return () => clearInterval(timerRef.current);
-  }, [loading]);
-
-  useEffect(() => {
-    if (steps[currentStepIndex]) {
-      countTokens(steps[currentStepIndex].content, setSystemPromptTokens);
-    }
-  }, [steps, currentStepIndex]);
-
-  useEffect(() => {
-    countTokens(userPrompt, setUserPromptTokens);
-  }, [userPrompt]);
-
-  useEffect(() => {
-    const handleBeforeUnload = (event) => {
-      if (hasUnsavedChanges) {
-        event.preventDefault();
-        event.returnValue = '';
-      }
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [hasUnsavedChanges]);
-
-  const fetchSteps = async () => {
+  // =====================
+  //    FETCH PROMPTS
+  // =====================
+  const fetchPrompts = async () => {
     try {
       const response = await axios.get(`${API_URL}/system_prompts`);
-      setSteps(
-        response.data.sort(
-          (a, b) =>
-            parseInt(a.step.split(' ')[1]) - parseInt(b.step.split(' ')[1])
-        )
-      );
+      // Instead of sorting by step, just store them as-is:
+      setPrompts(response.data);
     } catch (error) {
-      console.error('Failed to fetch steps:', error);
+      console.error('Failed to fetch system prompts:', error);
     }
   };
 
+  // =====================
+  //    FETCH MODELS
+  // =====================
   const fetchAvailableModels = async () => {
     try {
       const models = await getAvailableModels();
@@ -93,10 +73,66 @@ const LLMInteraction = ({ initialPrompt }) => {
     }
   };
 
+  // =====================
+  //   TIME TRACKING
+  // =====================
+  useEffect(() => {
+    if (loading) {
+      timerRef.current = setInterval(() => {
+        setElapsedTime((prevTime) => prevTime + 0.1);
+      }, 100);
+    } else {
+      clearInterval(timerRef.current);
+      setElapsedTime(0);
+    }
+    return () => clearInterval(timerRef.current);
+  }, [loading]);
+
+  // =====================
+  // TOKEN COUNT (System Prompt & User Prompt)
+  // =====================
+  useEffect(() => {
+    // If there is an active prompt, count tokens for it
+    const activePrompt = prompts.find((p) => p.id === activePromptId);
+    if (activePrompt?.content) {
+      countTokens(activePrompt.content, setSystemPromptTokens);
+    } else {
+      setSystemPromptTokens(0);
+    }
+  }, [prompts, activePromptId]);
+
+  useEffect(() => {
+    // Count tokens for user prompt
+    if (userPrompt) {
+      countTokens(userPrompt, setUserPromptTokens);
+    } else {
+      setUserPromptTokens(0);
+    }
+  }, [userPrompt]);
+
+  // =====================
+  // PREVENT UNINTENDED UNLOAD
+  // =====================
+  useEffect(() => {
+    const handleBeforeUnload = (event) => {
+      if (hasUnsavedChanges) {
+        event.preventDefault();
+        event.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges]);
+
+  // =====================
+  // UTILITY: Count Tokens
+  // =====================
   const countTokens = async (text, setTokens) => {
     try {
       const response = await axios.post(`${API_URL}/count_tokens`, {
-        text: text,
+        text,
         model: 'gpt-3.5-turbo'
       });
       setTokens(response.data.count);
@@ -106,92 +142,128 @@ const LLMInteraction = ({ initialPrompt }) => {
     }
   };
 
+  // =====================
+  //   HANDLE SUBMIT
+  // =====================
   const handleSubmit = async (model) => {
+    if (!activePromptId) {
+      console.warn('No system prompt selected!');
+      return;
+    }
+
     setLoading(true);
     setElapsedTime(0);
+
     try {
-      const currentSystemPrompt = steps[currentStepIndex].content;
+      const activePrompt = prompts.find((p) => p.id === activePromptId);
+      const currentSystemPrompt = activePrompt?.content || '';
+
       const messages = [
         { role: 'system', content: currentSystemPrompt },
         ...conversationHistory,
-        { role: 'user', content: userPrompt },
+        { role: 'user', content: userPrompt }
       ];
 
       const result = await sendLLMRequest(messages, temperature, model);
 
+      // Look for JSON output snippet in the response
       const jsonOutput = result.response.match(/```json\n([\s\S]*?)\n```/);
       if (jsonOutput && jsonOutput[1]) {
-        const parsedOutput = JSON.parse(jsonOutput[1]);
-        setFeasibilityScore(parsedOutput.feasibilityScore);
-        setQuestions(parsedOutput.questions);
+        try {
+          const parsedOutput = JSON.parse(jsonOutput[1]);
+          setFeasibilityScore(parsedOutput.feasibilityScore);
+          setQuestions(parsedOutput.questions);
+        } catch (parseErr) {
+          console.warn('Failed to parse JSON snippet:', parseErr);
+        }
       }
 
+      // Update conversation
       const newConversationHistory = [
-        { role: 'user', content: userPrompt },
-        { role: 'assistant', content: result.response },
         ...conversationHistory,
+        { role: 'user', content: userPrompt },
+        { role: 'assistant', content: result.response }
       ];
       setConversationHistory(newConversationHistory);
 
+      // Update cost & tokens
       setTotalCost((prevCost) => prevCost + result.cost);
       setTotalTokens((prevTokens) => ({
         input: prevTokens.input + result.tokenCounts.input,
         output: prevTokens.output + result.tokenCounts.output
       }));
 
+      // Clear user prompt
       setUserPrompt('');
       setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Error in LLM request:', error);
       setConversationHistory([
-        { role: 'assistant', content: 'An error occurred while processing your request.' },
-        { role: 'user', content: userPrompt },
         ...conversationHistory,
+        { role: 'assistant', content: 'An error occurred while processing your request.' }
       ]);
     }
+
     setLoading(false);
   };
 
-  const handleProceedToNextStep = () => {
-    if (currentStepIndex < steps.length - 1) {
-      setCurrentStepIndex(currentStepIndex + 1);
-    }
-  };
-
-  const handleGoBack = () => {
-    if (currentStepIndex > 0) {
-      setCurrentStepIndex(currentStepIndex - 1);
-    }
-  };
-
+  // =====================
+  //   TEMPERATURE UI
+  // =====================
   const getTemperatureColor = (temp) => {
-    if (temp <= 1) return '#34D399';
-    if (temp <= 1.5) return '#FBBF24';
-    return '#EF4444';
+    if (temp <= 1) return '#34D399';   // green
+    if (temp <= 1.5) return '#FBBF24'; // yellow
+    return '#EF4444';                 // red
   };
 
+  // =====================
+  //   FEASIBILITY COLOR
+  // =====================
   const getFeasibilityScoreColor = (score) => {
     if (score >= 90) return 'text-green-500 dark:text-green-400';
     if (score >= 50) return 'text-yellow-500 dark:text-yellow-400';
     return 'text-red-500 dark:text-red-400';
   };
 
+  // =====================
+  //  PROMPT CHANGE
+  // =====================
   const handleUserPromptChange = (newPrompt) => {
     setUserPrompt(newPrompt);
     setHasUnsavedChanges(true);
   };
 
-  const buttonStyle = {
-    base: "px-3 py-2 rounded flex items-center justify-center shadow-md transition-all duration-300 hover:shadow-lg",
-    gray: "bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200",
-    blue: "bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white"
-  };
-
+  // =====================
+  //  RENDER
+  // =====================
   return (
     <div className="container mx-auto p-6 bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
-      <h2 className="text-3xl font-bold mb-6">LLM Interaction - Step {currentStepIndex + 1}</h2>
+      <h2 className="text-3xl font-bold mb-6">LLM Interaction</h2>
+
+      {/* COST DISPLAY */}
       <CostDisplay totalCost={totalCost} totalTokens={totalTokens} />
-      <SystemPromptDisplay content={steps[currentStepIndex]?.content || ''} tokenCount={systemPromptTokens} />
+
+      {/* 1) System Prompt Selector */}
+      <SystemPromptSelector
+        prompts={prompts}
+        activePromptId={activePromptId}
+        onSelect={(id) => setActivePromptId(id)}
+      />
+
+      {/* 2) Show the Active System Prompt */}
+      {/** pass in the content from whichever prompt is active **/}
+      {(() => {
+        const activePrompt = prompts.find((p) => p.id === activePromptId);
+        const promptContent = activePrompt?.content || '';
+        return (
+          <SystemPromptDisplay
+            content={promptContent}
+            tokenCount={systemPromptTokens}
+          />
+        );
+      })()}
+
+      {/* (Optional) Feasibility Score & Questions (if your logic requires) */}
       {feasibilityScore !== null && (
         <div className="mb-4">
           <h3 className="text-xl font-semibold">Feasibility Score:</h3>
@@ -210,36 +282,23 @@ const LLMInteraction = ({ initialPrompt }) => {
           </ul>
         </div>
       )}
-      <UserPromptInput 
-        value={userPrompt} 
-        onChange={handleUserPromptChange} 
-        tokenCount={userPromptTokens} 
-      />
-      
-      <div className="flex space-x-2 mb-4">
-        <button
-          onClick={handleGoBack}
-          disabled={currentStepIndex === 0}
-          className={`${buttonStyle.base} ${buttonStyle.gray} ${currentStepIndex === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          <ArrowLeft className="mr-2" size={20} />
-          <span>Back</span>
-        </button>
-        <button
-          onClick={handleProceedToNextStep}
-          disabled={currentStepIndex >= steps.length - 1}
-          className={`${buttonStyle.base} ${buttonStyle.blue} ${currentStepIndex >= steps.length - 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          <span>Next</span>
-          <ArrowRight className="ml-2" size={20} />
-        </button>
-      </div>
 
-      <div className="mb-4">
-        <label htmlFor="temperature" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+      {/* 3) The User Prompt Input */}
+      <UserPromptInput
+        value={userPrompt}
+        onChange={handleUserPromptChange}
+        tokenCount={userPromptTokens}
+      />
+
+      {/* 4) Temperature Slider */}
+      <div className="mb-4 w-full max-w-sm">
+        <label
+          htmlFor="temperature"
+          className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+        >
           Temperature: {temperature}
         </label>
-        <div className="relative w-1/4 h-8 bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-full overflow-hidden">
+        <div className="relative h-8 bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-full overflow-hidden">
           <input
             type="range"
             id="temperature"
@@ -254,32 +313,39 @@ const LLMInteraction = ({ initialPrompt }) => {
             }}
             className="absolute w-full h-full opacity-0 cursor-pointer z-10"
           />
-          <div 
+          <div
             className="absolute top-0 left-0 h-full bg-white transition-all duration-300 ease-in-out"
-            style={{ 
+            style={{
               width: `${(temperature / 2) * 100}%`,
               backgroundColor: getTemperatureColor(temperature),
-              boxShadow: `0 0 10px ${getTemperatureColor(temperature)}`,
+              boxShadow: `0 0 10px ${getTemperatureColor(temperature)}`
             }}
           ></div>
         </div>
       </div>
-      
-      <div className="flex flex-wrap justify-between items-center mb-4">
-        <div className="w-full md:w-auto mb-2 md:mb-0">
-          <LanguageModelSelector
-            availableModels={availableModels}
-            onModelSelect={handleSubmit}
-            loading={loading}
-          />
-        </div>
+
+      {/* 5) Model Selector + Send Button(s) */}
+      <div className="mb-4">
+        <LanguageModelSelector
+          availableModels={availableModels}
+          onModelSelect={handleSubmit}
+          loading={loading}
+        />
       </div>
+
+      {/* 6) Loading Indicator (optional) */}
       {loading && (
         <div className="mt-4 p-4 bg-blue-100 dark:bg-blue-900 rounded-lg shadow-lg">
-          <p className="text-lg font-semibold text-blue-700 dark:text-blue-200">Request in progress...</p>
-          <p className="text-xl font-bold text-blue-800 dark:text-blue-100">{elapsedTime.toFixed(1)} seconds</p>
+          <p className="text-lg font-semibold text-blue-700 dark:text-blue-200">
+            Request in progress...
+          </p>
+          <p className="text-xl font-bold text-blue-800 dark:text-blue-100">
+            {elapsedTime.toFixed(1)} seconds
+          </p>
         </div>
       )}
+
+      {/* 7) Conversation History */}
       <ConversationDisplay conversationHistory={conversationHistory} />
     </div>
   );
