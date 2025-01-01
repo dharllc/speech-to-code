@@ -8,7 +8,7 @@ def should_skip_token_count(file_path):
     _, ext = os.path.splitext(file_path.lower())
     return ext in image_extensions
 
-def get_tree_structure(path, max_depth=4):
+def get_tree_structure(path, max_depth=10):
     excluded_dirs = {'node_modules', 'venv', '__pycache__', '.git'}
 
     def traverse(current_path, current_depth=0):
