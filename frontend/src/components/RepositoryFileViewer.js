@@ -11,7 +11,7 @@ import { API_URL } from '../config/api';
 const CORE_FILE_TYPES = [
   'js', 'jsx', 'ts', 'tsx', 'py', 'go', 'java', 'kt', 'rb', 'rs', 
   'cpp', 'hpp', 'c', 'h', 'json', 'css', 'scss', 'less', 'html', 
-  'htm', 'php', 'swift', 'sql'
+  'htm', 'php', 'swift', 'sql', 'yml', 'yaml', 'tf'
 ];
 
 const WARNING_PATTERNS = {

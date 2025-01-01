@@ -28,12 +28,35 @@ def count_tokens(text: str, model: str) -> int:
     return len(encoding.encode(text))
 
 async def openai_completion(model: str, messages: list, max_tokens: int, temperature: float):
-    response = openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        max_tokens=max_tokens,
-        temperature=temperature
-    )
+    # If the model name indicates an "o1" variant, it doesn't support "system" role
+    if "o1" in model.lower():
+        filtered_messages = []
+        for msg in messages:
+            if msg["role"] == "system":
+                filtered_messages.append({
+                    "role": "user",
+                    "content": f"(Originally a system prompt) {msg['content']}"
+                })
+            else:
+                filtered_messages.append(msg)
+        messages = filtered_messages
+    
+    # For "o1" models, also remember to use 'max_completion_tokens' instead of 'max_tokens', temperature=1, and remove system messages
+    if "o1" in model.lower():
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
+            # rename to match the model’s parameter requirements
+            max_completion_tokens=max_tokens,
+            temperature=1
+        )
+    else:
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature
+        )
     return response.choices[0].message['content']
 
 async def anthropic_completion(model: str, messages: list, max_tokens: int, temperature: float):
