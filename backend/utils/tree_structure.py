@@ -4,7 +4,7 @@ import json
 def should_skip_token_count(file_path):
     image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.ico', '.webp', '.svg', '.mp4', '.webm',
                        '.mov', '.wav', '.mp3', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.zip', '.tar',
-                       '.gz', '.7z', '.rar', '.exe', '.dll', '.so', '.dylib', '.class', '.o', '.obj'}
+                       '.gz', '.7z', '.rar', '.exe', '.dll', '.so', '.dylib', '.class', '.o', '.obj', '.map'}
     _, ext = os.path.splitext(file_path.lower())
     return ext in image_extensions
 
