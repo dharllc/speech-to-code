@@ -12,10 +12,10 @@ import UserPromptInput from './UserPromptInput';
 import LanguageModelSelector from './LanguageModelSelector';
 import ConversationDisplay from './ConversationDisplay';
 import CostDisplay from './CostDisplay';
+import CopyButton from './CopyButton'; // ← Added import for CopyButton
 
 // Icons (optional)
-import { ChevronDown, ChevronUp } from 'lucide-react';
-import { Loader2 } from 'lucide-react'; // or any spinner icon you prefer
+import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
 
 const LLMInteraction = ({ initialPrompt }) => {
   // 1) System Prompt-Related State
@@ -196,7 +196,10 @@ const LLMInteraction = ({ initialPrompt }) => {
       console.error('Error in LLM request:', error);
       setConversationHistory([
         ...conversationHistory,
-        { role: 'assistant', content: 'An error occurred while processing your request.' }
+        {
+          role: 'assistant',
+          content: 'An error occurred while processing your request.'
+        }
       ]);
     }
 
@@ -282,16 +285,24 @@ const LLMInteraction = ({ initialPrompt }) => {
             )}
           </div>
 
-          {/* 4) User Prompt Collapsible */}
+          {/* 4) User Prompt Collapsible (with Copy All button) */}
           <div className="border rounded-lg overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setShowUserPrompt(!showUserPrompt)}
-              className="w-full flex items-center justify-between px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-            >
-              <span className="font-semibold">User Prompt</span>
-              {showUserPrompt ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
+            {/* Header row: toggle + copy button */}
+            <div className="flex items-center justify-between bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors px-2 py-1 text-xs">
+              <button
+                type="button"
+                onClick={() => setShowUserPrompt(!showUserPrompt)}
+                className="flex items-center space-x-1 focus:outline-none"
+              >
+                <span className="font-semibold">User Prompt</span>
+                {showUserPrompt ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+              {/* "Copy All" button: copies system + user prompts */}
+              <CopyButton
+                textToCopy={`${promptContent}\n\n${userPrompt}`}
+                className="ml-2"
+              />
+            </div>
             {showUserPrompt && (
               <div className="p-2 bg-gray-50 dark:bg-gray-800">
                 <UserPromptInput
