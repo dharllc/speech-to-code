@@ -1,16 +1,7 @@
-// Filename: frontend/src/components/LanguageModelSelector.js
 import React, { useState } from 'react';
 
-const formatTokenCount = (count) => {
-  if (count >= 1000) {
-    return `${Math.round(count / 1000)}k`;
-  }
-  return count.toString();
-};
-
-const formatCost = (cost) => {
-  return Number(cost).toFixed(2);
-};
+const formatTokenCount = count => count >= 1000 ? `${Math.round(count/1000)}k` : count.toString();
+const formatCost = cost => Number(cost).toFixed(2);
 
 const LanguageModelSelector = ({ availableModels, onModelSelect, loading }) => {
   const [clickedModel, setClickedModel] = useState(null);
@@ -21,34 +12,37 @@ const LanguageModelSelector = ({ availableModels, onModelSelect, loading }) => {
   };
 
   return (
-    <div className="mb-6">
+    <div className="space-y-2">
       {Object.entries(availableModels).map(([provider, models]) => (
-        <div key={provider} className="mb-4">
-          <h3 className="text-lg font-semibold mb-2">
+        <div key={provider}>
+          <h3 className="font-semibold text-sm text-gray-400 mb-1">
             {provider.charAt(0).toUpperCase() + provider.slice(1)}
           </h3>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-1">
             {Object.entries(models).map(([model, details]) => (
               <button
                 key={model}
-                type="button"
                 onClick={() => handleModelClick(model)}
-                className={`p-2 rounded-lg text-white text-xs font-medium 
-                bg-gradient-to-r from-blue-600 to-blue-800 
-                hover:from-blue-700 hover:to-blue-900 
-                transition-all duration-200 flex flex-col items-start
-                ${clickedModel === model && loading ? 'ring-2 ring-yellow-400' : ''}
-                ${loading && clickedModel !== model ? 'opacity-50 cursor-not-allowed' : ''}
+                disabled={loading && clickedModel !== model}
+                className={`
+                  text-xs px-2 py-1.5 rounded
+                  bg-gray-800 hover:bg-gray-700
+                  border border-gray-700
+                  flex flex-col items-start
+                  ${clickedModel === model && loading ? 'ring-1 ring-yellow-400' : ''}
+                  ${loading && clickedModel !== model ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
-                disabled={loading}
               >
-                <span className="font-bold mb-1 text-sm">{model}</span>
-                <span className="text-xxs">
-                  Input: {formatTokenCount(details.input_tokens)} (${formatCost(details.input)}/1Mt)
-                </span>
-                <span className="text-xxs">
-                  Output: {formatTokenCount(details.output_tokens)} (${formatCost(details.output)}/1Mt)
-                </span>
+                <div className="flex items-center w-full justify-between">
+                  <span className="font-medium truncate">{model}</span>
+                  {loading && clickedModel === model && (
+                    <span className="ml-1 h-1.5 w-1.5 rounded-full bg-yellow-400 animate-pulse"/>
+                  )}
+                </div>
+                <div className="text-[10px] text-gray-400">
+                  {formatTokenCount(details.input_tokens)}i/${formatCost(details.input)} • 
+                  {formatTokenCount(details.output_tokens)}o/${formatCost(details.output)}
+                </div>
               </button>
             ))}
           </div>
