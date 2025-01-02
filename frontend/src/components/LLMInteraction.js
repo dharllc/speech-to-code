@@ -15,11 +15,12 @@ import CostDisplay from './CostDisplay';
 
 // Icons (optional)
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2 } from 'lucide-react'; // or any spinner icon you prefer
 
 const LLMInteraction = ({ initialPrompt }) => {
   // 1) System Prompt-Related State
-  const [prompts, setPrompts] = useState([]);                  // fetched from /system_prompts
-  const [activePromptId, setActivePromptId] = useState(null);  // which prompt is in use?
+  const [prompts, setPrompts] = useState([]);
+  const [activePromptId, setActivePromptId] = useState(null);
 
   // 2) Model + LLM-Related State
   const [availableModels, setAvailableModels] = useState({});
@@ -236,34 +237,43 @@ const LLMInteraction = ({ initialPrompt }) => {
 
   return (
     <div className="container mx-auto p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
-      <h2 className="text-2xl font-bold mb-4">LLM Interaction</h2>
+      {/* Main heading + inline loading indicator */}
+      <div className="flex items-center mb-2">
+        <h2 className="text-xl font-bold">LLM Interaction</h2>
+        {loading && (
+          <div className="flex items-center ml-4 text-sm text-blue-600 dark:text-blue-300">
+            <Loader2 className="mr-1 animate-spin" size={18} />
+            <span>Request in progress...</span>
+          </div>
+        )}
+      </div>
 
-      {/* Top section: quick summary + model selection */}
+      {/* Two-column layout */}
       <div className="flex flex-col md:flex-row md:items-start gap-4 mb-4">
-        {/* Left column: System Prompt + User Prompt in collapsible sections */}
-        <div className="flex-1 space-y-2">
-          {/* Cost Display */}
+        {/* LEFT COLUMN */}
+        <div className="flex-1 space-y-3">
+          {/* 1) Slimmer Cost Display */}
           <CostDisplay totalCost={totalCost} totalTokens={totalTokens} />
 
-          {/* System Prompt Selector (always visible) */}
+          {/* 2) System Prompt Selector */}
           <SystemPromptSelector
             prompts={prompts}
             activePromptId={activePromptId}
             onSelect={(id) => setActivePromptId(id)}
           />
 
-          {/* Toggleable System Prompt Display */}
+          {/* 3) System Prompt Collapsible */}
           <div className="border rounded-lg overflow-hidden">
             <button
               type="button"
               onClick={() => setShowSystemPrompt(!showSystemPrompt)}
-              className="w-full flex items-center justify-between px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              className="w-full flex items-center justify-between px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
             >
               <span className="font-semibold">System Prompt</span>
-              {showSystemPrompt ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              {showSystemPrompt ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             {showSystemPrompt && (
-              <div className="p-3 bg-gray-50 dark:bg-gray-800">
+              <div className="p-2 bg-gray-50 dark:bg-gray-800">
                 <SystemPromptDisplay
                   content={promptContent}
                   tokenCount={systemPromptTokens}
@@ -272,18 +282,18 @@ const LLMInteraction = ({ initialPrompt }) => {
             )}
           </div>
 
-          {/* Toggleable User Prompt Input */}
+          {/* 4) User Prompt Collapsible */}
           <div className="border rounded-lg overflow-hidden">
             <button
               type="button"
               onClick={() => setShowUserPrompt(!showUserPrompt)}
-              className="w-full flex items-center justify-between px-3 py-2 text-sm bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              className="w-full flex items-center justify-between px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
             >
               <span className="font-semibold">User Prompt</span>
-              {showUserPrompt ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              {showUserPrompt ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
             </button>
             {showUserPrompt && (
-              <div className="p-3 bg-gray-50 dark:bg-gray-800">
+              <div className="p-2 bg-gray-50 dark:bg-gray-800">
                 <UserPromptInput
                   value={userPrompt}
                   onChange={handleUserPromptChange}
@@ -293,15 +303,15 @@ const LLMInteraction = ({ initialPrompt }) => {
             )}
           </div>
 
-          {/* Temperature Slider */}
-          <div className="mb-2 w-full max-w-sm">
+          {/* 5) Temperature Slider */}
+          <div className="mb-1 w-full max-w-sm">
             <label
               htmlFor="temperature"
-              className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5"
             >
-              Temperature: {temperature}
+              Temperature: {temperature.toFixed(2)}
             </label>
-            <div className="relative h-8 bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-full overflow-hidden">
+            <div className="relative h-5 bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-full overflow-hidden">
               <input
                 type="range"
                 id="temperature"
@@ -321,25 +331,25 @@ const LLMInteraction = ({ initialPrompt }) => {
                 style={{
                   width: `${(temperature / 2) * 100}%`,
                   backgroundColor: getTemperatureColor(temperature),
-                  boxShadow: `0 0 10px ${getTemperatureColor(temperature)}`
+                  boxShadow: `0 0 5px ${getTemperatureColor(temperature)}`
                 }}
               ></div>
             </div>
           </div>
 
-          {/* Feasibility Score & Questions (optional) */}
+          {/* 6) Feasibility & Questions */}
           {feasibilityScore !== null && (
-            <div className="mb-2">
-              <h3 className="text-sm font-semibold">Feasibility Score:</h3>
-              <p className={`text-md font-bold ${getFeasibilityScoreColor(feasibilityScore)}`}>
+            <div className="text-xs">
+              <span className="font-semibold">Feasibility Score:</span>{' '}
+              <span className={`font-bold ${getFeasibilityScoreColor(feasibilityScore)}`}>
                 {feasibilityScore}
-              </p>
+              </span>
             </div>
           )}
           {questions.length > 0 && (
-            <div className="mb-2">
-              <h3 className="text-sm font-semibold">Questions:</h3>
-              <ul className="list-disc pl-5 text-sm text-gray-800 dark:text-gray-200">
+            <div className="text-xs">
+              <span className="font-semibold">Questions:</span>
+              <ul className="list-disc pl-5 mt-1">
                 {questions.map((question, index) => (
                   <li key={index}>{question}</li>
                 ))}
@@ -348,22 +358,21 @@ const LLMInteraction = ({ initialPrompt }) => {
           )}
         </div>
 
-        {/* Right column: Model Selector (so the user can quickly click to run the request) */}
+        {/* RIGHT COLUMN */}
         <div className="md:w-1/3 flex-shrink-0">
-          <h3 className="text-lg font-semibold mb-1">Models</h3>
+          <h3 className="text-sm font-semibold mb-1">Models</h3>
           <LanguageModelSelector
             availableModels={availableModels}
             onModelSelect={handleSubmit}
             loading={loading}
           />
 
-          {/* Optional: If you want, you can display the loading indicator right below the models */}
+          {/* Loading details (elapsed time) */}
           {loading && (
-  <div className="fixed bottom-4 right-4 bg-blue-900 text-blue-100 px-3 py-2 rounded-lg shadow-lg flex items-center space-x-2">
-    <div className="h-2 w-2 bg-blue-400 rounded-full animate-pulse"/>
-    <span className="text-sm font-medium">{elapsedTime.toFixed(1)}s</span>
-  </div>
-)}
+            <div className="mt-2 text-sm bg-blue-50 dark:bg-blue-900 rounded-md px-2 py-1 text-blue-700 dark:text-blue-200">
+              Elapsed: {elapsedTime.toFixed(1)}s
+            </div>
+          )}
         </div>
       </div>
 
