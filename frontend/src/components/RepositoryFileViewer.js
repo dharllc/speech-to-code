@@ -202,9 +202,10 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
   const sortTreeStructure = (node) => {
     if (node.type === 'directory' && node.children) {
       node.children = node.children.sort((a, b) => {
-        const aTokens = a.token_count || 0;
-        const bTokens = b.token_count || 0;
-        return bTokens - aTokens;
+        if (a.type === b.type) {
+          return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+        }
+        return a.type === 'directory' ? -1 : 1;
       });
       node.children.forEach(sortTreeStructure);
     }
