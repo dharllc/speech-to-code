@@ -37,9 +37,14 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   const [enhancementDisabled, setEnhancementDisabled] = useState(() => 
     JSON.parse(localStorage.getItem('enhancementDisabled') || 'false')
   );
-  const MIN_PROMPT_LENGTH = 25;
+
+  const MIN_PROMPT_LENGTH = 20;
   const lastPromptRef = useRef(basePrompt);
   const treeOperationRef = useRef(false);
+
+  // Toggle to show/hide extra file chips
+  const [showAllFiles, setShowAllFiles] = useState(false);
+  const MAX_VISIBLE_FILE_CHIPS = 5;
 
   // Persist toggles to local storage
   useEffect(() => {
@@ -390,40 +395,65 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   //  FILE CHIPS
   // ======================
   const getFileChips = () => {
-    return selectedFiles
-      .sort((a, b) => {
-        const aTokens = a.type === 'directory'
-          ? (a.token_count?.total || 0)
-          : (fileContents[a.path]?.tokenCount || 0);
-        const bTokens = b.type === 'directory'
-          ? (b.token_count?.total || 0)
-          : (fileContents[b.path]?.tokenCount || 0);
+    // Sort by token count descending, then alphabetically
+    const sortedFiles = [...selectedFiles].sort((a, b) => {
+      const aTokens = a.type === 'directory'
+        ? (a.token_count?.total || 0)
+        : (fileContents[a.path]?.tokenCount || 0);
+      const bTokens = b.type === 'directory'
+        ? (b.token_count?.total || 0)
+        : (fileContents[b.path]?.tokenCount || 0);
 
-        if (aTokens !== bTokens) return bTokens - aTokens;
-        return a.path.localeCompare(b.path);
-      })
-      .map(file => {
-        if (file.type === 'directory') {
-          return (
-            <FileChip
-              key={file.path}
-              fileName={file.path}
-              tokenCount={file.token_count}
-              onRemove={() => removeFile(file.path)}
-              isDirectory
-            />
-          );
-        }
+      if (aTokens !== bTokens) return bTokens - aTokens;
+      return a.path.localeCompare(b.path);
+    });
+
+    // Control how many we show before "Show more"
+    const displayedFiles = showAllFiles
+      ? sortedFiles
+      : sortedFiles.slice(0, MAX_VISIBLE_FILE_CHIPS);
+
+    const chips = displayedFiles.map(file => {
+      if (file.type === 'directory') {
+        return (
+          <FileChip
+            key={file.path}
+            fileName={file.path}
+            tokenCount={file.token_count}
+            onRemove={() => removeFile(file.path)}
+            isBinary={false} // directories aren't binary, but we keep the prop consistent
+          />
+        );
+      } else {
         const tokenCount = fileContents[file.path]?.tokenCount || 0;
+        const isBinary = fileContents[file.path]?.isBinary || false;
         return (
           <FileChip
             key={file.path}
             fileName={file.path}
             tokenCount={tokenCount}
             onRemove={() => removeFile(file.path)}
+            isBinary={isBinary}
           />
         );
-      });
+      }
+    });
+
+    return (
+      <>
+        {chips}
+        {sortedFiles.length > MAX_VISIBLE_FILE_CHIPS && (
+          <button
+            className="m-1 px-2 py-1 text-sm bg-gray-200 dark:bg-gray-800 rounded-full hover:bg-gray-300 dark:hover:bg-gray-700"
+            onClick={() => setShowAllFiles(!showAllFiles)}
+          >
+            {showAllFiles
+              ? 'Show less'
+              : `Show ${sortedFiles.length - displayedFiles.length} more...`}
+          </button>
+        )}
+      </>
+    );
   };
 
   // ======================
