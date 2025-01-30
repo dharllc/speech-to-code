@@ -1,9 +1,9 @@
-// TwoColumnLayout.js
+// File: frontend/src/components/TwoColumnLayout.js
 import React, { useState } from 'react';
 import PromptComposer from './PromptComposer';
 import RepositoryFileViewer from './RepositoryFileViewer';
 
-const TwoColumnLayout = ({ selectedRepository, setUserPrompt, onClearAllFiles }) => {
+const TwoColumnLayout = ({ selectedRepository, setUserPrompt }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
 
   const handleFileSelect = (file, isSelected) => {
@@ -11,6 +11,7 @@ const TwoColumnLayout = ({ selectedRepository, setUserPrompt, onClearAllFiles })
       if (isSelected && !prev.some(f => f.path === file.path)) {
         return [...prev, file];
       }
+      // Deselect scenario
       return prev.filter(f => f.path !== file.path);
     });
   };
@@ -21,6 +22,7 @@ const TwoColumnLayout = ({ selectedRepository, setUserPrompt, onClearAllFiles })
 
   return (
     <div className="flex flex-col lg:flex-row w-full gap-4">
+      {/* Left Column: PromptComposer */}
       <div className="w-full lg:w-1/2 min-w-0">
         <div className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-lg">
           <PromptComposer
@@ -33,6 +35,7 @@ const TwoColumnLayout = ({ selectedRepository, setUserPrompt, onClearAllFiles })
         </div>
       </div>
 
+      {/* Right Column: Repository Browser */}
       <div className="w-full lg:w-1/2 min-w-0">
         <div className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-lg">
           <RepositoryFileViewer

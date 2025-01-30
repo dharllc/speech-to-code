@@ -7,13 +7,15 @@ import PropTypes from 'prop-types';
 
 const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt }) => {
   const [tokenCount, setTokenCount] = useState(0);
-  const [autoCopy, setAutoCopy] = useState(() => 
+  const [autoCopy, setAutoCopy] = useState(() =>
     JSON.parse(localStorage.getItem('autoCopyEnabled') || 'false')
   );
 
+  // Automatically copy the final prompt if autoCopy is toggled
   useEffect(() => {
     if (autoCopy && fullPrompt) {
-      navigator.clipboard.writeText(fullPrompt)
+      navigator.clipboard
+        .writeText(fullPrompt)
         .then(() => {
           console.log('Prompt copied to clipboard');
         })
@@ -23,6 +25,7 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt })
     }
   }, [fullPrompt, autoCopy]);
 
+  // Debounce token count calls
   useEffect(() => {
     const debouncedUpdateTokenCount = debounce(updateTokenCount, 300);
     debouncedUpdateTokenCount(prompt);
@@ -36,7 +39,7 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt })
   const updateTokenCount = async (text) => {
     try {
       const response = await axios.post(`${API_URL}/count_tokens`, {
-        text: text,
+        text,
         model: 'gpt-3.5-turbo'
       });
       setTokenCount(response.data.count);
@@ -77,9 +80,10 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt })
                    scrollbar-track-gray-200 dark:scrollbar-track-gray-800"
         value={prompt}
         onChange={handlePromptChange}
-        placeholder="Compose your prompt here..."
+        placeholder="Compose your request here..."
       />
       <div className="flex justify-between items-center mt-1">
+        {/* Auto Copy toggle */}
         <div className="flex items-center">
           <input
             type="checkbox"
@@ -95,6 +99,7 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt })
             Auto Copy
           </label>
         </div>
+        {/* Token count display */}
         <div className={getTokenCountColor(totalTokens)}>
           Tokens: {totalTokens}
         </div>
