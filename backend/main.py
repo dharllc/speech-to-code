@@ -1,3 +1,4 @@
+# uvicorn main:app --reload --port 8085 --log-level debug
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from utils.tree_structure import get_tree_structure, should_skip_token_count
@@ -421,13 +422,15 @@ Your response must be a valid JSON object with this exact structure:
 
 Guidelines:
 - Only suggest files that exist in the provided file listing
+- Do NOT invent any file paths or directories that do not appear in the provided file listing.
 - Put files you're very certain about in high_confidence
 - Put files you think might be relevant in medium_confidence
 - Put files that could potentially be useful for context in low_confidence
 - Each category can be empty but must exist in the JSON
-- Keep reason explanations brief and specific
+- Keep reason explanations brief and specific, use keywords instead of full sentences 
 - Focus on code files over documentation/configuration files unless explicitly relevant
 - It is preferable to over-suggest files than to under-suggest them
+- Suggesting a high number of files is acceptable if you are confident they are all relevant
 """
    }, {
        "role": "user",
@@ -437,7 +440,7 @@ Guidelines:
    try:
        logger.info(f"[{request_id}] Sending prompt to LLM for analysis")
        response = await handle_llm_interaction({
-           "model": "claude-3-haiku-20240307",
+           "model": "gpt-4o-mini",
            "messages": messages,
            "temperature": 0.1
        })

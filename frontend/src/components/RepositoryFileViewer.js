@@ -370,9 +370,12 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     const isExpanded = expandedFolders[currentPath];
     const Icon = getFileIcon(node.type, node.name);
 
+    // Check if file is currently selected
+    const isFileSelected = node.type === 'file' && selectedFiles.some(file => file.path === cleanPath);
+
     if (!shouldShowNode(node, currentPath)) return null;
 
-    // Decide folder icon color based on selection state (simple but clear)
+    // Decide folder icon color based on selection state
     const getFolderColorClass = (state) => {
       switch (state) {
         case 'all':
@@ -408,41 +411,61 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
       <div key={currentPath} className={`ml-${depth} text-sm`}>
         <div
           className={`
-            cursor-pointer
-            hover:bg-gray-100 dark:hover:bg-gray-700
             flex items-center py-0.5 px-1 rounded transition-colors duration-150
-            ${warning.warn ? 'opacity-75' : ''}
+            ${warning.warn ? 'opacity-75' : 'hover:bg-gray-100 dark:hover:bg-gray-700'}
+            ${
+              // If this node is a file and it is selected, highlight the row
+              isFileSelected 
+                ? 'bg-blue-50 dark:bg-blue-800' 
+                : ''
+            }
+            cursor-pointer
           `}
+          onClick={() => handleFileClick(node, currentPath)}
         >
-          <div
-            className="flex items-center flex-grow"
-            onClick={() => handleFileClick(node, currentPath)}
-          >
+          <div className="flex items-center flex-grow">
             {/* Folder/File icon */}
             <Icon
               className={`
                 mr-1
-                ${node.type === 'directory'
-                  ? getFolderColorClass(folderSelectionState)
-                  : warning.warn
-                    ? 'text-red-500 dark:text-red-400'
-                    : 'text-gray-500 dark:text-gray-400'
+                ${
+                  node.type === 'directory'
+                    ? getFolderColorClass(folderSelectionState)
+                    : warning.warn
+                      ? 'text-red-500 dark:text-red-400'
+                      : isFileSelected 
+                        ? 'text-blue-600 dark:text-blue-300'
+                        : 'text-gray-500 dark:text-gray-400'
                 }
               `}
               size={14}
             />
+            
             {/* File/Folder name */}
             <span
               className={`
                 truncate flex-grow
-                ${warning.warn 
-                  ? 'text-gray-500 dark:text-gray-500' 
-                  : 'text-gray-900 dark:text-gray-100'
+                ${
+                  warning.warn 
+                    ? 'text-gray-500 dark:text-gray-500'
+                    : isFileSelected
+                      ? 'text-blue-800 dark:text-blue-100 font-medium'
+                      : 'text-gray-900 dark:text-gray-100'
                 }
               `}
             >
               {node.name}
             </span>
+
+            {/* If the file is selected, show a small check mark */}
+            {isFileSelected && node.type === 'file' && (
+              <FiCheck 
+                className="ml-1 text-blue-600 dark:text-blue-300" 
+                size={14}
+                title="This file is selected"
+              />
+            )}
+
             {/* Warning icon if needed */}
             {warning.warn && (
               <FiAlertTriangle 
