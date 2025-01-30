@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from utils.tree_structure import get_tree_structure, should_skip_token_count
-import os, json, tiktoken
+import os, json, tiktoken, logging
 from dotenv import load_dotenv, set_key
 from pydantic import BaseModel
 from typing import List
@@ -11,22 +11,40 @@ from llm_interaction import handle_llm_interaction, get_available_models
 from utils.context_map import generate_context_map,save_context_map,load_context_map
 import os.path as osp
 
-# Load config first
+# After imports, before root_dir setup
+log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'logs')
+os.makedirs(log_dir, exist_ok=True)
+
+log_file = os.path.join(log_dir, f'llm_logs_{datetime.now().strftime("%Y%m%d")}.log')
+
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler(log_file, mode='a'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
 try:
     root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     with open(os.path.join(root_dir, 'config.json'), 'r') as f:
         config = json.load(f)
         BACKEND_PORT = config['backend']['port']
         FRONTEND_PORT = config['frontend']['port']
+    logger.info(f"Loaded config: BACKEND_PORT={BACKEND_PORT}, FRONTEND_PORT={FRONTEND_PORT}")
 except Exception as e:
+    logger.error(f"Failed to load config.json: {str(e)}")
     raise RuntimeError(f"Failed to load config.json: {str(e)}")
 
-# Load environment variables
 load_dotenv()
 
 REPO_PATH = os.getenv("REPO_PATH")
 if REPO_PATH is None:
+    logger.error("REPO_PATH environment variable is not set")
     raise ValueError("REPO_PATH environment variable is not set")
+logger.info(f"Using REPO_PATH: {REPO_PATH}")
 
 app = FastAPI()
 app.add_middleware(
@@ -37,17 +55,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Get the directory of the current script
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-# Define the path to system_prompts.json
 SYSTEM_PROMPTS_FILE = os.path.join(SCRIPT_DIR, "system_prompts.json")
-# Define the path to context maps
 CONTEXT_MAPS_DIR = osp.join(SCRIPT_DIR,"context_maps")
 
-# Ensure the system_prompts.json file exists
 if not os.path.exists(SYSTEM_PROMPTS_FILE):
     with open(SYSTEM_PROMPTS_FILE, 'w') as f:
         json.dump([], f)
+    logger.info(f"Created empty system_prompts.json file at {SYSTEM_PROMPTS_FILE}")
 
 class TokenRequest(BaseModel):
     text: str
@@ -69,8 +84,20 @@ class SystemPromptCreate(BaseModel):
     is_default: bool
 
 def load_system_prompts():
-    with open(SYSTEM_PROMPTS_FILE, 'r') as f:
-        return json.load(f)
+    try:
+        with open(SYSTEM_PROMPTS_FILE, 'r') as f:
+            content = f.read().strip()
+            if content:
+                return json.loads(content)
+            else:
+                return []
+    except json.JSONDecodeError:
+        logger.error(f"Error decoding JSON from {SYSTEM_PROMPTS_FILE}. Resetting to empty list.")
+        return []
+    except FileNotFoundError:
+        logger.error(f"{SYSTEM_PROMPTS_FILE} not found. Creating new file.")
+        save_system_prompts([])
+        return []
 
 def save_system_prompts(prompts):
     with open(SYSTEM_PROMPTS_FILE, 'w') as f:
@@ -82,6 +109,7 @@ async def count_tokens(request: TokenRequest):
         encoding = tiktoken.encoding_for_model(request.model)
         return {"count": len(encoding.encode(request.text))}
     except Exception as e:
+        logger.error(f"Error counting tokens: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/")
@@ -89,44 +117,36 @@ async def root():
     return {"message": "Welcome to Speech-to-Code!"}
 
 def count_tokens_for_file(file_path):
-    # Import the should_skip_token_count function
-    from utils.tree_structure import should_skip_token_count
-    
-    # First check if we should skip this file
     if should_skip_token_count(file_path):
-        print(f"Skipping token count for binary/media file: {file_path}")
+        logger.debug(f"Skipping token count for binary/media file: {file_path}")
         return 0
         
-    # Only try to read the file if it's not a binary/media file
     try:
-        # Try to read a small portion first to verify it's text
         with open(file_path, 'rb') as f:
-            sample = f.read(1024)  # Read first 1KB
+            sample = f.read(1024)
             try:
                 sample.decode('utf-8')
             except UnicodeDecodeError:
-                print(f"File appears to be binary, skipping: {file_path}")
+                logger.debug(f"File appears to be binary, skipping: {file_path}")
                 return 0
         
-        # If we get here, it's probably a text file
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
             content = file.read()
-            if not content.strip():  # Skip empty files
+            if not content.strip():
                 return 0
             encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
             return len(encoding.encode(content))
     except Exception as e:
-        print(f"Error counting tokens for {file_path}: {str(e)}")
+        logger.error(f"Error counting tokens for {file_path}: {str(e)}")
         return 0
 
 def update_token_counts(node, base_path):
     full_path = os.path.join(base_path, node['path'])
     
-    # First check if this is a file we should skip
     if node['type'] == 'file' and should_skip_token_count(full_path):
         node['token_count'] = 0
         node['skip_token_count'] = True
-        print(f"Skipping file: {full_path}")
+        logger.debug(f"Skipping file: {full_path}")
         return
         
     if node['type'] == 'file':
@@ -142,64 +162,61 @@ def update_token_counts(node, base_path):
 
 @app.get("/tree")
 async def get_tree(background_tasks: BackgroundTasks, repository: str = Query(..., description="The name of the repository")):
-    print(f"Fetching tree for repository: {repository}")
+    logger.info(f"Fetching tree for repository: {repository}")
     if not repository:
         raise HTTPException(status_code=400, detail="Repository name is required")
     base_path = os.path.join(REPO_PATH, repository)
-    print(f"Base path: {base_path}")
+    logger.debug(f"Base path: {base_path}")
     if not os.path.exists(base_path):
         raise HTTPException(status_code=404, detail=f"Repository '{repository}' not found")
     tree = json.loads(get_tree_structure(base_path))
     update_token_counts(tree, base_path)
-    print(f"Tree structure: {json.dumps(tree, indent=2)}")
+    logger.debug(f"Tree structure: {json.dumps(tree, indent=2)}")
     return {"tree": json.dumps(tree)}
 
 @app.get("/directories")
 async def get_directories():
     try:
         directories = [d for d in os.listdir(REPO_PATH) if os.path.isdir(os.path.join(REPO_PATH, d))]
-        print(f"REPO_PATH: {REPO_PATH}")
-        print(f"Found directories: {directories}")
+        logger.debug(f"REPO_PATH: {REPO_PATH}")
+        logger.debug(f"Found directories: {directories}")
         return {"directories": directories}
     except Exception as e:
-        print(f"Error in get_directories: {str(e)}")
+        logger.error(f"Error in get_directories: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
     
 @app.get("/file_content")
 async def get_file_content(repository: str = Query(...), path: str = Query(...)):
     file_path = os.path.join(REPO_PATH, repository, path)
-    print(f"Attempting to read file: {file_path}")
+    logger.debug(f"Attempting to read file: {file_path}")
     
     if not os.path.exists(file_path):
-        print(f"File not found: {file_path}")
+        logger.error(f"File not found: {file_path}")
         raise HTTPException(status_code=404, detail=f"File not found: {path}")
     
-    # Check if this is a binary/media file
     if should_skip_token_count(file_path):
-        print(f"Binary/media file, returning without counting tokens: {file_path}")
+        logger.debug(f"Binary/media file, returning without counting tokens: {file_path}")
         return {"content": "", "token_count": 0, "is_binary": True}
     
     try:
-        # Try to read a small portion first to verify it's text
         with open(file_path, 'rb') as f:
-            sample = f.read(1024)  # Read first 1KB
+            sample = f.read(1024)
             try:
                 sample.decode('utf-8')
             except UnicodeDecodeError:
-                print(f"File appears to be binary, skipping: {file_path}")
+                logger.debug(f"File appears to be binary, skipping: {file_path}")
                 return {"content": "", "token_count": 0, "is_binary": True}
         
-        # If we get here, it's probably a text file
         with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
             content = file.read()
-            if not content.strip():  # Empty file
+            if not content.strip():
                 return {"content": "", "token_count": 0}
                 
             token_count = len(tiktoken.encoding_for_model("gpt-3.5-turbo").encode(content))
-            print(f"Successfully read file: {file_path}")
+            logger.debug(f"Successfully read file: {file_path}")
             return {"content": content, "token_count": token_count}
     except Exception as e:
-        print(f"Error reading file {file_path}: {str(e)}")
+        logger.error(f"Error reading file {file_path}: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/file_lines")
@@ -209,27 +226,8 @@ async def get_file_lines(repository: str, file_path: str):
         with open(full_path, 'r', encoding='utf-8', errors='ignore') as file:
             return {"line_count": sum(1 for _ in file)}
     except Exception as e:
+        logger.error(f"Error getting file lines: {str(e)}")
         return {"error": str(e)}
-
-def load_system_prompts():
-    try:
-        with open(SYSTEM_PROMPTS_FILE, 'r') as f:
-            content = f.read().strip()
-            if content:
-                return json.loads(content)
-            else:
-                return []
-    except json.JSONDecodeError:
-        print(f"Error decoding JSON from {SYSTEM_PROMPTS_FILE}. Resetting to empty list.")
-        return []
-    except FileNotFoundError:
-        print(f"{SYSTEM_PROMPTS_FILE} not found. Creating new file.")
-        save_system_prompts([])
-        return []
-
-def save_system_prompts(prompts):
-    with open(SYSTEM_PROMPTS_FILE, 'w') as f:
-        json.dump(prompts, f, indent=2)
 
 @app.get("/system_prompts", response_model=List[SystemPrompt])
 async def get_system_prompts():
@@ -271,7 +269,7 @@ async def create_system_prompt(prompt: SystemPromptCreate):
         save_system_prompts(prompts)
         return new_prompt
     except Exception as e:
-        print(f"Error creating system prompt: {str(e)}")
+        logger.error(f"Error creating system prompt: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to save prompt: {str(e)}")
 
 @app.delete("/system_prompts/{prompt_id}")
@@ -312,9 +310,20 @@ async def update_system_prompt(prompt_id: str, prompt: SystemPromptCreate):
         return updated_prompt
     raise HTTPException(status_code=404, detail="Prompt not found")
 
-@app.post("/llm_interaction")
+@app.post("/llm_interaction") 
 async def llm_interaction(request: dict):
-    return await handle_llm_interaction(request)
+    request_id = str(uuid.uuid4())[:8]
+    logger.info(f"[{request_id}] Received LLM interaction request")
+    logger.debug(f"[{request_id}] Request details: {json.dumps(request, indent=2)}")
+    
+    try:
+        response = await handle_llm_interaction(request)
+        logger.info(f"[{request_id}] LLM interaction successful")
+        logger.debug(f"[{request_id}] Response: {json.dumps(response, indent=2)}")
+        return response
+    except Exception as e:
+        logger.error(f"[{request_id}] LLM interaction failed: {str(e)}")
+        raise
 
 @app.get("/available_models")
 async def available_models():
@@ -335,73 +344,79 @@ async def get_env_vars():
 
 @app.post("/env_vars")
 async def update_env_var(env_var: dict):
-    key, value = next(iter(env_var.items()))
-    env_file = os.path.join(os.path.dirname(__file__), ".env")
-    set_key(env_file, key, value)
-    os.environ[key] = value
-    return {"message": f"{key} updated successfully"}
+   key, value = next(iter(env_var.items()))
+   env_file = os.path.join(os.path.dirname(__file__), ".env")
+   set_key(env_file, key, value)
+   os.environ[key] = value
+   return {"message": f"{key} updated successfully"}
 
 @app.post("/repository-context/{repository}/initialize")
 async def initialize_context_map(repository:str):
-    repo_path=osp.join(REPO_PATH,repository)
-    if not osp.exists(repo_path):
-        raise HTTPException(status_code=404,detail=f"Repository '{repository}' not found")
-    try:
-        context_map=generate_context_map(repo_path,repository)
-        save_context_map(context_map,CONTEXT_MAPS_DIR)
-        return{"message":"Context map initialized successfully","repositoryId":repository}
-    except Exception as e:
-        raise HTTPException(status_code=500,detail=f"Failed to initialize context map: {str(e)}")
+   repo_path=osp.join(REPO_PATH,repository)
+   if not osp.exists(repo_path):
+       raise HTTPException(status_code=404,detail=f"Repository '{repository}' not found")
+   try:
+       context_map=generate_context_map(repo_path,repository)
+       save_context_map(context_map,CONTEXT_MAPS_DIR)
+       return{"message":"Context map initialized successfully","repositoryId":repository}
+   except Exception as e:
+       raise HTTPException(status_code=500,detail=f"Failed to initialize context map: {str(e)}")
 
 @app.post("/repository-context/{repository}/refresh")
 async def refresh_context_map(repository:str):
-    repo_path=osp.join(REPO_PATH,repository)
-    if not osp.exists(repo_path):
-        raise HTTPException(status_code=404,detail=f"Repository '{repository}' not found")
-    try:
-        context_map=generate_context_map(repo_path,repository)
-        save_context_map(context_map,CONTEXT_MAPS_DIR)
-        return{"message":"Context map refreshed successfully","repositoryId":repository}
-    except Exception as e:
-        raise HTTPException(status_code=500,detail=f"Failed to refresh context map: {str(e)}")
+   repo_path=osp.join(REPO_PATH,repository)
+   if not osp.exists(repo_path):
+       raise HTTPException(status_code=404,detail=f"Repository '{repository}' not found")
+   try:
+       context_map=generate_context_map(repo_path,repository)
+       save_context_map(context_map,CONTEXT_MAPS_DIR)
+       return{"message":"Context map refreshed successfully","repositoryId":repository}
+   except Exception as e:
+       raise HTTPException(status_code=500,detail=f"Failed to refresh context map: {str(e)}")
 
 @app.get("/repository-context/{repository}")
 async def get_context_map(repository:str):
-    context_map=load_context_map(repository,CONTEXT_MAPS_DIR)
-    if not context_map:
-        raise HTTPException(status_code=404,detail=f"Context map for repository '{repository}' not found")
-    return context_map
+   context_map=load_context_map(repository,CONTEXT_MAPS_DIR)
+   if not context_map:
+       raise HTTPException(status_code=404,detail=f"Context map for repository '{repository}' not found")
+   return context_map
 
 class AnalyzePromptRequest(BaseModel):
-    repository: str
-    prompt: str
+   repository: str
+   prompt: str
 
 @app.post("/analyze-prompt")
 async def analyze_prompt(request: AnalyzePromptRequest):
-    context_map = load_context_map(request.repository, CONTEXT_MAPS_DIR)
-    if not context_map:
-        raise HTTPException(status_code=404, detail=f"Context map for repository '{request.repository}' not found")
+   request_id = str(uuid.uuid4())[:8]
+   logger.info(f"[{request_id}] Analyzing prompt for repository: {request.repository}")
+   logger.debug(f"[{request_id}] Prompt: {request.prompt}")
 
-    files_json = json.dumps({k: v['summary'] for k, v in context_map['files'].items()}, indent=2)
-    
-    messages = [{
-        "role": "system",
-        "content": """You are an expert at analyzing code repository structures and context maps to identify relevant files for code changes. Given a user's description and a repository's file listings with summaries, suggest files that are most relevant to the described task.
+   context_map = load_context_map(request.repository, CONTEXT_MAPS_DIR)
+   if not context_map:
+       logger.error(f"[{request_id}] Context map not found for repository: {request.repository}")
+       raise HTTPException(status_code=404, detail=f"Context map for repository '{request.repository}' not found")
+
+   files_json = json.dumps({k: v['summary'] for k, v in context_map['files'].items()}, indent=2)
+   logger.debug(f"[{request_id}] Files with summaries: {files_json}")
+
+   messages = [{
+       "role": "system",
+       "content": """You are an expert at analyzing code repository structures and context maps to identify relevant files for code changes. Given a user's description and a repository's file listings with summaries, suggest files that are most relevant to the described task.
 
 Your response must be a valid JSON object with this exact structure:
 {
-  "high_confidence": [
-    {"file": "path/to/file", "reason": "brief explanation"},
-    ...
-  ],
-  "medium_confidence": [
-    {"file": "path/to/file", "reason": "brief explanation"},
-    ...
-  ],
-  "low_confidence": [
-    {"file": "path/to/file", "reason": "brief explanation"},
-    ...
-  ]
+ "high_confidence": [
+   {"file": "path/to/file", "reason": "brief explanation"},
+   ...
+ ],
+ "medium_confidence": [
+   {"file": "path/to/file", "reason": "brief explanation"},
+   ...
+ ],
+ "low_confidence": [
+   {"file": "path/to/file", "reason": "brief explanation"},
+   ...
+ ]
 }
 
 Guidelines:
@@ -414,50 +429,53 @@ Guidelines:
 - Focus on code files over documentation/configuration files unless explicitly relevant
 - It is preferable to over-suggest files than to under-suggest them
 """
-    }, {
-        "role": "user",
-        "content": f"""Repository files with summaries:
-{files_json}
+   }, {
+       "role": "user",
+       "content": f"""Repository files with summaries:\n{files_json}\n\nUser prompt:\n{request.prompt}\n\nProvide file suggestions in the specified JSON format."""
+   }]
 
-User prompt:
-{request.prompt}
+   try:
+       logger.info(f"[{request_id}] Sending prompt to LLM for analysis")
+       response = await handle_llm_interaction({
+           "model": "claude-3-haiku-20240307",
+           "messages": messages,
+           "temperature": 0.1
+       })
+       logger.debug(f"[{request_id}] Raw LLM response: {json.dumps(response, indent=2)}")
 
-Provide file suggestions in the specified JSON format."""
-    }]
+       try:
+           suggestions = json.loads(response["response"])
+           logger.debug(f"[{request_id}] Parsed suggestions: {json.dumps(suggestions, indent=2)}")
+       except json.JSONDecodeError as e:
+           logger.error(f"[{request_id}] Failed to parse LLM response as JSON: {str(e)}")
+           logger.debug(f"[{request_id}] Invalid JSON was: {response['response']}")
+           raise HTTPException(status_code=500, detail="Invalid JSON response from LLM")
 
-    try:
-        response = await handle_llm_interaction({
-            # "model": "claude-3-5-sonnet-20241022",
-            "model": "claude-3-haiku-20240307",
-            "messages": messages,
-            "temperature": 0.1
-        })
-        
-        suggestions = json.loads(response["response"])
-        
-        # Validate response structure
-        required_keys = {"high_confidence", "medium_confidence", "low_confidence"}
-        if not all(key in suggestions for key in required_keys):
-            raise ValueError("Invalid response structure")
-            
-        # Validate all files exist in context map
-        all_files = context_map['files'].keys()
-        for confidence in required_keys:
-            for item in suggestions[confidence]:
-                if item["file"] not in all_files:
-                    suggestions[confidence].remove(item)
-        
-        return {
-            "suggestions": suggestions,
-            "tokenCounts": response["tokenCounts"],
-            "cost": response["cost"]
-        }
-        
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=500, detail="Invalid JSON response from LLM")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+       required_keys = {"high_confidence", "medium_confidence", "low_confidence"}
+       if not all(key in suggestions for key in required_keys):
+           logger.error(f"[{request_id}] Missing required keys in suggestions: {suggestions.keys()}")
+           raise ValueError("Invalid response structure")
+
+       all_files = context_map['files'].keys()
+       for confidence in required_keys:
+           for item in suggestions[confidence]:
+               if item["file"] not in all_files:
+                   logger.warning(f"[{request_id}] Removing non-existent file from {confidence}: {item['file']}")
+                   suggestions[confidence].remove(item)
+
+       result = {
+           "suggestions": suggestions,
+           "tokenCounts": response["tokenCounts"],
+           "cost": response["cost"]
+       }
+       logger.info(f"[{request_id}] Analysis completed successfully")
+       return result
+
+   except Exception as e:
+       logger.error(f"[{request_id}] Error during prompt analysis: {str(e)}")
+       raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=BACKEND_PORT)
+   import uvicorn
+   logger.info(f"Starting server on port {BACKEND_PORT}")
+   uvicorn.run(app, host="0.0.0.0", port=BACKEND_PORT, log_level="debug", log_config=None)
