@@ -10,6 +10,7 @@
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.3",
     "babel-loader": "^9.2.1",
+    "date-fns": "^2.30.0",
     "lucide-react": "^0.427.0",
     "postcss": "^8.4.41",
     "react": "^18.3.1",
