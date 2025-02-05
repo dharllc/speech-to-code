@@ -5,31 +5,32 @@ const STORAGE_KEY_PREFIX = 'fileCombinations_';
 
 export const useFileCombinations = (selectedRepository) => {
   const [combinations, setCombinations] = useState([]);
+  const [instanceId] = useState(() => sessionStorage.getItem('currentInstanceId'));
 
-  // Load combinations from localStorage when repository changes
+  // Load combinations from sessionStorage when repository changes
   useEffect(() => {
     if (selectedRepository) {
-      const stored = localStorage.getItem(`${STORAGE_KEY_PREFIX}${selectedRepository}`);
+      const stored = sessionStorage.getItem(`${instanceId}_${STORAGE_KEY_PREFIX}${selectedRepository}`);
       setCombinations(stored ? JSON.parse(stored) : []);
     } else {
       setCombinations([]);
     }
-  }, [selectedRepository]);
+  }, [selectedRepository, instanceId]);
 
-  // Save combinations to localStorage whenever they change
+  // Save combinations to sessionStorage whenever they change
   useEffect(() => {
     if (selectedRepository) {
       if (combinations.length > 0) {
-        localStorage.setItem(
-          `${STORAGE_KEY_PREFIX}${selectedRepository}`,
+        sessionStorage.setItem(
+          `${instanceId}_${STORAGE_KEY_PREFIX}${selectedRepository}`,
           JSON.stringify(combinations)
         );
       } else {
-        // If there are no combinations, remove the key from localStorage
-        localStorage.removeItem(`${STORAGE_KEY_PREFIX}${selectedRepository}`);
+        // If there are no combinations, remove the key from sessionStorage
+        sessionStorage.removeItem(`${instanceId}_${STORAGE_KEY_PREFIX}${selectedRepository}`);
       }
     }
-  }, [combinations, selectedRepository]);
+  }, [combinations, selectedRepository, instanceId]);
 
   const addCombination = (files, totalTokens) => {
     if (!files || files.length === 0) return;
@@ -66,7 +67,7 @@ export const useFileCombinations = (selectedRepository) => {
   const removeCombination = (combinationId) => {
     setCombinations(prev => {
       const updated = prev.filter(c => c.id !== combinationId);
-      // If this was the last combination, the useEffect above will clean up localStorage
+      // If this was the last combination, the useEffect above will clean up sessionStorage
       return updated;
     });
   };
@@ -74,7 +75,7 @@ export const useFileCombinations = (selectedRepository) => {
   const clearCombinations = () => {
     setCombinations([]);
     if (selectedRepository) {
-      localStorage.removeItem(`${STORAGE_KEY_PREFIX}${selectedRepository}`);
+      sessionStorage.removeItem(`${instanceId}_${STORAGE_KEY_PREFIX}${selectedRepository}`);
     }
   };
 

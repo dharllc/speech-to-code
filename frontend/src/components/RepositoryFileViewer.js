@@ -157,6 +157,7 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPaths, setFilteredPaths] = useState(new Set());
   const [showWarnedFiles, setShowWarnedFiles] = useState(false);
+  const [instanceId] = useState(() => sessionStorage.getItem('currentInstanceId'));
 
   const fileTypes = useMemo(() => {
     if (!treeStructure) return {};
@@ -219,7 +220,7 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
       setTreeStructure(sortedTree);
       
       // Load saved state or initialize all folders as expanded
-      const savedState = localStorage.getItem(`expandedFolders-${repo}`);
+      const savedState = sessionStorage.getItem(`${instanceId}_expandedFolders-${repo}`);
       if (savedState) {
         setExpandedFolders(JSON.parse(savedState));
       } else {
@@ -234,12 +235,12 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
         };
         initializeFolders(sortedTree);
         setExpandedFolders(initialState);
-        localStorage.setItem(`expandedFolders-${repo}`, JSON.stringify(initialState));
+        sessionStorage.setItem(`${instanceId}_expandedFolders-${repo}`, JSON.stringify(initialState));
       }
     } catch (error) {
       console.error('Failed to fetch tree structure:', error);
     }
-  }, []);
+  }, [instanceId]);
 
   useEffect(() => {
     if (selectedRepository) {
@@ -253,7 +254,7 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
       [path]: !expandedFolders[path]
     };
     setExpandedFolders(newState);
-    localStorage.setItem(`expandedFolders-${selectedRepository}`, JSON.stringify(newState));
+    sessionStorage.setItem(`${instanceId}_expandedFolders-${selectedRepository}`, JSON.stringify(newState));
   };
 
   const sortTreeStructure = (node) => {

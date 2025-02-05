@@ -10,13 +10,30 @@ import LLMInteraction from './components/LLMInteraction';
 import Settings from './components/Settings';
 
 function App() {
+  const [instanceId] = useState(() => {
+    // Get existing instance ID or create a new one
+    const existingId = sessionStorage.getItem('currentInstanceId');
+    if (existingId) return existingId;
+    
+    const newId = `instance_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    sessionStorage.setItem('currentInstanceId', newId);
+    return newId;
+  });
+
   const [selectedRepository, setSelectedRepository] = useState('');
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [userPrompt, setUserPrompt] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
-    const savedState = localStorage.getItem('sidebarOpen');
+    const savedState = sessionStorage.getItem(`${instanceId}_sidebarOpen`);
     return savedState !== null ? savedState === 'true' : window.innerWidth >= 1024;
   });
+
+  // Update document title when selected repository changes
+  useEffect(() => {
+    document.title = selectedRepository 
+      ? `Speech-to-Code - ${selectedRepository}`
+      : 'Speech-to-Code';
+  }, [selectedRepository]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -29,14 +46,14 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const storedRepo = localStorage.getItem('selectedRepository');
+    const storedRepo = sessionStorage.getItem(`${instanceId}_selectedRepository`);
     if (storedRepo) setSelectedRepository(storedRepo);
-  }, []);
+  }, [instanceId]);
 
   const handleRepositorySelect = (repo) => {
     setSelectedRepository(repo);
     setSelectedFiles([]);
-    localStorage.setItem('selectedRepository', repo);
+    sessionStorage.setItem(`${instanceId}_selectedRepository`, repo);
   };
 
   const handleFileSelectionChange = (file, isSelected) => {
@@ -58,7 +75,7 @@ function App() {
   const toggleSidebar = () => {
     const newState = !isSidebarOpen;
     setIsSidebarOpen(newState);
-    localStorage.setItem('sidebarOpen', newState.toString());
+    sessionStorage.setItem(`${instanceId}_sidebarOpen`, newState.toString());
   };
 
   const NavItem = ({ to, icon: Icon, label }) => (
