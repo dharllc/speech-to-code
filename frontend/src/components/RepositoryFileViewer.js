@@ -307,23 +307,42 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     }
 
     const paths = new Set();
+    const matchingFolders = new Set();
+    
     const searchFiles = (node, path = '') => {
       const currentPath = `${path}/${node.name}`;
+      
+      // If this node matches the search term
       if (node.name.toLowerCase().includes(searchTerm.toLowerCase())) {
         paths.add(currentPath);
+        
+        // If it's a folder, add it to matching folders set
+        if (node.type === 'directory') {
+          matchingFolders.add(currentPath);
+        }
+        
+        // Add all parent paths to ensure they're visible
         let parentPath = path;
         while (parentPath) {
           paths.add(parentPath);
           parentPath = parentPath.substring(0, parentPath.lastIndexOf('/'));
         }
       }
+      
       if (node.children) {
         node.children.forEach(child => searchFiles(child, currentPath));
       }
     };
 
     searchFiles(treeStructure);
+    
+    // Store both regular paths and matching folders in the filtered paths
     setFilteredPaths(paths);
+    // Store matching folders separately
+    sessionStorage.setItem(
+      `${instanceId}_matchingFolders-${searchTerm}`, 
+      JSON.stringify(Array.from(matchingFolders))
+    );
     
     // Auto-expand all matching folders
     if (paths.size > 0) {
@@ -340,10 +359,28 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
       });
       setExpandedFolders(prev => ({ ...prev, ...newExpandedFolders }));
     }
-  }, [searchTerm, treeStructure]);
+  }, [searchTerm, treeStructure, instanceId]);
 
   const shouldShowNode = (node, path) => {
     if (!searchTerm) return true;
+    
+    // Get the matching folders from session storage
+    const matchingFoldersStr = sessionStorage.getItem(`${instanceId}_matchingFolders-${searchTerm}`);
+    const matchingFolders = matchingFoldersStr ? new Set(JSON.parse(matchingFoldersStr)) : new Set();
+    
+    // If any parent folder matches the search term, show all its contents
+    const pathParts = path.split('/');
+    let currentPath = '';
+    for (const part of pathParts) {
+      if (part) {
+        currentPath += `/${part}`;
+        if (matchingFolders.has(currentPath)) {
+          return true;
+        }
+      }
+    }
+    
+    // Otherwise, show only if the path is in filtered paths
     return filteredPaths.has(path) || node.name.toLowerCase().includes(searchTerm.toLowerCase());
   };
 
