@@ -259,12 +259,26 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
 
   const sortTreeStructure = (node) => {
     if (node.type === 'directory' && node.children) {
+      // Calculate total token count for directories
+      node.children.forEach(child => {
+        if (child.type === 'directory') {
+          child.total_token_count = child.children ? child.children.reduce((sum, n) => {
+            return sum + (n.token_count || 0) + (n.total_token_count || 0);
+          }, 0) : 0;
+        }
+      });
+
       node.children = node.children.sort((a, b) => {
         if (a.type === b.type) {
-          return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+          // For same type (both files or both directories), sort by token count
+          const aTokens = a.type === 'directory' ? (a.total_token_count || 0) : (a.token_count || 0);
+          const bTokens = b.type === 'directory' ? (b.total_token_count || 0) : (b.token_count || 0);
+          return bTokens - aTokens; // Descending order
         }
-        return a.type === 'directory' ? -1 : 1;
+        return a.type === 'directory' ? -1 : 1; // Still keep directories first
       });
+      
+      // Recursively sort children
       node.children.forEach(sortTreeStructure);
     }
     return node;
