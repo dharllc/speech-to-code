@@ -133,9 +133,13 @@ const PromptActions = ({ addTreeStructure, clearPrompt, clearFiles, setTranscrip
         await handleCopyToClipboard();
       } else {
         await navigator.clipboard.writeText(prompt);
-        setStatus('Copied to clipboard!');
-        setTimeout(() => setStatus(''), 2000);
       }
+      setCopied(true);
+      setStatus('Copied to clipboard!');
+      setTimeout(() => {
+        setCopied(false);
+        setStatus('');
+      }, 2000);
     } catch (error) {
       console.error('Failed to copy:', error);
       setStatus('Failed to copy to clipboard');
