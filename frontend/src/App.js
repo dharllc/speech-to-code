@@ -46,6 +46,13 @@ function App() {
     });
   };
 
+  const handleBatchFileSelection = (files) => {
+    // Clear existing files first
+    setSelectedFiles([]);
+    // Then add all new files
+    setSelectedFiles(files);
+  };
+
   const handleClearAllFiles = () => setSelectedFiles([]);
   
   const toggleSidebar = () => {
@@ -112,7 +119,8 @@ function App() {
                   <TwoColumnLayout 
                     selectedRepository={selectedRepository} 
                     selectedFiles={selectedFiles} 
-                    onFileSelectionChange={handleFileSelectionChange} 
+                    onFileSelectionChange={handleFileSelectionChange}
+                    onBatchFileSelection={handleBatchFileSelection}
                     onClearAllFiles={handleClearAllFiles} 
                     setUserPrompt={setUserPrompt} 
                   />

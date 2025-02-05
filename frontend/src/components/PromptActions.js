@@ -2,8 +2,9 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trees, Trash2, Mic, Square, Copy, Check, ArrowRight, Files } from 'lucide-react';
 import AudioVisualizer from './AudioVisualizer';
+import { FiCopy, FiTrash2, FiFolder } from 'react-icons/fi';
 
-const PromptActions = ({ addTreeStructure, clearPrompt, clearFiles, setTranscription, enhanceTranscription, setStatus, prompt, setUserPrompt }) => {
+const PromptActions = ({ addTreeStructure, clearPrompt, clearFiles, setTranscription, enhanceTranscription, setStatus, prompt, setUserPrompt, handleCopyToClipboard }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [currentDuration, setCurrentDuration] = useState(0);
   const [copied, setCopied] = useState(false);
@@ -122,9 +123,24 @@ const PromptActions = ({ addTreeStructure, clearPrompt, clearFiles, setTranscrip
   };
 
   const copyToClipboard = async () => {
-    await navigator.clipboard.writeText(prompt);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (!prompt) {
+      setStatus('Nothing to copy');
+      return;
+    }
+
+    try {
+      if (handleCopyToClipboard) {
+        await handleCopyToClipboard();
+      } else {
+        await navigator.clipboard.writeText(prompt);
+        setStatus('Copied to clipboard!');
+        setTimeout(() => setStatus(''), 2000);
+      }
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      setStatus('Failed to copy to clipboard');
+      setTimeout(() => setStatus(''), 2000);
+    }
   };
 
   const handleGoToLLM = () => {

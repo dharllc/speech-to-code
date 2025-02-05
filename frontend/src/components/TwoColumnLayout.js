@@ -3,8 +3,15 @@ import React, { useState } from 'react';
 import PromptComposer from './PromptComposer';
 import RepositoryFileViewer from './RepositoryFileViewer';
 
-const TwoColumnLayout = ({ selectedRepository, setUserPrompt }) => {
-  const [selectedFiles, setSelectedFiles] = useState([]);
+const TwoColumnLayout = ({ 
+  selectedRepository, 
+  selectedFiles, 
+  onFileSelectionChange,
+  onBatchFileSelection,
+  onClearAllFiles,
+  setUserPrompt 
+}) => {
+  const [selectedFilesState, setSelectedFiles] = useState([]);
 
   const handleFileSelect = (file, isSelected) => {
     setSelectedFiles(prev => {
@@ -17,33 +24,37 @@ const TwoColumnLayout = ({ selectedRepository, setUserPrompt }) => {
   };
 
   const handleFileRemove = (filePath) => {
-    setSelectedFiles(prev => prev.filter(f => f.path !== filePath));
+    const fileToRemove = selectedFiles.find(f => f.path === filePath);
+    if (fileToRemove && fileToRemove.type === 'directory') {
+      fileToRemove.files.forEach(file => {
+        onFileSelectionChange(file, false);
+      });
+    } else {
+      onFileSelectionChange({ path: filePath }, false);
+    }
   };
 
   return (
-    <div className="flex flex-col lg:flex-row w-full gap-4">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* Left Column: PromptComposer */}
-      <div className="w-full lg:w-1/2 min-w-0">
-        <div className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-lg">
-          <PromptComposer
-            selectedRepository={selectedRepository}
-            selectedFiles={selectedFiles}
-            onFileRemove={handleFileRemove}
-            onFileSelectionChange={handleFileSelect}
-            setUserPrompt={setUserPrompt}
-          />
-        </div>
+      <div className="h-[calc(100vh-8rem)] overflow-auto">
+        <PromptComposer
+          selectedRepository={selectedRepository}
+          selectedFiles={selectedFiles}
+          onFileRemove={handleFileRemove}
+          onFileSelectionChange={onFileSelectionChange}
+          onBatchFileSelection={onBatchFileSelection}
+          setUserPrompt={setUserPrompt}
+        />
       </div>
 
       {/* Right Column: Repository Browser */}
-      <div className="w-full lg:w-1/2 min-w-0">
-        <div className="bg-white dark:bg-gray-900 rounded-lg p-4 shadow-lg">
-          <RepositoryFileViewer
-            selectedRepository={selectedRepository}
-            onFileSelect={handleFileSelect}
-            selectedFiles={selectedFiles}
-          />
-        </div>
+      <div className="h-[calc(100vh-8rem)] overflow-auto">
+        <RepositoryFileViewer
+          selectedRepository={selectedRepository}
+          selectedFiles={selectedFiles}
+          onFileSelect={(file, isSelected) => onFileSelectionChange(file, isSelected)}
+        />
       </div>
     </div>
   );
