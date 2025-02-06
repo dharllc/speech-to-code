@@ -129,17 +129,23 @@ const PromptActions = ({ addTreeStructure, clearPrompt, clearFiles, setTranscrip
     }
 
     try {
+      let success = false;
       if (handleCopyToClipboard) {
-        await handleCopyToClipboard();
+        success = await handleCopyToClipboard();
       } else {
         await navigator.clipboard.writeText(prompt);
+        success = true;
       }
-      setCopied(true);
-      setStatus('Copied to clipboard!');
-      setTimeout(() => {
-        setCopied(false);
-        setStatus('');
-      }, 2000);
+      
+      if (success) {
+        setCopied(true);
+        setStatus('Copied to clipboard!');
+        setTimeout(() => {
+          setCopied(false);
+          // Only clear the status if it's still showing our copy message
+          setStatus(prev => prev === 'Copied to clipboard!' ? '' : prev);
+        }, 2000);
+      }
     } catch (error) {
       console.error('Failed to copy:', error);
       setStatus('Failed to copy to clipboard');
