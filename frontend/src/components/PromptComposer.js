@@ -12,8 +12,10 @@ import FileSuggestions from './FileSuggestions';
 import PromptAnalysisControls from './PromptAnalysisControls';
 import PromptPreview from './PromptPreview';  // <-- NEW import
 import { API_URL } from '../config/api';
+import { useFileCombinations } from '../hooks/useFileCombinations';
+import FileCombinations from './FileCombinations';
 
-const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUserPrompt, onFileSelectionChange }) => {
+const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUserPrompt, onFileSelectionChange, onBatchFileSelection }) => {
   const [basePrompt, setBasePrompt] = useState('');
   const [fileContents, setFileContents] = useState({});
   const [transcriptionHistory, setTranscriptionHistory] = useState([]);
@@ -45,6 +47,13 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   // Toggle to show/hide extra file chips
   const [showAllFiles, setShowAllFiles] = useState(false);
   const MAX_VISIBLE_FILE_CHIPS = 5;
+
+  const {
+    combinations,
+    addCombination,
+    removeCombination,
+    clearCombinations
+  } = useFileCombinations(selectedRepository);
 
   // Persist toggles to local storage
   useEffect(() => {
@@ -464,6 +473,113 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     setHasUnsavedChanges(true);
   };
 
+  // Calculate total tokens for selected files
+  const calculateTotalTokens = useCallback(() => {
+    return Object.values(fileContents).reduce((total, { tokenCount }) => total + (tokenCount || 0), 0);
+  }, [fileContents]);
+
+  // Handle copy to clipboard
+  const handleCopyToClipboard = useCallback(async () => {
+    const prompt = getStructuredPrompt();
+    try {
+      await navigator.clipboard.writeText(prompt);
+      // Save the combination after successful copy
+      addCombination(selectedFiles, calculateTotalTokens());
+      setStatus('Copied to clipboard!');
+      setTimeout(() => setStatus(''), 2000);
+    } catch (error) {
+      console.error('Failed to copy:', error);
+      setStatus('Failed to copy to clipboard');
+      setTimeout(() => setStatus(''), 2000);
+    }
+  }, [getStructuredPrompt, selectedFiles, addCombination, calculateTotalTokens]);
+
+  // Handle restoring a combination
+  const handleRestoreCombination = useCallback(async (combination) => {
+    try {
+      setStatus('Restoring file combination...');
+      
+      // First, clear everything
+      selectedFiles.forEach(file => onFileRemove(file.path));
+      setFileContents({});
+      
+      // Then fetch all file contents first
+      const newContents = {};
+      const filesToAdd = [];
+      
+      for (const file of combination.files) {
+        if (file.type === 'directory') {
+          const directoryFiles = [];
+          for (const subFile of file.files) {
+            try {
+              const response = await axios.get(`${API_URL}/file_content?repository=${selectedRepository}&path=${subFile.path}`);
+              if (!response.data.is_binary) {
+                newContents[subFile.path] = { 
+                  content: response.data.content, 
+                  tokenCount: response.data.token_count,
+                  isBinary: false 
+                };
+                directoryFiles.push({
+                  path: subFile.path,
+                  type: 'file',
+                  token_count: response.data.token_count
+                });
+              }
+            } catch (error) {
+              console.error(`Failed to fetch content for ${subFile.path}:`, error);
+            }
+          }
+          if (directoryFiles.length > 0) {
+            filesToAdd.push({
+              path: file.path,
+              type: 'directory',
+              files: directoryFiles,
+              token_count: {
+                total: directoryFiles.reduce((sum, f) => sum + (f.token_count || 0), 0)
+              }
+            });
+          }
+        } else {
+          try {
+            const response = await axios.get(`${API_URL}/file_content?repository=${selectedRepository}&path=${file.path}`);
+            if (!response.data.is_binary) {
+              newContents[file.path] = { 
+                content: response.data.content, 
+                tokenCount: response.data.token_count,
+                isBinary: false 
+              };
+              filesToAdd.push({
+                path: file.path,
+                type: 'file',
+                token_count: response.data.token_count
+              });
+            }
+          } catch (error) {
+            console.error(`Failed to fetch content for ${file.path}:`, error);
+          }
+        }
+      }
+      
+      // Update file contents first
+      setFileContents(newContents);
+      
+      // Update all files at once using batch selection
+      onBatchFileSelection(filesToAdd);
+      
+      // Force a re-render of the prompt preview
+      setHasUnsavedChanges(true);
+      
+      // Update status
+      setStatus('File combination restored');
+      setTimeout(() => setStatus(''), 2000);
+      
+    } catch (error) {
+      console.error('Error restoring combination:', error);
+      setStatus('Error restoring combination');
+      setTimeout(() => setStatus(''), 2000);
+    }
+  }, [onFileRemove, onBatchFileSelection, setStatus, selectedRepository]);
+
   // ======================
   //  RENDER
   // ======================
@@ -479,12 +595,12 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         setTranscription={text => text && enhanceTranscription(text)}
         enhanceTranscription={enhanceTranscription}
         setStatus={setStatus}
-        // Instead of the old "prompt", we pass our structured prompt out if needed
-        prompt={getStructuredPrompt()} 
+        prompt={getStructuredPrompt()}
         setUserPrompt={prompt => {
           setUserPrompt(prompt);
           setHasUnsavedChanges(false);
         }}
+        handleCopyToClipboard={handleCopyToClipboard}
       />
 
       {/* Chips for repo tree + files */}
@@ -499,6 +615,14 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         )}
         {getFileChips()}
       </div>
+
+      {/* Recent File Combinations */}
+      <FileCombinations
+        combinations={combinations}
+        onRestoreCombination={handleRestoreCombination}
+        onRemoveCombination={removeCombination}
+        currentSelection={selectedFiles}
+      />
 
       {/* Main Text Area for base prompt */}
       <PromptTextArea

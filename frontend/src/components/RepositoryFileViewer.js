@@ -157,6 +157,7 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPaths, setFilteredPaths] = useState(new Set());
   const [showWarnedFiles, setShowWarnedFiles] = useState(false);
+  const [instanceId] = useState(() => sessionStorage.getItem('currentInstanceId'));
 
   const fileTypes = useMemo(() => {
     if (!treeStructure) return {};
@@ -219,7 +220,7 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
       setTreeStructure(sortedTree);
       
       // Load saved state or initialize all folders as expanded
-      const savedState = localStorage.getItem(`expandedFolders-${repo}`);
+      const savedState = sessionStorage.getItem(`${instanceId}_expandedFolders-${repo}`);
       if (savedState) {
         setExpandedFolders(JSON.parse(savedState));
       } else {
@@ -234,12 +235,12 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
         };
         initializeFolders(sortedTree);
         setExpandedFolders(initialState);
-        localStorage.setItem(`expandedFolders-${repo}`, JSON.stringify(initialState));
+        sessionStorage.setItem(`${instanceId}_expandedFolders-${repo}`, JSON.stringify(initialState));
       }
     } catch (error) {
       console.error('Failed to fetch tree structure:', error);
     }
-  }, []);
+  }, [instanceId]);
 
   useEffect(() => {
     if (selectedRepository) {
@@ -253,17 +254,31 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
       [path]: !expandedFolders[path]
     };
     setExpandedFolders(newState);
-    localStorage.setItem(`expandedFolders-${selectedRepository}`, JSON.stringify(newState));
+    sessionStorage.setItem(`${instanceId}_expandedFolders-${selectedRepository}`, JSON.stringify(newState));
   };
 
   const sortTreeStructure = (node) => {
     if (node.type === 'directory' && node.children) {
+      // Calculate total token count for directories
+      node.children.forEach(child => {
+        if (child.type === 'directory') {
+          child.total_token_count = child.children ? child.children.reduce((sum, n) => {
+            return sum + (n.token_count || 0) + (n.total_token_count || 0);
+          }, 0) : 0;
+        }
+      });
+
       node.children = node.children.sort((a, b) => {
         if (a.type === b.type) {
-          return a.name.toLowerCase().localeCompare(b.name.toLowerCase());
+          // For same type (both files or both directories), sort by token count
+          const aTokens = a.type === 'directory' ? (a.total_token_count || 0) : (a.token_count || 0);
+          const bTokens = b.type === 'directory' ? (b.total_token_count || 0) : (b.token_count || 0);
+          return bTokens - aTokens; // Descending order
         }
-        return a.type === 'directory' ? -1 : 1;
+        return a.type === 'directory' ? -1 : 1; // Still keep directories first
       });
+      
+      // Recursively sort children
       node.children.forEach(sortTreeStructure);
     }
     return node;
@@ -292,23 +307,42 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     }
 
     const paths = new Set();
+    const matchingFolders = new Set();
+    
     const searchFiles = (node, path = '') => {
       const currentPath = `${path}/${node.name}`;
+      
+      // If this node matches the search term
       if (node.name.toLowerCase().includes(searchTerm.toLowerCase())) {
         paths.add(currentPath);
+        
+        // If it's a folder, add it to matching folders set
+        if (node.type === 'directory') {
+          matchingFolders.add(currentPath);
+        }
+        
+        // Add all parent paths to ensure they're visible
         let parentPath = path;
         while (parentPath) {
           paths.add(parentPath);
           parentPath = parentPath.substring(0, parentPath.lastIndexOf('/'));
         }
       }
+      
       if (node.children) {
         node.children.forEach(child => searchFiles(child, currentPath));
       }
     };
 
     searchFiles(treeStructure);
+    
+    // Store both regular paths and matching folders in the filtered paths
     setFilteredPaths(paths);
+    // Store matching folders separately
+    sessionStorage.setItem(
+      `${instanceId}_matchingFolders-${searchTerm}`, 
+      JSON.stringify(Array.from(matchingFolders))
+    );
     
     // Auto-expand all matching folders
     if (paths.size > 0) {
@@ -325,10 +359,28 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
       });
       setExpandedFolders(prev => ({ ...prev, ...newExpandedFolders }));
     }
-  }, [searchTerm, treeStructure]);
+  }, [searchTerm, treeStructure, instanceId]);
 
   const shouldShowNode = (node, path) => {
     if (!searchTerm) return true;
+    
+    // Get the matching folders from session storage
+    const matchingFoldersStr = sessionStorage.getItem(`${instanceId}_matchingFolders-${searchTerm}`);
+    const matchingFolders = matchingFoldersStr ? new Set(JSON.parse(matchingFoldersStr)) : new Set();
+    
+    // If any parent folder matches the search term, show all its contents
+    const pathParts = path.split('/');
+    let currentPath = '';
+    for (const part of pathParts) {
+      if (part) {
+        currentPath += `/${part}`;
+        if (matchingFolders.has(currentPath)) {
+          return true;
+        }
+      }
+    }
+    
+    // Otherwise, show only if the path is in filtered paths
     return filteredPaths.has(path) || node.name.toLowerCase().includes(searchTerm.toLowerCase());
   };
 
