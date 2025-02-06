@@ -7,23 +7,6 @@ import PropTypes from 'prop-types';
 
 const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt }) => {
   const [tokenCount, setTokenCount] = useState(0);
-  const [autoCopy, setAutoCopy] = useState(() =>
-    JSON.parse(localStorage.getItem('autoCopyEnabled') || 'false')
-  );
-
-  // Automatically copy the final prompt if autoCopy is toggled
-  useEffect(() => {
-    if (autoCopy && fullPrompt) {
-      navigator.clipboard
-        .writeText(fullPrompt)
-        .then(() => {
-          console.log('Prompt copied to clipboard');
-        })
-        .catch(err => {
-          console.error('Failed to copy prompt:', err);
-        });
-    }
-  }, [fullPrompt, autoCopy]);
 
   // Debounce token count calls
   useEffect(() => {
@@ -82,23 +65,7 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt })
         onChange={handlePromptChange}
         placeholder="Compose your request here..."
       />
-      <div className="flex justify-between items-center mt-1">
-        {/* Auto Copy toggle */}
-        <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="autoCopy"
-            checked={autoCopy}
-            onChange={(e) => {
-              setAutoCopy(e.target.checked);
-              localStorage.setItem('autoCopyEnabled', JSON.stringify(e.target.checked));
-            }}
-            className="mr-2"
-          />
-          <label htmlFor="autoCopy" className="text-sm text-gray-600 dark:text-gray-400">
-            Auto Copy
-          </label>
-        </div>
+      <div className="flex justify-end items-center mt-1">
         {/* Token count display */}
         <div className={getTokenCountColor(totalTokens)}>
           Tokens: {totalTokens}

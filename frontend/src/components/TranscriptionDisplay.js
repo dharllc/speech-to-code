@@ -1,16 +1,13 @@
 import React, { useState } from 'react';
-import { Check, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Check } from 'lucide-react';
 import CopyButton from './CopyButton';
 
 const TranscriptionDisplay = ({ 
   transcriptionHistory, 
   addToPrompt,
   autoAddEnabled,
-  setAutoAddEnabled,
   preferEnhanced,
-  setPreferEnhanced,
   enhancementDisabled = false,
-  setEnhancementDisabled
 }) => {
   const [addedToPrompt, setAddedToPrompt] = useState({});
 
@@ -27,27 +24,6 @@ const TranscriptionDisplay = ({
     const date = new Date(isoString);
     return date.toLocaleString();
   };
-
-  const Toggle = ({ enabled, onToggle, label }) => (
-    <button
-      onClick={onToggle}
-      className={`
-        flex items-center gap-2 px-3 py-1.5 rounded-full
-        transition-all duration-300 ease-in-out
-        ${enabled 
-          ? 'bg-blue-500 hover:bg-blue-600' 
-          : 'bg-gray-400 hover:bg-gray-500'
-        }
-      `}
-    >
-      {enabled ? (
-        <ToggleRight className="w-5 h-5 text-white transition-transform duration-300 transform" />
-      ) : (
-        <ToggleLeft className="w-5 h-5 text-white transition-transform duration-300 transform" />
-      )}
-      <span className="text-white text-sm font-medium">{label}</span>
-    </button>
-  );
 
   const TranscriptionSection = ({ title, text, index, isEnhanced, timestamp }) => (
     text && (
@@ -73,31 +49,8 @@ const TranscriptionDisplay = ({
 
   return (
     <div className="mt-6">
-      <div className="flex flex-col gap-4 mb-4">
-        <div className="flex justify-between items-center">
-          <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">Transcription History</h3>
-          <div className="flex gap-3">
-            <Toggle
-              enabled={!enhancementDisabled}
-              onToggle={() => setEnhancementDisabled(!enhancementDisabled)}
-              label="Enhancement"
-            />
-            <Toggle
-              enabled={autoAddEnabled}
-              onToggle={() => setAutoAddEnabled(!autoAddEnabled)}
-              label="Auto-add"
-            />
-          </div>
-        </div>
-        {autoAddEnabled && !enhancementDisabled && (
-          <div className="flex justify-end">
-            <Toggle
-              enabled={preferEnhanced}
-              onToggle={() => setPreferEnhanced(!preferEnhanced)}
-              label={preferEnhanced ? "Enhanced" : "Raw"}
-            />
-          </div>
-        )}
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="font-bold text-lg text-gray-900 dark:text-gray-100">Transcription History</h3>
       </div>
       
       <div className="space-y-4">

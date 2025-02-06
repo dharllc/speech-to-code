@@ -9,11 +9,11 @@ import TranscriptionDisplay from './TranscriptionDisplay';
 import FileChip from './FileChip';
 import { analyzePromptForFiles } from '../services/llmService';
 import FileSuggestions from './FileSuggestions';
-import PromptAnalysisControls from './PromptAnalysisControls';
 import PromptPreview from './PromptPreview';  // <-- NEW import
 import { API_URL } from '../config/api';
 import { useFileCombinations } from '../hooks/useFileCombinations';
 import FileCombinations from './FileCombinations';
+import PromptSettings from './PromptSettings';
 
 const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUserPrompt, onFileSelectionChange, onBatchFileSelection }) => {
   const [basePrompt, setBasePrompt] = useState('');
@@ -33,16 +33,17 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   const [autoAddEnabled, setAutoAddEnabled] = useState(() => 
     JSON.parse(localStorage.getItem('autoAddEnabled') || 'false')
   );
-  const [preferEnhanced, setPreferEnhanced] = useState(() => 
-    JSON.parse(localStorage.getItem('preferEnhanced') || 'true')
-  );
   const [enhancementDisabled, setEnhancementDisabled] = useState(() => 
     JSON.parse(localStorage.getItem('enhancementDisabled') || 'false')
+  );
+  const [isAutoCopyEnabled, setIsAutoCopyEnabled] = useState(() => 
+    JSON.parse(localStorage.getItem('autoCopyEnabled') || 'false')
   );
 
   const MIN_PROMPT_LENGTH = 20;
   const lastPromptRef = useRef(basePrompt);
   const treeOperationRef = useRef(false);
+  const lastCopiedPromptRef = useRef('');
 
   // Toggle to show/hide extra file chips
   const [showAllFiles, setShowAllFiles] = useState(false);
@@ -58,13 +59,13 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   // Persist toggles to local storage
   useEffect(() => {
     localStorage.setItem('autoAnalyzeEnabled', JSON.stringify(isAutoAnalyzeEnabled));
-  }, [isAutoAnalyzeEnabled]);
+    localStorage.setItem('autoCopyEnabled', JSON.stringify(isAutoCopyEnabled));
+  }, [isAutoAnalyzeEnabled, isAutoCopyEnabled]);
 
   useEffect(() => {
     localStorage.setItem('autoAddEnabled', JSON.stringify(autoAddEnabled));
-    localStorage.setItem('preferEnhanced', JSON.stringify(preferEnhanced));
     localStorage.setItem('enhancementDisabled', JSON.stringify(enhancementDisabled));
-  }, [autoAddEnabled, preferEnhanced, enhancementDisabled]);
+  }, [autoAddEnabled, enhancementDisabled]);
 
   // Fetch tree structure whenever repository changes
   useEffect(() => {
@@ -292,7 +293,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     const timestamp = new Date().toISOString();
     setTranscriptionHistory(prev => [{ timestamp, raw: text, enhanced: '' }, ...prev]);
 
-    if (autoAddEnabled && (!preferEnhanced || enhancementDisabled)) {
+    if (autoAddEnabled && enhancementDisabled) {
       addToPrompt(text);
     }
 
@@ -336,7 +337,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         );
       });
 
-      if (autoAddEnabled && preferEnhanced && !enhancementDisabled) {
+      if (autoAddEnabled && !enhancementDisabled) {
         addToPrompt(enhancedText);
       }
 
@@ -486,13 +487,42 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       // Save the combination after successful copy
       addCombination(selectedFiles, calculateTotalTokens());
       setStatus('Copied to clipboard!');
-      setTimeout(() => setStatus(''), 2000);
+      setTimeout(() => {
+        setStatus(prev => prev === 'Copied to clipboard!' ? '' : prev);
+      }, 2000);
+      return true;
     } catch (error) {
       console.error('Failed to copy:', error);
       setStatus('Failed to copy to clipboard');
       setTimeout(() => setStatus(''), 2000);
+      return false;
     }
   }, [getStructuredPrompt, selectedFiles, addCombination, calculateTotalTokens]);
+
+  // Watch for changes that should trigger auto-copy
+  useEffect(() => {
+    let timeoutId;
+    if (!isAutoCopyEnabled || !hasUnsavedChanges) return;
+
+    // Only copy if there are actual changes
+    const currentPrompt = getStructuredPrompt();
+    if (currentPrompt !== lastCopiedPromptRef.current) {
+      timeoutId = setTimeout(() => {
+        handleCopyToClipboard().then(success => {
+          if (success) {
+            lastCopiedPromptRef.current = currentPrompt;
+            setStatus('Auto-copied to clipboard');
+            const messageTimeoutId = setTimeout(() => {
+              setStatus(prev => prev === 'Auto-copied to clipboard' ? '' : prev);
+            }, 2000);
+            return () => clearTimeout(messageTimeoutId);
+          }
+        });
+      }, 1000); // Increased delay to prevent rapid copying
+    }
+
+    return () => timeoutId && clearTimeout(timeoutId);
+  }, [isAutoCopyEnabled, hasUnsavedChanges, handleCopyToClipboard, getStructuredPrompt]);
 
   // Handle restoring a combination
   const handleRestoreCombination = useCallback(async (combination) => {
@@ -578,13 +608,29 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       setStatus('Error restoring combination');
       setTimeout(() => setStatus(''), 2000);
     }
-  }, [onFileRemove, onBatchFileSelection, setStatus, selectedRepository]);
+  }, [onFileRemove, onBatchFileSelection, selectedRepository]);
 
   // ======================
   //  RENDER
   // ======================
   return (
-    <div className="p-2">
+    <div className="flex flex-col gap-4 p-4">
+      {/* Settings Row */}
+      <PromptSettings
+        isAutoAnalyzeEnabled={isAutoAnalyzeEnabled}
+        onToggleAutoAnalyze={() => setIsAutoAnalyzeEnabled(prev => !prev)}
+        autoAddEnabled={autoAddEnabled}
+        onToggleAutoAdd={() => setAutoAddEnabled(prev => !prev)}
+        enhancementDisabled={enhancementDisabled}
+        onToggleEnhancement={() => setEnhancementDisabled(prev => !prev)}
+        onManualAnalyze={() => analyzePrompt(basePrompt)}
+        isAnalyzing={isAnalyzing}
+        promptLength={basePrompt.length}
+        minPromptLength={MIN_PROMPT_LENGTH}
+        autoCopyEnabled={isAutoCopyEnabled}
+        onToggleAutoCopy={() => setIsAutoCopyEnabled(prev => !prev)}
+      />
+
       <h2 className="text-base font-bold mb-2">Prompt Composer</h2>
 
       {/* Prompt Actions Bar */}
@@ -635,19 +681,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
             return sum + (fileContents[file.path]?.tokenCount || 0);
           }, 0)
         }
-        // Pass the structured prompt for "autoCopy" or token counting
         fullPrompt={getStructuredPrompt()}
-      />
-
-      {/* Analysis Controls / Suggestions */}
-      <PromptAnalysisControls
-        promptLength={basePrompt.length}
-        minLength={MIN_PROMPT_LENGTH}
-        isAnalyzing={isAnalyzing}
-        isAutoAnalyzeEnabled={isAutoAnalyzeEnabled}
-        onToggleAutoAnalyze={() => setIsAutoAnalyzeEnabled(prev => !prev)}
-        onManualAnalyze={() => analyzePrompt(basePrompt)}
-        disabled={!selectedRepository}
       />
 
       {/* Status Spinner */}
@@ -677,11 +711,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         transcriptionHistory={transcriptionHistory}
         addToPrompt={addToPrompt}
         autoAddEnabled={autoAddEnabled}
-        setAutoAddEnabled={setAutoAddEnabled}
-        preferEnhanced={preferEnhanced}
-        setPreferEnhanced={setPreferEnhanced}
         enhancementDisabled={enhancementDisabled}
-        setEnhancementDisabled={setEnhancementDisabled}
       />
 
       {/* Finally, show the new structured prompt preview */}
