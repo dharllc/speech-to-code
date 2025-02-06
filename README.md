@@ -1,167 +1,159 @@
-# Speech-to-Code
+# 🎙️ Speech-to-Code
+
+> Transform your voice into code with the power of AI 🚀
 
 Speech-to-Code is a web application that leverages Large Language Models (LLMs) to convert spoken language into executable code. This project aims to streamline the code generation process by allowing developers to express their ideas verbally and have them translated into functional code.
 
-## Usage
+## ✨ Key Features
 
-Here is an example workflow of the Speech-to-Code application:
+### 🎯 Advanced Prompt Composer
+- 🗣️ Combine speech, repository files, and manual text input
+- 📊 Real-time audio visualization for voice input
+- 🔍 Smart file suggestions based on context
+- 👀 Preview and edit prompts before submission
 
-### Write a prompt, combining speech, the repo tree, and current source code
-![Prompt Composer](./screenshots/prompt_composer.png)
+### 🤖 Multi-Model Support
+- 🔌 Integration with multiple LLM providers (OpenAI, Anthropic)
+- ⚙️ Customizable model parameters
+- 💰 Cost tracking and display
+- ⚡ Model-specific optimizations
 
-### Prompt an LLM and copy the code
-![Prompt](./screenshots/prompt_ui.png)
-![Copy Code](./screenshots/conversation_display.png)
+### 📁 Repository Integration
+- 🌳 Interactive file viewer for repository navigation
+- 🔗 Smart file combinations for context
+- 📝 File-based suggestions
+- 📊 Repository structure visualization
 
-### Manage system prompts
-![System Prompts](./screenshots/system_prompts.png)
+### 🎤 Transcription Management
+- ⚡ Real-time speech-to-text conversion
+- ✏️ Transcription editing and refinement
+- 📈 Voice input visualization
 
-## Prerequisites
+### 💡 System Prompt Management
+- 📝 Create and edit system prompts
+- 📂 Organize prompts by category
+- ⚡ Quick prompt selection
+- 🔄 Version control for prompts
 
-Before you begin, ensure you have met the following requirements:
-* You have installed the latest version of [Node.js and npm](https://nodejs.org/en/download/)
-* You have installed [Python](https://www.python.org/downloads/) (version 3.7 or later)
-* You have a Windows/Linux/Mac machine with command line access
+### 🎨 User Experience
+- 🌓 Dark/Light mode toggle
+- 📊 Two-column layout for better workflow
+- 📱 Responsive design
+- 📋 Copy-to-clipboard functionality
 
-## Installation
+### ⚙️ Advanced Settings
+- 🔑 Environment variable management
+- 📂 Repository path configuration
+- 🔒 API key management
+- 🔌 Port configuration
 
-To install Speech-to-Code, follow these steps:
+## 🚀 Getting Started
 
-1. Clone the repository
-   ```
+### 📋 Prerequisites
+
+Before you begin, ensure you have installed:
+* 📦 [Node.js and npm](https://nodejs.org/en/download/) (latest version)
+* 🐍 [Python](https://www.python.org/downloads/) (version 3.7 or later)
+* 💻 A Windows/Linux/Mac machine with command line access
+
+### 🔧 Installation
+
+1. **Clone the repository**
+   ```bash
    git clone https://github.com/dharllc/speech-to-code.git
    cd speech-to-code
    ```
 
-2. Make the build script executable
-   ```
+2. **Make the build script executable**
+   ```bash
    chmod +x build.sh
    ```
 
-3. Run the build script
-   ```
+3. **Run the build script**
+   ```bash
    ./build.sh
    ```
-   This script will:
-   - Install necessary dependencies for both frontend and backend
-   - Set up a Python virtual environment
-   - Create .env files with placeholders for API keys if they don't exist
+   The script will:
+   - 📦 Install necessary dependencies
+   - 🐍 Set up a Python virtual environment
+   - 🔑 Create .env files with placeholders
 
-4. Configure environment variables
-   After running the application, navigate to the Settings page to configure your environment variables, including:
-   - OPENAI_API_KEY
-   - GOOGLE_API_KEY
-   - ANTHROPIC_API_KEY
-   - REPO_PATH (path to your local GitHub repositories)
+4. **Configure Environment Variables**
+   Navigate to the Settings page to configure:
+   - OpenAI API Key
+   - Google API Key
+   - Anthropic API Key
+   - Repository Path
 
-## Running the Application
+## 🚀 Running the Application
 
-To run Speech-to-Code, follow these steps:
-
-1. Configure ports (optional):
-Edit `config.json` in the root directory to set custom ports. If you need to change the port numbers for the frontend or backend, do it from the root config.json file. 
-```json
-{
-    "frontend": {
-        "port": 3000 
-    },
-    "backend": {
-        "port": 8000 
-    }
-}
-```
-
-2. Start the frontend:
+1. **Configure ports** (optional)
+   Edit `config.json` in the root directory:
+   ```json
+   {
+       "frontend": {
+           "port": 3000 
+       },
+       "backend": {
+           "port": 8000 
+       }
+   }
    ```
+
+2. **Start the frontend**
+   ```bash
    cd frontend
    npm start
    ```
 
-3. In a new terminal, start the backend:
-   ```
+3. **Start the backend**
+   ```bash
    cd backend
    source venv/bin/activate
    uvicorn main:app --reload --log-level debug
    ```
 
-The application should now be running. Access the frontend at `http://localhost:3000` in your web browser, or the port set in the config.json file. Create a unique python virtual environment for this repository and install the required packages using:
+Access the application at `http://localhost:3000` 🌐
 
-```
-pip install -r requirements.txt
-```
-
-This command should be executed in the /backend folder.
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 speech-to-code/
-├── backend/
+├── 🔧 backend/
 │   ├── .env
 │   ├── main.py
 │   ├── llm_interaction.py
 │   ├── model_config.py
 │   ├── system_prompts.json
 │   ├── context_maps/
-│   ├── utils/
-├── frontend/
+│   └── utils/
+├── 🎨 frontend/
 │   ├── public/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── services/
-│   │   ├── config/
-│   ├── .env
-│   ├── .gitignore
-│   ├── package-lock.json
-│   ├── package.json
-│   ├── postcss.config.js
-│   └── tailwind.config.js
-├── logs/
-├── .gitattributes
-├── .gitignore
-├── package-lock.json
-├── README.md
+│   └── src/
+│       ├── components/
+│       ├── services/
+│       └── config/
+├── 📝 logs/
+└── 📄 README.md
 ```
 
-## Key Components
+## 🔧 Troubleshooting
 
-### Backend
-- `main.py`: The main FastAPI application
-- `llm_interaction.py`: Handles interactions with Language Learning Models
-- `model_config.py`: Configuration for different language models
-- `system_prompts.json`: Stores system prompts for LLM interactions
+If you encounter issues:
+1. 🔑 Verify API keys in Settings
+2. 📦 Check dependencies
+3. 🚀 Ensure both servers are running
 
-### Frontend
-- `src/components/`: React components for the user interface
-- `src/services/llmService.js`: Service for interacting with the backend LLM API
-- `src/App.js`: Main React application component
-- `src/components/Settings.js`: Component for managing environment variables and repository settings
+For detailed logs, check the console output of both servers.
 
-## Features
+## 🤝 Contributing
 
-- Prompt Composer: Craft and edit prompts for code generation
-- System Prompt Management: Manage and customize system prompts
-- Prompt UI: Interact with various Large Language Models
-- Settings: Configure environment variables and repository settings
-- Dark Mode: Toggle between light and dark themes
+We welcome contributions! Check our issues page for current tasks or suggest new features.
 
-## Troubleshooting
+## 📬 Feedback
 
-If you encounter any issues:
-- Ensure all API keys are correctly set in the Settings page
-- Check that all dependencies are installed correctly
-- Verify that both frontend and backend servers are running
+Have suggestions? Email me at sachin@dharllc.com
 
-For more detailed error messages, check the console output of both frontend and backend servers.
+## 📄 License
 
-## Contributing
-
-Contributions to Speech-to-Code are welcome. Please refer to the repository's issues page for current tasks or to suggest new features.
-
-## Feedback
-
-Please send feedback via email to sachin@dharllc.com
-
-## License
-
-This project uses the following license: [MIT License](https://opensource.org/licenses/MIT).
+This project is licensed under the [MIT License](https://opensource.org/licenses/MIT) 📜
