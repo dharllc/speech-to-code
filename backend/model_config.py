@@ -1,25 +1,18 @@
 MODELS = {
     "OpenAI": {
-        "o1-2024-12-17": {"input": 15, "output": 60, "input_tokens": 128000, "output_tokens": 32768},
-        "o1-mini-2024-09-12": {"input": 3, "output": 12, "input_tokens": 128000, "output_tokens": 65536},
+        "o1": {"input": 15, "output": 60, "input_tokens": 128000, "output_tokens": 32768},
+        "o3-mini": {"input": 1.1, "output": 4.4, "input_tokens": 128000, "output_tokens": 32768},
         "gpt-4o": {"input": 5, "output": 15, "input_tokens": 128000, "output_tokens": 4096},
         "gpt-4o-mini": {"input": 0.15, "output": 0.60, "input_tokens": 128000, "output_tokens": 16384}
     },
     "Anthropic": {
-        "claude-3-5-sonnet-20241022": {"input": 3, "output": 15, "input_tokens": 200000, "output_tokens": 8192},
-        "claude-3-5-sonnet-20240620": {"input": 3, "output": 15, "input_tokens": 200000, "output_tokens": 8192},
-        "claude-3-haiku-20240307": {"input": 0.25, "output": 1.25, "input_tokens": 200000, "output_tokens": 4096},
-        "claude-3-opus-20240229": {"input": 15, "output": 75, "input_tokens": 200000, "output_tokens": 4096}
+        "claude-3-5-sonnet-latest": {"input": 3, "output": 15, "input_tokens": 200000, "output_tokens": 8192},
+        "claude-3-5-haiku-latest": {"input": 0.25, "output": 1.25, "input_tokens": 200000, "output_tokens": 4096},
+        "claude-3-opus-latest": {"input": 15, "output": 75, "input_tokens": 200000, "output_tokens": 4096}
     },
     "Google": {
-        # "gemini-2.0-flash": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
-        "gemini-2.0-flash-thinking-exp-1219": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
-        "gemini-2.0-flash-exp": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
-        "gemini-1.5-pro": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
-    #     "gemini-1.5-pro-exp-0801": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
-    #     "gemini-1.5-pro-exp-0827": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
-    #     "gemini-1.5-flash": {"input": 0.075, "output": 0.30, "input_tokens": 1048576, "output_tokens": 8192},
-    #     "gemini-1.5-flash-exp-0827": {"input": 0.075, "output": 0.30, "input_tokens": 1048576, "output_tokens": 8192},
-    #     "gemini-1.5-flash-8b-exp-0827": {"input": 0.075, "output": 0.30, "input_tokens": 1048576, "output_tokens": 8192}
+        "gemini-2.0-pro-exp-02-05": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
+        "gemini-2.0-flash-thinking-exp-01-21": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
+        "gemini-2.0-flash-exp": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192}
     }
 }

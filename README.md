@@ -1,6 +1,4 @@
-# 🎙️ Speech-to-Code
-
-> Transform your voice into code with the power of AI 🚀
+# Speech-to-Code
 
 Speech-to-Code is a web application that leverages Large Language Models (LLMs) to convert spoken language into executable code. This project aims to streamline the code generation process by allowing developers to express their ideas verbally and have them translated into functional code.
 
@@ -8,10 +6,10 @@ Speech-to-Code is a web application that leverages Large Language Models (LLMs) 
 
 ### 🎯 Compose Your Prompt
 Combine speech, repository files, and manual text input in our intuitive prompt composer:
-![Prompt Composer](./screenshots/prompt_composer.png)
 
-### 💬 Interact with AI Models
-Get intelligent code suggestions from various LLM providers:
+![Prompt Composer](./screenshots/prompt_composer.png)
+### 💬 Use LLM APIs Directly
+Sidestep rate limits and outages by using LLM APIs direcrtly:
 ![Prompt UI](./screenshots/prompt_ui.png)
 
 ### 📋 Review and Copy Code
