@@ -2,11 +2,20 @@ import os
 import json
 
 def should_skip_token_count(file_path):
-    image_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.ico', '.webp', '.svg', '.mp4', '.webm',
-                       '.mov', '.wav', '.mp3', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.zip', '.tar',
-                       '.gz', '.7z', '.rar', '.exe', '.dll', '.so', '.dylib', '.class', '.o', '.obj', '.map'}
-    _, ext = os.path.splitext(file_path.lower())
-    return ext in image_extensions
+    # List of specific files to skip
+    skip_files = {'package-lock.json', 'yarn.lock', '.ds_store', 'thumbs.db',
+                 'desktop.ini', '.gitignore', '.dockerignore'}
+    
+    # List of extensions to skip
+    skip_extensions = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.ico', '.webp', '.svg', '.mp4', '.webm',
+                      '.mov', '.wav', '.mp3', '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.zip', '.tar',
+                      '.gz', '.7z', '.rar', '.exe', '.dll', '.so', '.dylib', '.class', '.o', '.obj', '.map',
+                      '.log', '.lock', '.pid', '.pyc', '.pyo'}
+    
+    filename = os.path.basename(file_path.lower())
+    _, ext = os.path.splitext(filename)
+    
+    return filename in skip_files or ext in skip_extensions
 
 def get_tree_structure(path, max_depth=10):
     excluded_dirs = {'node_modules', 'venv', '__pycache__', '.git'}
