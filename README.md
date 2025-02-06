@@ -4,57 +4,75 @@
 
 Speech-to-Code is a web application that leverages Large Language Models (LLMs) to convert spoken language into executable code. This project aims to streamline the code generation process by allowing developers to express their ideas verbally and have them translated into functional code.
 
+## 📸 Application Screenshots
+
+### 🎯 Compose Your Prompt
+Combine speech, repository files, and manual text input in our intuitive prompt composer:
+![Prompt Composer](./screenshots/prompt_composer.png)
+
+### 💬 Interact with AI Models
+Get intelligent code suggestions from various LLM providers:
+![Prompt UI](./screenshots/prompt_ui.png)
+
+### 📋 Review and Copy Code
+Easily review and copy the generated code:
+![Copy Code](./screenshots/conversation_display.png)
+
+### ⚙️ Manage System Prompts
+Customize and organize your system prompts:
+![System Prompts](./screenshots/system_prompts.png)
+
 ## ✨ Key Features
 
 ### 🎯 Advanced Prompt Composer
-- 🗣️ Combine speech, repository files, and manual text input
-- 📊 Real-time audio visualization for voice input
-- 🔍 Smart file suggestions based on context
-- 👀 Preview and edit prompts before submission
+- Combine speech, repository files, and manual text input
+- Real-time audio visualization for voice input
+- Smart file suggestions based on context
+- Preview and edit prompts before submission
 
 ### 🤖 Multi-Model Support
-- 🔌 Integration with multiple LLM providers (OpenAI, Anthropic)
-- ⚙️ Customizable model parameters
-- 💰 Cost tracking and display
-- ⚡ Model-specific optimizations
+- Integration with multiple LLM providers (OpenAI, Anthropic)
+- Customizable model parameters
+- Cost tracking and display
+- Model-specific optimizations
 
 ### 📁 Repository Integration
-- 🌳 Interactive file viewer for repository navigation
-- 🔗 Smart file combinations for context
-- 📝 File-based suggestions
-- 📊 Repository structure visualization
+- Interactive file viewer for repository navigation
+- Smart file combinations for context
+- File-based suggestions
+- Repository structure visualization
 
 ### 🎤 Transcription Management
-- ⚡ Real-time speech-to-text conversion
-- ✏️ Transcription editing and refinement
-- 📈 Voice input visualization
+- Real-time speech-to-text conversion
+- Transcription editing and refinement
+- Voice input visualization
 
 ### 💡 System Prompt Management
-- 📝 Create and edit system prompts
-- 📂 Organize prompts by category
-- ⚡ Quick prompt selection
-- 🔄 Version control for prompts
+- Create and edit system prompts
+- Organize prompts by category
+- Quick prompt selection
+- Version control for prompts
 
 ### 🎨 User Experience
-- 🌓 Dark/Light mode toggle
-- 📊 Two-column layout for better workflow
-- 📱 Responsive design
-- 📋 Copy-to-clipboard functionality
+- Dark/Light mode toggle
+- Two-column layout for better workflow
+- Responsive design
+- Copy-to-clipboard functionality
 
 ### ⚙️ Advanced Settings
-- 🔑 Environment variable management
-- 📂 Repository path configuration
-- 🔒 API key management
-- 🔌 Port configuration
+- Environment variable management
+- Repository path configuration
+- API key management
+- Port configuration
 
 ## 🚀 Getting Started
 
 ### 📋 Prerequisites
 
 Before you begin, ensure you have installed:
-* 📦 [Node.js and npm](https://nodejs.org/en/download/) (latest version)
-* 🐍 [Python](https://www.python.org/downloads/) (version 3.7 or later)
-* 💻 A Windows/Linux/Mac machine with command line access
+* [Node.js and npm](https://nodejs.org/en/download/) (latest version)
+* [Python](https://www.python.org/downloads/) (version 3.7 or later)
+* A Windows/Linux/Mac machine with command line access
 
 ### 🔧 Installation
 
@@ -74,9 +92,9 @@ Before you begin, ensure you have installed:
    ./build.sh
    ```
    The script will:
-   - 📦 Install necessary dependencies
-   - 🐍 Set up a Python virtual environment
-   - 🔑 Create .env files with placeholders
+   - Install necessary dependencies
+   - Set up a Python virtual environment
+   - Create .env files with placeholders
 
 4. **Configure Environment Variables**
    Navigate to the Settings page to configure:
@@ -119,7 +137,7 @@ Access the application at `http://localhost:3000` 🌐
 
 ```
 speech-to-code/
-├── 🔧 backend/
+├── backend/
 │   ├── .env
 │   ├── main.py
 │   ├── llm_interaction.py
@@ -127,22 +145,22 @@ speech-to-code/
 │   ├── system_prompts.json
 │   ├── context_maps/
 │   └── utils/
-├── 🎨 frontend/
+├── frontend/
 │   ├── public/
 │   └── src/
 │       ├── components/
 │       ├── services/
 │       └── config/
-├── 📝 logs/
-└── 📄 README.md
+├── logs/
+└── README.md
 ```
 
 ## 🔧 Troubleshooting
 
 If you encounter issues:
-1. 🔑 Verify API keys in Settings
-2. 📦 Check dependencies
-3. 🚀 Ensure both servers are running
+1. Verify API keys in Settings
+2. Check dependencies
+3. Ensure both servers are running
 
 For detailed logs, check the console output of both servers.
 
