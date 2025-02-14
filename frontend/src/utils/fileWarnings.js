@@ -1,7 +1,7 @@
 export const WARNING_PATTERNS = {
     files: [
       'package-lock.json', 'yarn.lock', '.DS_Store', 'Thumbs.db',
-      'desktop.ini', '.gitignore', '.dockerignore'
+      'desktop.ini', '.gitignore', '.dockerignore', '.next'
     ],
     extensions: [
       '.log', '.lock', '.pid', '.pyc', '.pyo', '.exe', '.dll', '.so', 
