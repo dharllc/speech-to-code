@@ -23,9 +23,26 @@ const SystemPromptSelector = ({ prompts, activePromptId, onSelect }) => {
   return (
     <div className="mb-4">
       <h3 className="text-lg font-semibold mb-2 text-gray-800 dark:text-gray-200">
-        Choose a System Prompt
+        System Prompt (Optional)
       </h3>
       <div className="flex flex-wrap gap-2">
+        <button
+          key="none"
+          type="button"
+          onClick={() => onSelect(null)}
+          className={`
+            px-3 py-2 rounded-lg text-sm font-medium
+            border border-transparent shadow-sm
+            transition-colors duration-200
+            ${
+              activePromptId === null
+                ? 'bg-blue-500 text-white hover:bg-blue-600'
+                : 'bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-200'
+            }
+          `}
+        >
+          None
+        </button>
         {prompts.map((prompt) => (
           <button
             key={prompt.id}

@@ -142,11 +142,6 @@ const LLMInteraction = ({ initialPrompt }) => {
   //   HANDLE SUBMIT
   // =====================
   const handleSubmit = async (model) => {
-    if (!activePromptId) {
-      console.warn('No system prompt selected!');
-      return;
-    }
-
     setLoading(true);
     setElapsedTime(0);
 
@@ -154,8 +149,9 @@ const LLMInteraction = ({ initialPrompt }) => {
       const activePrompt = prompts.find((p) => p.id === activePromptId);
       const currentSystemPrompt = activePrompt?.content || '';
 
+      // Only include system message if a prompt is selected
       const messages = [
-        { role: 'system', content: currentSystemPrompt },
+        ...(activePromptId ? [{ role: 'system', content: currentSystemPrompt }] : []),
         ...conversationHistory,
         { role: 'user', content: userPrompt }
       ];
