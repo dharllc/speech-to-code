@@ -13,7 +13,9 @@ load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
 anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
 google_api_key = os.getenv("GOOGLE_API_KEY")
+xai_api_key = os.getenv("XAI_API_KEY")
 
+# Initialize clients
 anthropic_client = Anthropic(api_key=anthropic_api_key)
 genai.configure(api_key=google_api_key)
 
@@ -46,7 +48,7 @@ async def openai_completion(model: str, messages: list, max_tokens: int, tempera
         response = openai.ChatCompletion.create(
             model=model,
             messages=messages,
-            # rename to match the model’s parameter requirements
+            # rename to match the model's parameter requirements
             max_completion_tokens=max_tokens,
             temperature=1
         )
@@ -125,6 +127,28 @@ async def google_completion(model: str, messages: list, max_tokens: int, tempera
     )
     return response.text
 
+async def xai_completion(model: str, messages: list, max_tokens: int, temperature: float):
+    # Save the current OpenAI configuration
+    original_api_key = openai.api_key
+    original_api_base = openai.api_base
+    
+    try:
+        # Set X.AI configuration
+        openai.api_key = xai_api_key
+        openai.api_base = "https://api.x.ai/v1"
+        
+        response = openai.ChatCompletion.create(
+            model=model,
+            messages=messages,
+            max_tokens=max_tokens,
+            temperature=temperature
+        )
+        return response.choices[0].message['content']
+    finally:
+        # Restore original OpenAI configuration
+        openai.api_key = original_api_key
+        openai.api_base = original_api_base
+
 async def handle_llm_interaction(request: dict):
     model = request.get('model', 'gpt-3.5-turbo')
     messages = request.get('messages', [])
@@ -147,6 +171,8 @@ async def handle_llm_interaction(request: dict):
             output_text = await anthropic_completion(model, messages, max_tokens, temperature)
         elif model in MODELS['Google']:
             output_text = await google_completion(model, messages, max_tokens, temperature)
+        elif model in MODELS['XAI']:
+            output_text = await xai_completion(model, messages, max_tokens, temperature)
         else:
             raise ValueError(f"Unsupported model: {model}")
 

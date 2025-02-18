@@ -14,5 +14,8 @@ MODELS = {
         "gemini-2.0-pro-exp-02-05": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
         "gemini-2.0-flash-thinking-exp-01-21": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
         "gemini-2.0-flash-exp": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192}
+    },
+    "XAI": {
+        "grok-2-1212": {"input": 2.00, "output": 10.00, "input_tokens": 128000, "output_tokens": 32768}
     }
 }
