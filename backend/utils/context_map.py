@@ -35,14 +35,75 @@ def extract_readme_description(content:str)->str:
 def get_file_metadata(filepath:str,content:str)->Dict:
     file_type=os.path.splitext(filepath)[1][1:].lower()
     key_elements=[]
-    if file_type=='py':key_elements=parse_python_file(content)
-    elif file_type=='js':key_elements=parse_javascript_file(content)
+    summary=""
+
+    # Fast categorization based on file type and basic content analysis
+    if file_type in ['js', 'jsx', 'ts', 'tsx']:
+        key_elements=parse_javascript_file(content)
+        # Check for React components (fast check without full parsing)
+        is_component = any(x in content for x in ['React.', 'export default', '<div', '<>', 'function', 'const'])
+        has_hooks = any(x in content for x in ['useState', 'useEffect', 'useContext', 'useRef'])
+        summary_parts = []
+        if is_component:
+            summary_parts.append("React component")
+            if has_hooks:
+                summary_parts.append("with hooks")
+        elif 'export' in content:
+            summary_parts.append("JS/TS module")
+        if key_elements:
+            summary_parts.append(f"({len(key_elements)} exports/functions)")
+        summary = " ".join(summary_parts) or "JavaScript/TypeScript file"
+
+    elif file_type == 'py':
+        key_elements=parse_python_file(content)
+        # Quick check for common Python patterns
+        is_api = any(x in content for x in ['@app.route', 'fastapi', 'django', 'flask'])
+        is_class = 'class ' in content
+        summary_parts = []
+        if is_api:
+            summary_parts.append("API endpoints")
+        elif is_class:
+            summary_parts.append("Python class")
+        if key_elements:
+            summary_parts.append(f"({len(key_elements)} functions/imports)")
+        summary = " ".join(summary_parts) or "Python module"
+
+    elif file_type in ['json', 'yaml', 'yml']:
+        # Config files are important for context
+        is_package = 'package.json' in filepath.lower()
+        is_config = any(x in filepath.lower() for x in ['config', 'settings', 'next.config'])
+        if is_package:
+            summary = "Package configuration"
+        elif is_config:
+            summary = "Project configuration"
+        else:
+            summary = f"{file_type.upper()} data file"
+
+    elif file_type == 'md':
+        # Quick check for documentation
+        is_doc = any(x in filepath.lower() for x in ['readme', 'doc', 'guide', 'contributing'])
+        summary = "Documentation" if is_doc else "Markdown file"
+
+    elif file_type in ['css', 'scss', 'sass', 'less']:
+        # Quick check for style patterns
+        is_module = '.module.' in filepath.lower()
+        is_global = 'global' in filepath.lower()
+        if is_module:
+            summary = "CSS Module"
+        elif is_global:
+            summary = "Global styles"
+        else:
+            summary = "Stylesheet"
+
+    else:
+        summary = f"{file_type} file"
+
     return{
         'type':file_type,
         'size':len(content),
         'lastModified':datetime.fromtimestamp(os.path.getmtime(filepath)).isoformat(),
         'key_elements':key_elements,
-        'summary':f"{'Function' if key_elements else 'File'} containing {len(key_elements)} key elements"
+        'summary':summary
     }
 
 def generate_context_map(repo_path:str,repo_name:str)->Dict:
