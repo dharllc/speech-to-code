@@ -74,10 +74,10 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt })
   };
 
   return (
-    <div className="mb-4 relative group">
+    <div className="relative group">
       <textarea
         ref={textareaRef}
-        className="w-full h-64 p-2 border rounded resize-none
+        className="w-full h-64 p-4 border rounded-md resize-none
                    bg-white dark:bg-gray-800 
                    text-gray-900 dark:text-gray-100
                    border-gray-300 dark:border-gray-700
@@ -94,22 +94,26 @@ const PromptTextArea = ({ prompt, setPrompt, additionalTokenCount, fullPrompt })
 
       <button
         onClick={handlePasteButtonClick}
-        className="absolute right-2 bottom-8 p-1.5 
+        className="absolute right-3 bottom-10 p-2
                    bg-blue-500 text-white rounded-md
                    opacity-0 group-hover:opacity-100
                    transition-opacity duration-200
                    hover:bg-blue-600 focus:outline-none
                    shadow-sm hover:shadow-md"
         title="Focus at bottom (⌘K)"
+        aria-label="Focus at bottom of textarea"
       >
-        <ArrowDownToLine size={14} />
+        <ArrowDownToLine size={16} />
       </button>
 
-      <div className="flex justify-between items-center mt-1 text-xs">
-        <div className="text-gray-500 dark:text-gray-400">
-          Press ⌘K to focus at bottom
+      <div className="flex justify-between items-center mt-2 px-1 text-xs">
+        <div className="text-gray-500 dark:text-gray-400 flex items-center">
+          <span className="inline-flex items-center bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md">
+            <span className="font-mono mr-1">⌘K</span> 
+            to focus at bottom
+          </span>
         </div>
-        <div className={getTokenCountColor(tokenCount + additionalTokenCount)}>
+        <div className={`${getTokenCountColor(tokenCount + additionalTokenCount)} px-2 py-1 rounded-md bg-gray-100 dark:bg-gray-700`}>
           Tokens: {tokenCount + additionalTokenCount}
         </div>
       </div>

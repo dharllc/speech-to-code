@@ -2,18 +2,25 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
-import { FiLoader } from 'react-icons/fi';
+import { FiLoader, FiFile, FiFolder } from 'react-icons/fi';
 import PromptActions from './PromptActions';
 import PromptTextArea from './PromptTextArea';
 import TranscriptionDisplay from './TranscriptionDisplay';
 import FileChip from './FileChip';
 import { analyzePromptForFiles } from '../services/llmService';
 import FileSuggestions from './FileSuggestions';
-import PromptPreview from './PromptPreview';  // <-- NEW import
+import PromptPreview from './PromptPreview';
 import { API_URL } from '../config/api';
 import { useFileCombinations } from '../hooks/useFileCombinations';
 import FileCombinations from './FileCombinations';
 import PromptSettings from './PromptSettings';
+
+// Import shadcn-style components
+import { Card, CardContent } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { Separator } from "./ui/separator";
+import { ScrollArea } from "./ui/scroll-area";
+import { Skeleton } from "./ui/skeleton";
 
 const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUserPrompt, onFileSelectionChange, onBatchFileSelection }) => {
   const [basePrompt, setBasePrompt] = useState('');
@@ -112,69 +119,70 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   // ======================
   //  FILE CONTENT FETCH
   // ======================
-  useEffect(() => {
-    const fetchFileContents = async () => {
-      const newContents = { ...fileContents };
+  const fetchFileContents = async () => {
+    const newContents = { ...fileContents };
 
-      // Remove any old file paths no longer selected
-      Object.keys(newContents).forEach(path => {
-        const stillSelected = selectedFiles.some(file => {
-          if (file.type === 'directory') {
-            return file.files.some(f => f.path === path);
-          }
-          return file.path === path;
-        });
-        if (!stillSelected) {
-          delete newContents[path];
-        }
-      });
-
-      // Fetch content for newly added files
-      for (const file of selectedFiles) {
+    // Remove any old file paths no longer selected
+    Object.keys(newContents).forEach(path => {
+      const stillSelected = selectedFiles.some(file => {
         if (file.type === 'directory') {
-          for (const subFile of file.files) {
-            if (!newContents[subFile.path]) {
-              try {
-                const response = await axios.get(`${API_URL}/file_content?repository=${selectedRepository}&path=${subFile.path}`);
-                if (response.data.is_binary) {
-                  console.log(`Skipping binary file: ${subFile.path}`);
-                  newContents[subFile.path] = { content: '', tokenCount: 0, isBinary: true };
-                } else {
-                  newContents[subFile.path] = { 
-                    content: response.data.content, 
-                    tokenCount: response.data.token_count,
-                    isBinary: false 
-                  };
-                }
-              } catch (error) {
-                console.error(`Failed to fetch content for ${subFile.path}:`, error);
-              }
-            }
-          }
-        } else {
-          // Single file
-          if (!newContents[file.path]) {
+          return file.files.some(f => f.path === path);
+        }
+        return file.path === path;
+      });
+      if (!stillSelected) {
+        delete newContents[path];
+      }
+    });
+
+    // Fetch content for newly added files
+    for (const file of selectedFiles) {
+      if (file.type === 'directory') {
+        for (const subFile of file.files) {
+          if (!newContents[subFile.path]) {
             try {
-              const response = await axios.get(`${API_URL}/file_content?repository=${selectedRepository}&path=${file.path}`);
+              const response = await axios.get(`${API_URL}/file_content?repository=${selectedRepository}&path=${subFile.path}`);
               if (response.data.is_binary) {
-                console.log(`Skipping binary file: ${file.path}`);
-                newContents[file.path] = { content: '', tokenCount: 0, isBinary: true };
+                console.log(`Skipping binary file: ${subFile.path}`);
+                newContents[subFile.path] = { content: '', tokenCount: 0, isBinary: true };
               } else {
-                newContents[file.path] = { 
+                newContents[subFile.path] = { 
                   content: response.data.content, 
                   tokenCount: response.data.token_count,
                   isBinary: false 
                 };
               }
             } catch (error) {
-              console.error(`Failed to fetch content for ${file.path}:`, error);
+              console.error(`Failed to fetch content for ${subFile.path}:`, error);
             }
           }
         }
+      } else {
+        // Single file
+        if (!newContents[file.path]) {
+          try {
+            const response = await axios.get(`${API_URL}/file_content?repository=${selectedRepository}&path=${file.path}`);
+            if (response.data.is_binary) {
+              console.log(`Skipping binary file: ${file.path}`);
+              newContents[file.path] = { content: '', tokenCount: 0, isBinary: true };
+            } else {
+              newContents[file.path] = { 
+                content: response.data.content, 
+                tokenCount: response.data.token_count,
+                isBinary: false 
+              };
+            }
+          } catch (error) {
+            console.error(`Failed to fetch content for ${file.path}:`, error);
+          }
+        }
       }
+    }
 
-      setFileContents(newContents);
-    };
+    setFileContents(newContents);
+  };
+
+  useEffect(() => {
     fetchFileContents();
   }, [selectedFiles, selectedRepository]);
 
@@ -453,14 +461,15 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
       <>
         {chips}
         {sortedFiles.length > MAX_VISIBLE_FILE_CHIPS && (
-          <button
-            className="m-1 px-2 py-1 text-sm bg-gray-200 dark:bg-gray-800 rounded-full hover:bg-gray-300 dark:hover:bg-gray-700"
+          <Badge 
+            className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+            variant="outline"
             onClick={() => setShowAllFiles(!showAllFiles)}
           >
             {showAllFiles
               ? 'Show less'
               : `Show ${sortedFiles.length - displayedFiles.length} more...`}
-          </button>
+          </Badge>
         )}
       </>
     );
@@ -614,108 +623,180 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
   //  RENDER
   // ======================
   return (
-    <div className="flex flex-col gap-4 p-4">
-      {/* Settings Row */}
-      <PromptSettings
-        isAutoAnalyzeEnabled={isAutoAnalyzeEnabled}
-        onToggleAutoAnalyze={() => setIsAutoAnalyzeEnabled(prev => !prev)}
-        autoAddEnabled={autoAddEnabled}
-        onToggleAutoAdd={() => setAutoAddEnabled(prev => !prev)}
-        enhancementDisabled={enhancementDisabled}
-        onToggleEnhancement={() => setEnhancementDisabled(prev => !prev)}
-        onManualAnalyze={() => analyzePrompt(basePrompt)}
-        isAnalyzing={isAnalyzing}
-        promptLength={basePrompt.length}
-        minPromptLength={MIN_PROMPT_LENGTH}
-        autoCopyEnabled={isAutoCopyEnabled}
-        onToggleAutoCopy={() => setIsAutoCopyEnabled(prev => !prev)}
-      />
-
-      <h2 className="text-base font-bold mb-2">Prompt Composer</h2>
-
-      {/* Prompt Actions Bar */}
-      <PromptActions
-        addTreeStructure={addTreeStructure}
-        clearPrompt={clearAll}
-        clearFiles={clearFiles}
-        setTranscription={text => text && enhanceTranscription(text)}
-        enhanceTranscription={enhanceTranscription}
-        setStatus={setStatus}
-        prompt={getStructuredPrompt()}
-        setUserPrompt={prompt => {
-          setUserPrompt(prompt);
-          setHasUnsavedChanges(false);
-        }}
-        handleCopyToClipboard={handleCopyToClipboard}
-      />
-
-      {/* Chips for repo tree + files */}
-      <div className="mb-2 flex flex-wrap gap-1">
-        {isTreeAdded && (
-          <FileChip
-            fileName="Repository Structure"
-            tokenCount={treeTokenCount}
-            onRemove={removeTreeStructure}
-            isRepositoryTree={true}
+    <div className="flex flex-col space-y-6 max-w-7xl mx-auto">
+      {/* Settings Card */}
+      <Card className="backdrop-blur-sm border-0 shadow-sm">
+        <CardContent className="p-0">
+          <PromptSettings
+            isAutoAnalyzeEnabled={isAutoAnalyzeEnabled}
+            onToggleAutoAnalyze={() => setIsAutoAnalyzeEnabled(prev => !prev)}
+            autoAddEnabled={autoAddEnabled}
+            onToggleAutoAdd={() => setAutoAddEnabled(prev => !prev)}
+            enhancementDisabled={enhancementDisabled}
+            onToggleEnhancement={() => setEnhancementDisabled(prev => !prev)}
+            onManualAnalyze={() => analyzePrompt(basePrompt)}
+            isAnalyzing={isAnalyzing}
+            promptLength={basePrompt.length}
+            minPromptLength={MIN_PROMPT_LENGTH}
+            autoCopyEnabled={isAutoCopyEnabled}
+            onToggleAutoCopy={() => setIsAutoCopyEnabled(prev => !prev)}
           />
-        )}
-        {getFileChips()}
-      </div>
+        </CardContent>
+      </Card>
 
-      {/* Recent File Combinations */}
-      <FileCombinations
-        combinations={combinations}
-        onRestoreCombination={handleRestoreCombination}
-        onRemoveCombination={removeCombination}
-        currentSelection={selectedFiles}
-      />
+      {/* Main Composer Card */}
+      <Card className="shadow border-0">
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-medium">Prompt Composer</h2>
+            {status && (
+              <Badge variant={status.includes('Error') ? 'destructive' : 'secondary'} className="animate-in fade-in">
+                {status}
+              </Badge>
+            )}
+          </div>
 
-      {/* Main Text Area for base prompt */}
-      <PromptTextArea
-        prompt={basePrompt}
-        setPrompt={handleBasePromptChange}
-        additionalTokenCount={
-          treeTokenCount +
-          selectedFiles.reduce((sum, file) => {
-            if (file.type === 'directory') return sum + (file.token_count?.total || 0);
-            return sum + (fileContents[file.path]?.tokenCount || 0);
-          }, 0)
-        }
-        fullPrompt={getStructuredPrompt()}
-      />
+          {/* Action Buttons */}
+          <PromptActions
+            addTreeStructure={addTreeStructure}
+            clearPrompt={clearAll}
+            clearFiles={clearFiles}
+            setTranscription={text => text && enhanceTranscription(text)}
+            enhanceTranscription={enhanceTranscription}
+            setStatus={setStatus}
+            prompt={getStructuredPrompt()}
+            setUserPrompt={prompt => {
+              setUserPrompt(prompt);
+              setHasUnsavedChanges(false);
+            }}
+            handleCopyToClipboard={handleCopyToClipboard}
+          />
 
-      {/* Status Spinner */}
-      {status && <div className="mb-1 text-xs text-gray-600">{status}</div>}
-      {isAnalyzing && (
-        <div className="flex items-center justify-center p-4 text-gray-500">
-          <FiLoader className="animate-spin mr-2" />
-        </div>
-      )}
+          {/* Loading Indicator */}
+          {isAnalyzing && (
+            <div className="flex items-center space-x-2 py-2">
+              <FiLoader className="animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Analyzing prompt...</span>
+            </div>
+          )}
+
+          {/* Selected Files Section */}
+          <div className="mt-4">
+            <div className="text-sm font-medium mb-2 text-muted-foreground flex items-center">
+              <FiFolder className="mr-1" size={14} />
+              Selected Files ({selectedFiles.length})
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {isTreeAdded && (
+                <FileChip
+                  fileName="Repository Structure"
+                  tokenCount={treeTokenCount}
+                  onRemove={removeTreeStructure}
+                  isRepositoryTree={true}
+                />
+              )}
+              {getFileChips()}
+            </div>
+          </div>
+
+          <Separator className="my-6" />
+
+          {/* Text Editor */}
+          <div>
+            <div className="text-sm font-medium mb-2 text-muted-foreground flex items-center">
+              <FiFile className="mr-1" size={14} />
+              Prompt
+            </div>
+            <PromptTextArea
+              prompt={basePrompt}
+              setPrompt={handleBasePromptChange}
+              additionalTokenCount={
+                treeTokenCount +
+                selectedFiles.reduce((sum, file) => {
+                  if (file.type === 'directory') return sum + (file.token_count?.total || 0);
+                  return sum + (fileContents[file.path]?.tokenCount || 0);
+                }, 0)
+              }
+              fullPrompt={getStructuredPrompt()}
+            />
+          </div>
+          
+          {/* Recent File Combinations */}
+          {combinations.length > 0 && (
+            <div className="mt-6">
+              <div className="text-sm font-medium mb-2 text-muted-foreground flex items-center">
+                <FiFolder className="mr-1" size={14} />
+                Recent File Combinations
+              </div>
+              <FileCombinations
+                combinations={combinations}
+                onRestoreCombination={handleRestoreCombination}
+                onRemoveCombination={removeCombination}
+                currentSelection={selectedFiles}
+              />
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* File Suggestions */}
       {fileSuggestions && (
-        <FileSuggestions
-          suggestions={{
-            high_confidence: fileSuggestions.high_confidence,
-            medium_confidence: fileSuggestions.medium_confidence,
-            low_confidence: fileSuggestions.low_confidence
-          }}
-          onBatchAdd={handleBatchAdd}
-          onBatchRemove={handleBatchRemove}
-          addedBatches={addedBatches}
-        />
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-medium mb-4 flex items-center">
+              <FiFile className="mr-2" />
+              Suggested Files
+            </h3>
+            <FileSuggestions
+              suggestions={{
+                high_confidence: fileSuggestions.high_confidence,
+                medium_confidence: fileSuggestions.medium_confidence,
+                low_confidence: fileSuggestions.low_confidence
+              }}
+              onBatchAdd={handleBatchAdd}
+              onBatchRemove={handleBatchRemove}
+              addedBatches={addedBatches}
+            />
+          </CardContent>
+        </Card>
       )}
 
       {/* Transcription History */}
-      <TranscriptionDisplay
-        transcriptionHistory={transcriptionHistory}
-        addToPrompt={addToPrompt}
-        autoAddEnabled={autoAddEnabled}
-        enhancementDisabled={enhancementDisabled}
-      />
+      {transcriptionHistory.length > 0 && (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-6">
+            <h3 className="text-lg font-medium mb-4 flex items-center">
+              <svg className="mr-2" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 8C13.1 8 14 8.9 14 10C14 11.1 13.1 12 12 12C10.9 12 10 11.1 10 10C10 8.9 10.9 8 12 8ZM12 18.2C9.5 18.2 7.29 16.92 6 14.98C6.03 12.99 10 11.9 12 11.9C13.99 11.9 17.97 12.99 18 14.98C16.71 16.92 14.5 18.2 12 18.2Z" 
+                  fill="currentColor" />
+              </svg>
+              Transcription History
+            </h3>
+            <ScrollArea className="h-[200px]">
+              <TranscriptionDisplay
+                transcriptionHistory={transcriptionHistory}
+                addToPrompt={addToPrompt}
+                autoAddEnabled={autoAddEnabled}
+                enhancementDisabled={enhancementDisabled}
+              />
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Finally, show the new structured prompt preview */}
-      <PromptPreview structuredPrompt={getStructuredPrompt()} />
+      {/* Prompt Preview */}
+      <Card className="border-0 shadow-sm">
+        <CardContent className="p-6">
+          <h3 className="text-lg font-medium mb-4 flex items-center">
+            <svg className="mr-2" width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 4.5C7 4.5 2.73 7.61 1 12C2.73 16.39 7 19.5 12 19.5C17 19.5 21.27 16.39 23 12C21.27 7.61 17 4.5 12 4.5ZM12 17C9.24 17 7 14.76 7 12C7 9.24 9.24 7 12 7C14.76 7 17 9.24 17 12C17 14.76 14.76 17 12 17ZM12 9C10.34 9 9 10.34 9 12C9 13.66 10.34 15 12 15C13.66 15 15 13.66 15 12C15 10.34 13.66 9 12 9Z" 
+                fill="currentColor" />
+            </svg>
+            Prompt Preview
+          </h3>
+          <PromptPreview structuredPrompt={getStructuredPrompt()} />
+        </CardContent>
+      </Card>
     </div>
   );
 };
