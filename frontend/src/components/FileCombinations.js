@@ -19,9 +19,7 @@ const FileCombinations = ({
 
   return (
     <div className="mt-2 mb-1">
-      <h3 className="text-xs font-medium mb-1.5 text-gray-700 dark:text-gray-300">
-        Recent File Combinations
-      </h3>
+
       <div className="flex flex-wrap gap-1.5">
         {combinations.map((combination) => {
           const isMatching = isMatchingCombination(combination);

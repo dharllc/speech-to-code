@@ -20,83 +20,83 @@ const PromptSettings = ({
   const canAnalyze = promptLength >= minPromptLength;
   
   return (
-    <div className="flex items-center justify-between px-3 py-2 bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm rounded-lg shadow-sm">
-      <div className="flex items-center gap-3">
-        {/* Analysis Group */}
-        <div className="flex items-center gap-2 pr-3 border-r border-gray-200 dark:border-gray-700">
-          <Tooltip title="Auto-analyze prompts for files">
-            <div className="flex items-center gap-1">
-              <FiSearch className="text-gray-500 dark:text-gray-400" size={14} />
-              <Switch
-                size="small"
-                checked={isAutoAnalyzeEnabled}
-                onChange={onToggleAutoAnalyze}
-              />
-            </div>
-          </Tooltip>
-          <Tooltip title={canAnalyze ? "Analyze prompt now" : "Prompt too short to analyze"}>
-            <span>
-              <Button
-                variant="contained"
-                size="small"
-                onClick={onManualAnalyze}
-                disabled={!canAnalyze || isAnalyzing}
-                className="min-w-0 px-3 py-1 text-xs"
-                sx={{
-                  backgroundColor: 'rgb(99, 102, 241)',
-                  '&:hover': {
-                    backgroundColor: 'rgb(79, 82, 221)',
-                  },
-                  '&.Mui-disabled': {
-                    backgroundColor: 'rgba(99, 102, 241, 0.4)',
-                    color: 'rgba(255, 255, 255, 0.8)',
-                  },
-                }}
-              >
-                {isAnalyzing ? "Analyzing..." : "Analyze"}
-              </Button>
-            </span>
-          </Tooltip>
-        </div>
+    <div className="flex items-center justify-between px-4 py-2">
+      <div className="flex items-center gap-4">
+        {/* Search icon and switch */}
+        <Tooltip title="Auto-analyze prompts for files" placement="top">
+          <div className="flex items-center gap-1">
+            <FiSearch className="text-gray-500 dark:text-gray-400" />
+            <Switch
+              size="small"
+              checked={isAutoAnalyzeEnabled}
+              onChange={onToggleAutoAnalyze}
+            />
+          </div>
+        </Tooltip>
 
-        {/* Transcription Group */}
-        <div className="flex items-center gap-3 pr-3 border-r border-gray-200 dark:border-gray-700">
-          <Tooltip title="Auto-add transcriptions to prompt">
-            <div className="flex items-center gap-1">
-              <BsMicFill className="text-gray-500 dark:text-gray-400" size={14} />
-              <Switch
-                size="small"
-                checked={autoAddEnabled}
-                onChange={onToggleAutoAdd}
-              />
-            </div>
-          </Tooltip>
+        {/* Analyze button */}
+        <Button
+          variant="contained"
+          size="small"
+          onClick={onManualAnalyze}
+          disabled={!canAnalyze || isAnalyzing}
+          className="text-xs px-3 py-1 min-w-0"
+          sx={{
+            backgroundColor: 'rgb(67, 70, 148)',
+            borderRadius: '6px',
+            textTransform: 'uppercase',
+            '&:hover': {
+              backgroundColor: 'rgb(79, 82, 221)',
+            },
+            '&.Mui-disabled': {
+              backgroundColor: 'rgba(67, 70, 148, 0.6)',
+              color: 'rgba(255, 255, 255, 0.8)',
+            },
+          }}
+        >
+          {isAnalyzing ? "..." : "ANALYZE"}
+        </Button>
 
-          <Tooltip title="Enhanced readability of transcriptions using AI">
-            <div className="flex items-center gap-1">
-              <BsRobot className="text-gray-500 dark:text-gray-400" size={14} />
-              <Switch
-                size="small"
-                checked={!enhancementDisabled}
-                onChange={onToggleEnhancement}
-              />
-            </div>
-          </Tooltip>
-        </div>
+        {/* Mic icon and switch */}
+        <Tooltip title="Auto-add transcriptions to prompt" placement="top">
+          <div className="flex items-center gap-1">
+            <BsMicFill className="text-gray-500 dark:text-gray-400" />
+            <Switch
+              size="small"
+              checked={autoAddEnabled}
+              onChange={onToggleAutoAdd}
+            />
+          </div>
+        </Tooltip>
 
-        {/* Auto-copy Group */}
-        <div className="flex items-center">
-          <Tooltip title="Auto-copy to clipboard when prompt is updated">
-            <div className="flex items-center gap-1">
-              <FiClipboard className="text-gray-500 dark:text-gray-400" size={14} />
-              <Switch
-                size="small"
-                checked={autoCopyEnabled}
-                onChange={onToggleAutoCopy}
-              />
-            </div>
-          </Tooltip>
-        </div>
+        {/* Robot icon and switch */}
+        <Tooltip title="Enhanced readability of transcriptions using AI" placement="top">
+          <div className="flex items-center gap-1">
+            <BsRobot className="text-gray-500 dark:text-gray-400" />
+            <Switch
+              size="small"
+              checked={!enhancementDisabled}
+              onChange={onToggleEnhancement}
+            />
+          </div>
+        </Tooltip>
+
+        {/* Clipboard icon and switch */}
+        <Tooltip title="Auto-copy to clipboard when prompt is updated" placement="top">
+          <div className="flex items-center gap-1">
+            <FiClipboard className="text-gray-500 dark:text-gray-400" />
+            <Switch
+              size="small"
+              checked={autoCopyEnabled}
+              onChange={onToggleAutoCopy}
+            />
+          </div>
+        </Tooltip>
+      </div>
+      
+      {/* Char counter */}
+      <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-600/20 dark:bg-gray-700 px-3 py-1 rounded-full">
+        {promptLength} / {minPromptLength} chars
       </div>
     </div>
   );

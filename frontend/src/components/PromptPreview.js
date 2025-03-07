@@ -151,33 +151,45 @@ const PromptPreview = ({ structuredPrompt }) => {
     })();
   }, [structuredPrompt]);
 
-  const tagStyle = "font-bold text-green-600 dark:text-green-300";
+  const tagStyle = "font-bold text-green-600 dark:text-green-300 px-2 py-0.5";
+  const contentStyle = "text-blue-600 dark:text-blue-300 italic px-2 py-1 my-1 bg-gray-100/30 dark:bg-gray-700/30 rounded";
 
   return (
-    <div className="mt-4 bg-gray-50 dark:bg-gray-800 p-2 rounded">
-      <h3 className="text-sm font-semibold mb-1 text-gray-700 dark:text-gray-200">
-        Prompt Preview
-      </h3>
-      <div className="h-64 overflow-y-auto text-xs text-gray-800 dark:text-gray-100 whitespace-pre-wrap">
-        {segments.map((seg, index) => {
-          if (seg.type === 'tag') {
-            // Show the tag line in green
-            return (
-              <div key={index} className={tagStyle}>
-                {seg.text}
-              </div>
-            );
-          } else if (seg.type === 'content') {
-            // Show a placeholder for content
-            const count = tokenCounts[index] || 0;
-            return (
-              <div key={index} className="text-blue-600 dark:text-blue-300 italic">
-                [ {count} tokens ]
-              </div>
-            );
-          }
-          return null;
-        })}
+    <div className="bg-gray-50 dark:bg-gray-800 rounded-md overflow-hidden border border-gray-200 dark:border-gray-700">
+      <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700 flex items-center">
+        <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">
+          Prompt Preview
+        </h3>
+      </div>
+      
+      <div className="p-4">
+        <div className="h-64 overflow-y-auto text-xs text-gray-800 dark:text-gray-100 whitespace-pre-wrap rounded-md border border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-gray-900/50 px-3 py-2">
+          {segments.length === 0 ? (
+            <div className="text-gray-400 dark:text-gray-500 italic flex items-center justify-center h-full">
+              No content to preview
+            </div>
+          ) : (
+            segments.map((seg, index) => {
+              if (seg.type === 'tag') {
+                // Show the tag line in green
+                return (
+                  <div key={index} className={tagStyle}>
+                    {seg.text}
+                  </div>
+                );
+              } else if (seg.type === 'content') {
+                // Show a placeholder for content
+                const count = tokenCounts[index] || 0;
+                return (
+                  <div key={index} className={contentStyle}>
+                    [ {count} tokens ]
+                  </div>
+                );
+              }
+              return null;
+            })
+          )}
+        </div>
       </div>
     </div>
   );

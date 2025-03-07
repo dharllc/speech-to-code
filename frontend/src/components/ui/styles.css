@@ -1,0 +1,72 @@
+/* Additional utility classes */
+
+/* Text colors */
+.text-primary {
+  color: rgb(59, 130, 246); /* blue-500 */
+}
+
+.text-primary-foreground {
+  color: white;
+}
+
+.text-muted-foreground {
+  color: rgb(107, 114, 128); /* gray-500 */
+}
+
+.dark .text-muted-foreground {
+  color: rgb(156, 163, 175); /* gray-400 */
+}
+
+/* Background colors */
+.bg-primary {
+  background-color: rgb(59, 130, 246); /* blue-500 */
+}
+
+/* Animations */
+.animate-in {
+  animation: animate-in 0.2s ease-out;
+}
+
+.fade-in {
+  opacity: 0;
+  animation: fade-in 0.2s ease-out forwards;
+}
+
+@keyframes animate-in {
+  from {
+    transform: translateY(0.5rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Spacing */
+.space-y-6 > * + * {
+  margin-top: 1.5rem;
+}
+
+.space-x-2 > * + * {
+  margin-left: 0.5rem;
+}
+
+/* Scrollbar hiding */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+} 
