@@ -49,6 +49,50 @@ def generate_context_map(repo_path:str,repo_name:str)->Dict:
     if not os.path.exists(repo_path):
         raise ValueError(f"Repository path not found: {repo_path}")
     
+    # Directories to exclude
+    EXCLUDED_DIRS = {
+        '.git', 'node_modules', 'venv', '__pycache__',
+        '.next', # Next.js build output
+        'out', # Next.js static export
+        'build', # Build directories
+        'dist',
+        'coverage', # Test coverage
+        '.vercel', # Vercel deployment
+        'public/static', # Static assets
+        '.turbo', # Turborepo cache
+    }
+
+    # File extensions to exclude
+    EXCLUDED_EXTENSIONS = {
+        # Build artifacts
+        'map', # Source maps
+        'min.js', 'min.css', # Minified files
+        # Binary and media files
+        'jpg', 'jpeg', 'png', 'gif', 'ico', 'svg', 'webp',
+        'mp3', 'mp4', 'wav', 'ogg', 'webm',
+        'pdf', 'doc', 'docx', 'xls', 'xlsx',
+        'ttf', 'woff', 'woff2', 'eot',
+        # Cache and temporary files
+        'cache', 'log', 'tmp',
+        # Package management
+        'lock', 'yarn.lock',
+    }
+
+    # Specific files to exclude
+    EXCLUDED_FILES = {
+        'package-lock.json',
+        'yarn.lock',
+        '.npmrc',
+        '.yarnrc',
+        '.env',
+        '.env.local',
+        '.env.development',
+        '.env.production',
+        '.env.test',
+        'tsconfig.tsbuildinfo',
+        '.eslintcache',
+    }
+    
     context_map={
         'repositoryId':repo_name,
         'lastUpdated':datetime.now().isoformat(),
@@ -57,10 +101,17 @@ def generate_context_map(repo_path:str,repo_name:str)->Dict:
     }
 
     for root,_,files in os.walk(repo_path):
-        if any(x in root for x in['.git','node_modules','venv','__pycache__']):continue
+        # Skip excluded directories
+        if any(x in root.split(os.sep) for x in EXCLUDED_DIRS):
+            continue
         
         for file in files:
-            if file.startswith('.'):continue
+            # Skip files starting with dot, excluded files, and excluded extensions
+            if (file.startswith('.') or 
+                file in EXCLUDED_FILES or 
+                any(file.endswith(f'.{ext}') for ext in EXCLUDED_EXTENSIONS)):
+                continue
+
             filepath=os.path.join(root,file)
             relpath=os.path.relpath(filepath,repo_path)
             
