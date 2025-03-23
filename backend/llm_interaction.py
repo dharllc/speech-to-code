@@ -1,6 +1,6 @@
 # Filename: backend/llm_interaction.py
 from fastapi import HTTPException
-import openai
+from openai import OpenAI
 from anthropic import Anthropic
 import google.generativeai as genai
 import os
@@ -10,14 +10,10 @@ from model_config import MODELS
 
 load_dotenv()
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
-anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
-google_api_key = os.getenv("GOOGLE_API_KEY")
-xai_api_key = os.getenv("XAI_API_KEY")
-
 # Initialize clients
-anthropic_client = Anthropic(api_key=anthropic_api_key)
-genai.configure(api_key=google_api_key)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+anthropic_client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 def get_encoding(model: str):
     try:
@@ -30,36 +26,74 @@ def count_tokens(text: str, model: str) -> int:
     return len(encoding.encode(text))
 
 async def openai_completion(model: str, messages: list, max_tokens: int, temperature: float):
-    # If the model name indicates an "o1" variant, it doesn't support "system" role
-    if "o1" in model.lower():
-        filtered_messages = []
+    try:
+        # Format messages for chat completion
+        formatted_messages = []
         for msg in messages:
-            if msg["role"] == "system":
-                filtered_messages.append({
-                    "role": "user",
-                    "content": f"(Originally a system prompt) {msg['content']}"
-                })
-            else:
-                filtered_messages.append(msg)
-        messages = filtered_messages
-    
-    # For "o1" models, also remember to use 'max_completion_tokens' instead of 'max_tokens', temperature=1, and remove system messages
-    if "o1" in model.lower():
-        response = openai.ChatCompletion.create(
-            model=model,
-            messages=messages,
-            # rename to match the model's parameter requirements
-            max_completion_tokens=max_tokens,
-            temperature=1
-        )
-    else:
-        response = openai.ChatCompletion.create(
-            model=model,
-            messages=messages,
-            max_tokens=max_tokens,
-            temperature=temperature
-        )
-    return response.choices[0].message['content']
+            if msg["role"] != "system":  # Add non-system messages directly
+                formatted_messages.append(msg)
+            elif msg["role"] == "system" and msg["content"].strip():  # Add non-empty system messages
+                formatted_messages.insert(0, msg)  # System message should be first
+        
+        if model in ["o3-mini", "o1"]:
+            # Use max_completion_tokens for o3-mini and o1, without temperature
+            response = client.chat.completions.create(
+                model=model,
+                messages=formatted_messages,
+                max_completion_tokens=max_tokens
+            )
+        elif model == "o1-pro":
+            # Extract system message if present
+            instructions = None
+            input_messages = []
+            for msg in messages:
+                if msg["role"] == "system":
+                    instructions = msg["content"]
+                else:
+                    input_messages.append(msg)
+            
+            # Format remaining messages as conversation
+            input_text = "\n".join([f"{msg['role'].capitalize()}: {msg['content']}" for msg in input_messages])
+            
+            response = client.responses.create(
+                model=model,
+                input=input_text,
+                instructions=instructions,
+                max_output_tokens=max_tokens,
+                temperature=temperature,
+                text={
+                    "format": {
+                        "type": "text"
+                    }
+                }
+            )
+            return {
+                "content": response.output[0].content[0].text,
+                "usage": {
+                    "input_tokens": response.usage.input_tokens,
+                    "output_tokens": response.usage.output_tokens
+                }
+            }
+        else:
+            # Default chat completion for other models (gpt-4, etc)
+            response = client.chat.completions.create(
+                model=model,
+                messages=formatted_messages,
+                max_tokens=max_tokens,
+                temperature=temperature
+            )
+        
+        # Extract the response text and usage from the chat completion format
+        return {
+            "content": response.choices[0].message.content,
+            "usage": {
+                "input_tokens": response.usage.prompt_tokens,
+                "output_tokens": response.usage.completion_tokens
+            }
+        }
+    except Exception as e:
+        print(f"Error in OpenAI completion: {str(e)}")
+        raise
 
 async def anthropic_completion(model: str, messages: list, max_tokens: int, temperature: float):
     formatted_messages = []
@@ -128,26 +162,38 @@ async def google_completion(model: str, messages: list, max_tokens: int, tempera
     return response.text
 
 async def xai_completion(model: str, messages: list, max_tokens: int, temperature: float):
-    # Save the current OpenAI configuration
-    original_api_key = openai.api_key
-    original_api_base = openai.api_base
+    # Create a new OpenAI client for XAI
+    xai_client = OpenAI(
+        api_key=os.getenv("XAI_API_KEY"),
+        base_url="https://api.x.ai/v1"
+    )
+    
+    # Format messages for chat completion
+    formatted_messages = []
+    for msg in messages:
+        if msg["role"] != "system":  # Add non-system messages directly
+            formatted_messages.append(msg)
+        elif msg["role"] == "system" and msg["content"].strip():  # Add non-empty system messages
+            formatted_messages.insert(0, msg)  # System message should be first
     
     try:
-        # Set X.AI configuration
-        openai.api_key = xai_api_key
-        openai.api_base = "https://api.x.ai/v1"
-        
-        response = openai.ChatCompletion.create(
+        response = xai_client.chat.completions.create(
             model=model,
-            messages=messages,
+            messages=formatted_messages,
             max_tokens=max_tokens,
             temperature=temperature
         )
-        return response.choices[0].message['content']
-    finally:
-        # Restore original OpenAI configuration
-        openai.api_key = original_api_key
-        openai.api_base = original_api_base
+        
+        return {
+            "content": response.choices[0].message.content,
+            "usage": {
+                "input_tokens": response.usage.prompt_tokens,
+                "output_tokens": response.usage.completion_tokens
+            }
+        }
+    except Exception as e:
+        print(f"Error in XAI completion: {str(e)}")
+        raise
 
 async def handle_llm_interaction(request: dict):
     model = request.get('model', 'gpt-3.5-turbo')
@@ -161,22 +207,31 @@ async def handle_llm_interaction(request: dict):
     else:
         raise ValueError(f"Unsupported model: {model}")
 
-    combined_prompt = " ".join([msg['content'] for msg in messages])
-    input_tokens = count_tokens(combined_prompt, model)
-
     try:
         if model in MODELS['OpenAI']:
-            output_text = await openai_completion(model, messages, max_tokens, temperature)
+            response = await openai_completion(model, messages, max_tokens, temperature)
+            output_text = response["content"]
+            input_tokens = response["usage"]["input_tokens"]
+            output_tokens = response["usage"]["output_tokens"]
         elif model in MODELS['Anthropic']:
             output_text = await anthropic_completion(model, messages, max_tokens, temperature)
+            # Calculate tokens for non-OpenAI responses
+            combined_prompt = " ".join([msg['content'] for msg in messages])
+            input_tokens = count_tokens(combined_prompt, model)
+            output_tokens = count_tokens(output_text, model)
         elif model in MODELS['Google']:
             output_text = await google_completion(model, messages, max_tokens, temperature)
+            # Calculate tokens for non-OpenAI responses
+            combined_prompt = " ".join([msg['content'] for msg in messages])
+            input_tokens = count_tokens(combined_prompt, model)
+            output_tokens = count_tokens(output_text, model)
         elif model in MODELS['XAI']:
-            output_text = await xai_completion(model, messages, max_tokens, temperature)
+            response = await xai_completion(model, messages, max_tokens, temperature)
+            output_text = response["content"]
+            input_tokens = response["usage"]["input_tokens"]
+            output_tokens = response["usage"]["output_tokens"]
         else:
             raise ValueError(f"Unsupported model: {model}")
-
-        output_tokens = count_tokens(output_text, model)
 
         provider = next(provider for provider, models in MODELS.items() if model in models)
         input_cost = (input_tokens / 1_000_000) * MODELS[provider][model]['input']
