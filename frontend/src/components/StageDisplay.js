@@ -1,11 +1,19 @@
 import React from 'react';
-import { FiFile, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { FiFile, FiCheckCircle, FiAlertCircle, FiList, FiShield, FiCopy } from 'react-icons/fi';
+import { Card } from "./ui/card";
+import { Button } from "./ui/button";
+import CopyButton from './CopyButton';
 
 const StageDisplay = ({ stageData, stage }) => {
   if (!stageData) return null;
 
   const getScoreColor = (score, type = 'clarity') => {
     if (type === 'clarity') {
+      if (score >= 90) return 'text-green-500 dark:text-green-400';
+      if (score >= 70) return 'text-blue-500 dark:text-blue-400';
+      if (score >= 40) return 'text-yellow-500 dark:text-yellow-400';
+      return 'text-red-500 dark:text-red-400';
+    } else if (type === 'instruction') {
       if (score >= 90) return 'text-green-500 dark:text-green-400';
       if (score >= 70) return 'text-blue-500 dark:text-blue-400';
       if (score >= 40) return 'text-yellow-500 dark:text-yellow-400';
@@ -136,6 +144,71 @@ const StageDisplay = ({ stageData, stage }) => {
     );
   };
 
+  const InstructionSteps = ({ steps }) => {
+    if (!steps || steps.length === 0) return null;
+    return (
+      <div className="mt-3">
+        <h4 className="text-sm font-semibold flex items-center gap-1">
+          <FiList className="inline" size={14} />
+          Implementation Steps:
+        </h4>
+        <ul className="list-none space-y-2 mt-2">
+          {steps.map((step, index) => (
+            <li key={index} className="text-xs pl-4 border-l-2 border-gray-200 dark:border-gray-700">
+              <div className="font-medium">{step.description}</div>
+              {step.files && step.files.length > 0 && (
+                <div className="mt-1 text-blue-600 dark:text-blue-400 font-mono">
+                  Files: {step.files.join(', ')}
+                </div>
+              )}
+              {step.validation && (
+                <div className="mt-1 text-gray-600 dark:text-gray-400">
+                  Validation: {step.validation}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  const SafetyChecks = ({ checks }) => {
+    if (!checks || checks.length === 0) return null;
+    return (
+      <div className="mt-3">
+        <h4 className="text-sm font-semibold flex items-center gap-1">
+          <FiShield className="inline" size={14} />
+          Safety Checks:
+        </h4>
+        <ul className="list-none space-y-2 mt-2">
+          {checks.map((check, index) => (
+            <li key={index} className="text-xs pl-4 border-l-2 border-gray-200 dark:border-gray-700">
+              <div className="font-medium">{check.check}</div>
+              <div className="mt-1 text-gray-600 dark:text-gray-400">
+                Mitigation: {check.mitigation}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  const RefinementSuggestions = ({ suggestions }) => {
+    if (!suggestions || suggestions.length === 0) return null;
+    return (
+      <div className="mt-3">
+        <h4 className="text-sm font-semibold">Refinement Suggestions:</h4>
+        <ul className="list-disc pl-5 mt-1">
+          {suggestions.map((suggestion, index) => (
+            <li key={index} className="text-xs text-gray-700 dark:text-gray-300">{suggestion}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
   return (
     <div className="border rounded-lg p-3 bg-white dark:bg-gray-800 shadow-sm space-y-2">
       {/* Stage 1: Understand & Validate */}
@@ -167,6 +240,91 @@ const StageDisplay = ({ stageData, stage }) => {
           <FileRequestList files={stageData.additionalFileRequests} title="Additional Files Needed" />
           <QuestionList questions={stageData.technicalQuestions} title="Technical Questions" />
           <ImplementationPlan plan={stageData.implementationPlan} />
+        </>
+      )}
+
+      {/* Stage 3: Agent Instructions */}
+      {stage === 'stage3-agent-instructions' && stageData.instructionQuality !== undefined && (
+        <>
+          {/* Instructions Ready Banner */}
+          <Card className="bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 p-4 mb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-1">
+                  Agent Instructions Ready
+                </h3>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  These instructions have been generated for the coding agent. Click the button to copy them.
+                </p>
+              </div>
+              <CopyButton
+                textToCopy={JSON.stringify({
+                  instructions: stageData.instructions,
+                  safetyChecks: stageData.safetyChecks,
+                  refinementSuggestions: stageData.refinementSuggestions
+                }, null, 2)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                buttonText={<><FiCopy size={16} /> Copy Instructions</>}
+              />
+            </div>
+          </Card>
+
+          <div className="flex items-center gap-2">
+            <FiCheckCircle className="text-blue-500" size={16} />
+            <span className="text-sm font-semibold">Instruction Quality Score:</span>
+            <span className={`font-bold ${getScoreColor(stageData.instructionQuality, 'instruction')}`}>
+              {stageData.instructionQuality}
+            </span>
+          </div>
+          
+          {/* Instructions Content */}
+          <div className="mt-3 space-y-4 border border-blue-200 dark:border-blue-800 rounded-lg p-4 bg-blue-50/50 dark:bg-blue-900/20">
+            {stageData.instructions && (
+              <>
+                <div>
+                  <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Context:</h4>
+                  <p className="text-xs text-gray-700 dark:text-gray-300">{stageData.instructions.context}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Objective:</h4>
+                  <p className="text-xs text-gray-700 dark:text-gray-300">{stageData.instructions.objective}</p>
+                </div>
+              </>
+            )}
+
+            {/* Implementation Steps */}
+            <InstructionSteps steps={stageData.instructions?.steps} />
+
+            {/* Constraints */}
+            {stageData.instructions?.constraints && stageData.instructions.constraints.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Constraints:</h4>
+                <ul className="list-disc pl-5 mt-1">
+                  {stageData.instructions.constraints.map((constraint, index) => (
+                    <li key={index} className="text-xs text-gray-700 dark:text-gray-300">{constraint}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Testing Guidelines */}
+            {stageData.instructions?.testingGuidelines && stageData.instructions.testingGuidelines.length > 0 && (
+              <div>
+                <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Testing Guidelines:</h4>
+                <ul className="list-disc pl-5 mt-1">
+                  {stageData.instructions.testingGuidelines.map((guideline, index) => (
+                    <li key={index} className="text-xs text-gray-700 dark:text-gray-300">{guideline}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+
+          {/* Safety Checks */}
+          <SafetyChecks checks={stageData.safetyChecks} />
+
+          {/* Refinement Suggestions */}
+          <RefinementSuggestions suggestions={stageData.refinementSuggestions} />
         </>
       )}
     </div>

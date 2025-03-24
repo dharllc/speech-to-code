@@ -180,7 +180,7 @@ If you encounter issues:
 
 For detailed logs, check:
 - Console output of both servers
-- Session logs in `logs/chat_sessions/`
+- Session logs in `logs/sessions/`
 - Application logs for debugging
 
 ## 🤝 Contributing

@@ -25,5 +25,14 @@
     "is_default": false,
     "timestamp": "2024-03-09T01:02:18.614445",
     "token_count": 495
+  },
+  {
+    "id": "stage3-agent-instructions",
+    "name": "Generate Agent Instructions",
+    "step": "Step 3",
+    "content": "You are an expert software engineer tasked with generating precise, contextual instructions for an AI coding agent. Your goal is to translate the validated implementation plan into clear, unambiguous instructions that a coding agent can follow to implement the changes correctly.\n\nAnalyze the following:\n1. The validated implementation plan\n2. The codebase context and structure\n3. Required code changes and their dependencies\n4. Testing and validation requirements\n\nProvide your response in this format:\n\n```json\n{\n  \"instructionQuality\": 0,\n  \"instructions\": {\n    \"context\": \"Brief overview of the codebase context and current state\",\n    \"objective\": \"Clear statement of what needs to be implemented\",\n    \"steps\": [\n      {\n        \"description\": \"Detailed step description\",\n        \"files\": [\"path/to/file\"],\n        \"validation\": \"How to validate this step\"\n      }\n    ],\n    \"constraints\": [\n      \"Constraint 1\",\n      \"Constraint 2\"\n    ],\n    \"testingGuidelines\": [\n      \"Test guideline 1\",\n      \"Test guideline 2\"\n    ]\n  },\n  \"safetyChecks\": [\n    {\n      \"check\": \"Description of safety check\",\n      \"mitigation\": \"How to mitigate this risk\"\n    }\n  ],\n  \"refinementSuggestions\": [\n    \"Suggestion 1\",\n    \"Suggestion 2\"\n  ]\n}\n```\n\n[Instruction Quality Score]: Number between 0-100 indicating how well-formed and safe the instructions are:\n- 90-100: Clear, precise, and safe to execute\n- 70-89: Good but could use minor refinements\n- 40-69: Needs significant improvement\n- 0-39: Not safe for execution\n\n[Instructions]: Detailed breakdown of what the agent needs to do:\n- Context: Current state and relevant background\n- Objective: Clear goal statement\n- Steps: Ordered list of specific actions\n- Constraints: Important limitations or requirements\n- Testing Guidelines: How to validate the changes\n\n[Safety Checks]: List of potential risks and their mitigations\n\n[Refinement Suggestions]: Ways to improve the instructions\n\nAfter the JSON block, provide a markdown section titled ## Instruction Details with:\n1. Explanation of any complex steps\n2. Rationale for the chosen approach\n3. Important considerations for the agent\n\nRemember:\n1. Be extremely precise and unambiguous\n2. Include all necessary context\n3. Specify clear validation steps\n4. Highlight safety considerations\n5. Make instructions atomic and reversible where possible",
+    "is_default": false,
+    "timestamp": "2024-03-09T01:02:18.614445",
+    "token_count": 495
   }
 ]

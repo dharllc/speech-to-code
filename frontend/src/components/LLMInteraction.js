@@ -299,6 +299,22 @@ const LLMInteraction = ({ initialPrompt }) => {
               const newFiles = new Set(parsedOutput.additionalFileRequests.map(req => req.file));
               setIncludedFiles(prev => new Set([...prev, ...newFiles]));
             }
+          } else if (activePromptId === 'stage3-agent-instructions') {
+            const stageData = {
+              instructionQuality: parsedOutput.instructionQuality,
+              instructions: parsedOutput.instructions,
+              safetyChecks: parsedOutput.safetyChecks,
+              refinementSuggestions: parsedOutput.refinementSuggestions
+            };
+            setStageData(stageData);
+            
+            // Update stage history
+            setStageHistory(prev => [...prev, {
+              stage: 'stage3-agent-instructions',
+              timestamp: new Date().toISOString(),
+              instructionQuality: parsedOutput.instructionQuality,
+              instructions: parsedOutput.instructions
+            }]);
           } else {
             setStageData(null);
           }
