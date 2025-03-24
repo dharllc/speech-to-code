@@ -1,6 +1,6 @@
 MODELS = {
     "OpenAI": {
-        "o1-pro": {"input": 150, "output": 600, "input_tokens": 200000, "output_tokens": 100000},
+        # "o1-pro": {"input": 150, "output": 600, "input_tokens": 200000, "output_tokens": 100000},
         "o1": {"input": 15, "output": 60, "input_tokens": 128000, "output_tokens": 32768},
         "o3-mini": {"input": 1.1, "output": 4.4, "input_tokens": 200000, "output_tokens": 100000},
         "gpt-4.5-preview": {"input": 75, "output": 150, "input_tokens": 128000, "output_tokens": 16384},
