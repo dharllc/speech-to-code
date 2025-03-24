@@ -13,6 +13,7 @@ import LanguageModelSelector from './LanguageModelSelector';
 import ConversationDisplay from './ConversationDisplay';
 import CostDisplay from './CostDisplay';
 import CopyButton from './CopyButton'; // ← Added import for CopyButton
+import StageDisplay from './StageDisplay';
 
 // Icons (optional)
 import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
@@ -47,6 +48,9 @@ const LLMInteraction = ({ initialPrompt }) => {
   // 6) Collapsible UI states
   const [showSystemPrompt, setShowSystemPrompt] = useState(true);
   const [showUserPrompt, setShowUserPrompt] = useState(true);
+
+  // Add new state for stage data
+  const [stageData, setStageData] = useState(null);
 
   // =====================
   //    INITIAL LOAD
@@ -163,11 +167,31 @@ const LLMInteraction = ({ initialPrompt }) => {
       if (jsonOutput && jsonOutput[1]) {
         try {
           const parsedOutput = JSON.parse(jsonOutput[1]);
-          setFeasibilityScore(parsedOutput.feasibilityScore);
-          setQuestions(parsedOutput.questions);
+          
+          // Handle stage-specific data
+          if (activePromptId === 'stage1-understand-validate') {
+            setStageData({
+              clarityScore: parsedOutput.clarityScore,
+              fileRequests: parsedOutput.fileRequests,
+              questions: parsedOutput.questions,
+              summary: parsedOutput.summary
+            });
+          } else if (activePromptId === 'stage2-plan-validate') {
+            setStageData({
+              feasibilityScore: parsedOutput.feasibilityScore,
+              additionalFileRequests: parsedOutput.additionalFileRequests,
+              technicalQuestions: parsedOutput.technicalQuestions,
+              implementationPlan: parsedOutput.implementationPlan
+            });
+          } else {
+            setStageData(null);
+          }
         } catch (parseErr) {
           console.warn('Failed to parse JSON snippet:', parseErr);
+          setStageData(null);
         }
+      } else {
+        setStageData(null);
       }
 
       // Update conversation
@@ -315,6 +339,13 @@ const LLMInteraction = ({ initialPrompt }) => {
               </div>
             )}
           </div>
+
+          {/* Add StageDisplay before the Temperature Slider */}
+          {stageData && activePromptId && (
+            <div className="mb-4">
+              <StageDisplay stageData={stageData} stage={activePromptId} />
+            </div>
+          )}
 
           {/* 5) Temperature Slider */}
           <div className="mb-1 w-full max-w-sm">
