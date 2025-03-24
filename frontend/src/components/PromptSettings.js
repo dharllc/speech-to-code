@@ -1,6 +1,6 @@
 import React from 'react';
 import { Switch, Tooltip, Button } from '@mui/material';
-import { FiSearch, FiClipboard } from 'react-icons/fi';
+import { FiSearch, FiClipboard, FiLoader } from 'react-icons/fi';
 import { BsRobot, BsMicFill } from 'react-icons/bs';
 
 const PromptSettings = ({
@@ -54,7 +54,14 @@ const PromptSettings = ({
             },
           }}
         >
-          {isAnalyzing ? "..." : "ANALYZE"}
+          {isAnalyzing ? (
+            <div className="flex items-center gap-2">
+              <FiLoader className="animate-spin" />
+              <span>Analyzing</span>
+            </div>
+          ) : (
+            "ANALYZE"
+          )}
         </Button>
 
         {/* Mic icon and switch */}
