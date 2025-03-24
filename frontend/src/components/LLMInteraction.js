@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { sendLLMRequest, getAvailableModels } from '../services/llmService';
 import { API_URL } from '../config/api';
+import * as chatSessionService from '../services/chatSessionService';
 
 // Child Components
 import SystemPromptSelector from './SystemPromptSelector';
@@ -15,9 +16,17 @@ import CostDisplay from './CostDisplay';
 import CopyButton from './CopyButton'; // ← Added import for CopyButton
 import StageDisplay from './StageDisplay';
 import StageProgress from './StageProgress';
+import ChatSessions from './ChatSessions';
 
 // Icons (optional)
 import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
+
+// Import shadcn components
+import { Card } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
+import { Separator } from "../components/ui/separator";
+import { ScrollArea } from "../components/ui/scroll-area";
+import { Skeleton } from "../components/ui/skeleton";
 
 const LLMInteraction = ({ initialPrompt }) => {
   // 1) System Prompt-Related State
@@ -57,6 +66,9 @@ const LLMInteraction = ({ initialPrompt }) => {
   const [includedFiles, setIncludedFiles] = useState(new Set());
   const [stageHistory, setStageHistory] = useState([]);
 
+  // Add new state for active session
+  const [activeSession, setActiveSession] = useState(null);
+
   // =====================
   //    INITIAL LOAD
   // =====================
@@ -64,6 +76,53 @@ const LLMInteraction = ({ initialPrompt }) => {
     fetchPrompts();
     fetchAvailableModels();
   }, []);
+
+  // Load active session from URL or localStorage on mount
+  useEffect(() => {
+    const loadSession = async () => {
+      const sessionId = new URLSearchParams(window.location.search).get('session');
+      if (sessionId) {
+        try {
+          const session = await chatSessionService.getChatSession(sessionId);
+          setActiveSession(session);
+          setConversationHistory(session.conversation_history);
+          setStageHistory(session.stage_history);
+          setIncludedFiles(new Set(session.included_files));
+        } catch (error) {
+          console.error('Failed to load session:', error);
+        }
+      }
+    };
+    loadSession();
+  }, []);
+
+  // Update URL when active session changes
+  useEffect(() => {
+    if (activeSession) {
+      const url = new URL(window.location);
+      url.searchParams.set('session', activeSession.id);
+      window.history.pushState({}, '', url);
+    }
+  }, [activeSession?.id]);
+
+  // Save session state after each change
+  useEffect(() => {
+    const saveSession = async () => {
+      if (activeSession) {
+        try {
+          await chatSessionService.updateChatSession(activeSession.id, {
+            ...activeSession,
+            conversation_history: conversationHistory,
+            stage_history: stageHistory,
+            included_files: Array.from(includedFiles)
+          });
+        } catch (error) {
+          console.error('Failed to save session:', error);
+        }
+      }
+    };
+    saveSession();
+  }, [conversationHistory, stageHistory, includedFiles]);
 
   const fetchPrompts = async () => {
     try {
@@ -155,6 +214,17 @@ const LLMInteraction = ({ initialPrompt }) => {
     setElapsedTime(0);
 
     try {
+      // Create a new chat session if one doesn't exist
+      if (!activeSession) {
+        // Remove HTML tags and get first three words for the title
+        const textWithoutTags = userPrompt.replace(/<[^>]*>/g, '');
+        const words = textWithoutTags.trim().split(/\s+/);
+        const title = words.slice(0, 3).join(' ') || 'New Chat';
+        
+        const newSession = await chatSessionService.createChatSession(title);
+        setActiveSession(newSession);
+      }
+
       const activePrompt = prompts.find((p) => p.id === activePromptId);
       const currentSystemPrompt = activePrompt?.content || '';
 
@@ -240,17 +310,20 @@ const LLMInteraction = ({ initialPrompt }) => {
         setStageData(null);
       }
 
-      // Update conversation
-      const newConversationHistory = [
-        ...conversationHistory,
-        { role: 'user', content: userPrompt },
-        { 
-          role: 'assistant', 
-          content: result.response,
-          model: model,
-          tokenCount: result.tokenCounts.output
-        }
-      ];
+      // Update conversation with timestamp
+      const newMessage = {
+        role: 'user',
+        content: userPrompt,
+        timestamp: new Date().toISOString()
+      };
+      const assistantMessage = {
+        role: 'assistant',
+        content: result.response,
+        model: model,
+        tokenCount: result.tokenCounts.output,
+        timestamp: new Date().toISOString()
+      };
+      const newConversationHistory = [...conversationHistory, newMessage, assistantMessage];
       setConversationHistory(newConversationHistory);
 
       // Update cost & tokens
@@ -270,7 +343,8 @@ const LLMInteraction = ({ initialPrompt }) => {
         {
           role: 'assistant',
           content: 'An error occurred while processing your request.',
-          model: model
+          model: model,
+          timestamp: new Date().toISOString()
         }
       ]);
     }
@@ -304,6 +378,20 @@ const LLMInteraction = ({ initialPrompt }) => {
     return '#EF4444';                 // red
   };
 
+  const handleSessionSelect = async (session) => {
+    if (session) {
+      setActiveSession(session);
+      setConversationHistory(session.conversation_history);
+      setStageHistory(session.stage_history);
+      setIncludedFiles(new Set(session.included_files));
+    } else {
+      setActiveSession(null);
+      setConversationHistory([]);
+      setStageHistory([]);
+      setIncludedFiles(new Set());
+    }
+  };
+
   // =====================
   //  RENDER
   // =====================
@@ -311,170 +399,185 @@ const LLMInteraction = ({ initialPrompt }) => {
   const promptContent = activePrompt?.content || '';
 
   return (
-    <div className="container mx-auto p-4 bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
-      {/* Main heading + inline loading indicator */}
-      <div className="flex items-center mb-2">
-        <h2 className="text-xl font-bold">LLM Interaction</h2>
-        {loading && (
-          <div className="flex items-center ml-4 text-sm text-blue-600 dark:text-blue-300">
-            <Loader2 className="mr-1 animate-spin" size={18} />
-            <span>Request in progress...</span>
-          </div>
-        )}
-      </div>
-
-      {/* Two-column layout */}
-      <div className="flex flex-col md:flex-row md:items-start gap-4 mb-4">
-        {/* LEFT COLUMN */}
-        <div className="flex-1 space-y-3">
-          {/* 1) Slimmer Cost Display */}
-          <CostDisplay totalCost={totalCost} totalTokens={totalTokens} />
-
-          {/* 2) System Prompt Selector */}
-          <SystemPromptSelector
-            prompts={prompts}
-            activePromptId={activePromptId}
-            onSelect={(id) => setActivePromptId(id)}
+    <div className="h-full flex flex-col">
+      <div className="flex h-full gap-4">
+        {/* Chat Sessions Sidebar */}
+        <div className="w-64 flex-shrink-0 overflow-y-auto border-r border-gray-200 dark:border-gray-700">
+          <ChatSessions
+            onSessionSelect={handleSessionSelect}
+            activeSessionId={activeSession?.id}
           />
+        </div>
 
-          {/* 3) System Prompt Collapsible */}
-          <div className="border rounded-lg overflow-hidden">
-            <button
-              type="button"
-              onClick={() => setShowSystemPrompt(!showSystemPrompt)}
-              className="w-full flex items-center justify-between px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-            >
-              <span className="font-semibold">System Prompt</span>
-              {showSystemPrompt ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-            {showSystemPrompt && (
-              <div className="p-2 bg-gray-50 dark:bg-gray-800">
-                <SystemPromptDisplay
-                  content={promptContent}
-                  tokenCount={systemPromptTokens}
-                />
+        {/* Main Content */}
+        <div className="flex-grow flex flex-col min-w-0 p-4">
+          {/* Main heading + inline loading indicator */}
+          <div className="flex items-center mb-4">
+            <h2 className="text-xl font-bold">LLM Interaction</h2>
+            {loading && (
+              <div className="flex items-center ml-4 text-sm text-blue-600 dark:text-blue-300">
+                <Loader2 className="mr-1 animate-spin" size={18} />
+                <span>Request in progress...</span>
               </div>
             )}
           </div>
 
-          {/* 4) User Prompt Collapsible (with Copy All button) */}
-          <div className="border rounded-lg overflow-hidden">
-            {/* Header row: toggle + copy button */}
-            <div className="flex items-center justify-between bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors px-2 py-1 text-xs">
-              <button
-                type="button"
-                onClick={() => setShowUserPrompt(!showUserPrompt)}
-                className="flex items-center space-x-1 focus:outline-none"
-              >
-                <span className="font-semibold">User Prompt</span>
-                {showUserPrompt ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
-              {/* "Copy All" button: copies system + user prompts */}
-              <CopyButton
-                textToCopy={`${promptContent}\n\n${userPrompt}`}
-                className="ml-2"
+          {/* Two-column layout */}
+          <div className="flex flex-col md:flex-row md:items-start gap-4 mb-4">
+            {/* LEFT COLUMN */}
+            <div className="flex-1 space-y-3">
+              {/* 1) Slimmer Cost Display */}
+              <CostDisplay totalCost={totalCost} totalTokens={totalTokens} />
+
+              {/* 2) System Prompt Selector */}
+              <SystemPromptSelector
+                prompts={prompts}
+                activePromptId={activePromptId}
+                onSelect={(id) => setActivePromptId(id)}
               />
-            </div>
-            {showUserPrompt && (
-              <div className="p-2 bg-gray-50 dark:bg-gray-800">
-                <UserPromptInput
-                  value={userPrompt}
-                  onChange={handleUserPromptChange}
-                  tokenCount={userPromptTokens}
-                />
+
+              {/* 3) System Prompt Collapsible */}
+              <div className="border rounded-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setShowSystemPrompt(!showSystemPrompt)}
+                  className="w-full flex items-center justify-between px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                >
+                  <span className="font-semibold">System Prompt</span>
+                  {showSystemPrompt ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+                {showSystemPrompt && (
+                  <div className="p-2 bg-gray-50 dark:bg-gray-800">
+                    <SystemPromptDisplay
+                      content={promptContent}
+                      tokenCount={systemPromptTokens}
+                    />
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Add StageProgress before the Temperature Slider */}
-          {stageHistory.length > 0 && (
-            <div className="mb-4">
-              <StageProgress stageHistory={stageHistory} />
+              {/* 4) User Prompt Collapsible (with Copy All button) */}
+              <div className="border rounded-lg overflow-hidden">
+                {/* Header row: toggle + copy button */}
+                <div className="flex items-center justify-between bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors px-2 py-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setShowUserPrompt(!showUserPrompt)}
+                    className="flex items-center space-x-1 focus:outline-none"
+                  >
+                    <span className="font-semibold">User Prompt</span>
+                    {showUserPrompt ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                  {/* "Copy All" button: copies system + user prompts */}
+                  <CopyButton
+                    textToCopy={`${promptContent}\n\n${userPrompt}`}
+                    className="ml-2"
+                  />
+                </div>
+                {showUserPrompt && (
+                  <div className="p-2 bg-gray-50 dark:bg-gray-800">
+                    <UserPromptInput
+                      value={userPrompt}
+                      onChange={handleUserPromptChange}
+                      tokenCount={userPromptTokens}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Add StageProgress before the Temperature Slider */}
+              {stageHistory.length > 0 && (
+                <div className="mb-4">
+                  <StageProgress stageHistory={stageHistory} />
+                </div>
+              )}
+
+              {/* Add StageDisplay after StageProgress */}
+              {stageData && activePromptId && (
+                <div className="mb-4">
+                  <StageDisplay stageData={stageData} stage={activePromptId} />
+                </div>
+              )}
+
+              {/* 5) Temperature Slider */}
+              <div className="mb-1 w-full max-w-sm">
+                <label
+                  htmlFor="temperature"
+                  className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5"
+                >
+                  Temperature: {temperature.toFixed(2)}
+                </label>
+                <div className="relative h-5 bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-full overflow-hidden">
+                  <input
+                    type="range"
+                    id="temperature"
+                    name="temperature"
+                    min="0"
+                    max="2"
+                    step="0.05"
+                    value={temperature}
+                    onChange={(e) => {
+                      setTemperature(parseFloat(e.target.value));
+                      setHasUnsavedChanges(true);
+                    }}
+                    className="absolute w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div
+                    className="absolute top-0 left-0 h-full bg-white transition-all duration-300 ease-in-out"
+                    style={{
+                      width: `${(temperature / 2) * 100}%`,
+                      backgroundColor: getTemperatureColor(temperature),
+                      boxShadow: `0 0 5px ${getTemperatureColor(temperature)}`
+                    }}
+                  ></div>
+                </div>
+              </div>
+
+              {/* 6) Feasibility & Questions */}
+              {feasibilityScore !== null && (
+                <div className="text-xs">
+                  <span className="font-semibold">Feasibility Score:</span>{' '}
+                  <span className={`font-bold ${getFeasibilityScoreColor(feasibilityScore)}`}>
+                    {feasibilityScore}
+                  </span>
+                </div>
+              )}
+              {questions.length > 0 && (
+                <div className="text-xs">
+                  <span className="font-semibold">Questions:</span>
+                  <ul className="list-disc pl-5 mt-1">
+                    {questions.map((question, index) => (
+                      <li key={index}>{question}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Add StageDisplay after StageProgress */}
-          {stageData && activePromptId && (
-            <div className="mb-4">
-              <StageDisplay stageData={stageData} stage={activePromptId} />
-            </div>
-          )}
-
-          {/* 5) Temperature Slider */}
-          <div className="mb-1 w-full max-w-sm">
-            <label
-              htmlFor="temperature"
-              className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-0.5"
-            >
-              Temperature: {temperature.toFixed(2)}
-            </label>
-            <div className="relative h-5 bg-gradient-to-r from-green-400 via-yellow-400 to-red-400 rounded-full overflow-hidden">
-              <input
-                type="range"
-                id="temperature"
-                name="temperature"
-                min="0"
-                max="2"
-                step="0.05"
-                value={temperature}
-                onChange={(e) => {
-                  setTemperature(parseFloat(e.target.value));
-                  setHasUnsavedChanges(true);
-                }}
-                className="absolute w-full h-full opacity-0 cursor-pointer z-10"
+            {/* RIGHT COLUMN */}
+            <div className="md:w-1/3 flex-shrink-0">
+              <h3 className="text-sm font-semibold mb-1">Models</h3>
+              <LanguageModelSelector
+                availableModels={availableModels}
+                onModelSelect={handleSubmit}
+                loading={loading}
               />
-              <div
-                className="absolute top-0 left-0 h-full bg-white transition-all duration-300 ease-in-out"
-                style={{
-                  width: `${(temperature / 2) * 100}%`,
-                  backgroundColor: getTemperatureColor(temperature),
-                  boxShadow: `0 0 5px ${getTemperatureColor(temperature)}`
-                }}
-              ></div>
+
+              {/* Loading details (elapsed time) */}
+              {loading && (
+                <div className="mt-2 text-sm bg-blue-50 dark:bg-blue-900 rounded-md px-2 py-1 text-blue-700 dark:text-blue-200">
+                  Elapsed: {elapsedTime.toFixed(1)}s
+                </div>
+              )}
             </div>
           </div>
 
-          {/* 6) Feasibility & Questions */}
-          {feasibilityScore !== null && (
-            <div className="text-xs">
-              <span className="font-semibold">Feasibility Score:</span>{' '}
-              <span className={`font-bold ${getFeasibilityScoreColor(feasibilityScore)}`}>
-                {feasibilityScore}
-              </span>
-            </div>
-          )}
-          {questions.length > 0 && (
-            <div className="text-xs">
-              <span className="font-semibold">Questions:</span>
-              <ul className="list-disc pl-5 mt-1">
-                {questions.map((question, index) => (
-                  <li key={index}>{question}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-        </div>
-
-        {/* RIGHT COLUMN */}
-        <div className="md:w-1/3 flex-shrink-0">
-          <h3 className="text-sm font-semibold mb-1">Models</h3>
-          <LanguageModelSelector
-            availableModels={availableModels}
-            onModelSelect={handleSubmit}
-            loading={loading}
-          />
-
-          {/* Loading details (elapsed time) */}
-          {loading && (
-            <div className="mt-2 text-sm bg-blue-50 dark:bg-blue-900 rounded-md px-2 py-1 text-blue-700 dark:text-blue-200">
-              Elapsed: {elapsedTime.toFixed(1)}s
-            </div>
-          )}
+          {/* Conversation Area */}
+          <div className="flex-grow overflow-auto">
+            <ConversationDisplay conversationHistory={conversationHistory} />
+          </div>
         </div>
       </div>
-
-      {/* Conversation History */}
-      <ConversationDisplay conversationHistory={conversationHistory} />
     </div>
   );
 };

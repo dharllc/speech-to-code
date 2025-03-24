@@ -5,7 +5,7 @@ from utils.tree_structure import get_tree_structure, should_skip_token_count
 import os, json, tiktoken
 from dotenv import load_dotenv, set_key
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 from datetime import datetime
 import uuid
 from llm_interaction import handle_llm_interaction, get_available_models
@@ -415,6 +415,92 @@ Guidelines:
 
    except Exception as e:
        raise HTTPException(status_code=500, detail=str(e))
+
+class ChatSession(BaseModel):
+    id: str
+    title: str
+    created_at: str
+    updated_at: str
+    conversation_history: List[dict]
+    stage_history: List[dict]
+    included_files: List[str]
+
+LOGS_DIR = os.path.join(SCRIPT_DIR, "logs")
+SESSIONS_DIR = os.path.join(LOGS_DIR, "sessions")
+
+# Create directories if they don't exist
+os.makedirs(SESSIONS_DIR, exist_ok=True)
+
+@app.get("/chat-sessions")
+async def list_chat_sessions():
+    try:
+        sessions = []
+        for filename in os.listdir(SESSIONS_DIR):
+            if filename.endswith('.json'):
+                with open(os.path.join(SESSIONS_DIR, filename), 'r') as f:
+                    session = json.load(f)
+                    sessions.append(session)
+        return sorted(sessions, key=lambda x: x['updated_at'], reverse=True)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/chat-sessions")
+async def create_chat_session(title: str = "New Chat"):
+    try:
+        session_id = str(uuid.uuid4())
+        now = datetime.utcnow().isoformat()
+        
+        session = {
+            "id": session_id,
+            "title": title,
+            "created_at": now,
+            "updated_at": now,
+            "conversation_history": [],
+            "stage_history": [],
+            "included_files": []
+        }
+        
+        with open(os.path.join(SESSIONS_DIR, f"{session_id}.json"), 'w') as f:
+            json.dump(session, f, indent=2)
+        
+        return session
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/chat-sessions/{session_id}")
+async def get_chat_session(session_id: str):
+    try:
+        with open(os.path.join(SESSIONS_DIR, f"{session_id}.json"), 'r') as f:
+            return json.load(f)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Session not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/chat-sessions/{session_id}")
+async def update_chat_session(session_id: str, session: ChatSession):
+    try:
+        session_dict = session.dict()
+        session_dict["updated_at"] = datetime.utcnow().isoformat()
+        
+        with open(os.path.join(SESSIONS_DIR, f"{session_id}.json"), 'w') as f:
+            json.dump(session_dict, f, indent=2)
+        
+        return session_dict
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Session not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/chat-sessions/{session_id}")
+async def delete_chat_session(session_id: str):
+    try:
+        os.remove(os.path.join(SESSIONS_DIR, f"{session_id}.json"))
+        return {"message": "Session deleted"}
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Session not found")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
    import uvicorn
