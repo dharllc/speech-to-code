@@ -5,6 +5,10 @@ set -e
 
 echo "Starting Speech-to-Code setup..."
 
+# Create necessary directories
+echo "Creating required directories..."
+mkdir -p logs/chat_sessions
+
 # Frontend setup
 echo "Setting up frontend..."
 cd frontend
@@ -42,6 +46,10 @@ else
         echo "REPO_PATH=$repo_path" >> .env
     fi
 fi
+
+# Set proper permissions for logs directory
+echo "Setting proper permissions for logs directory..."
+chmod -R 755 ../logs
 
 echo "Setup complete!"
 echo "Please update the API keys in both frontend/.env and backend/.env files."
