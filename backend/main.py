@@ -424,6 +424,7 @@ class ChatSession(BaseModel):
     conversation_history: List[dict]
     stage_history: List[dict]
     included_files: List[str]
+    deleted_at: Optional[str] = None
 
 LOGS_DIR = os.path.join(SCRIPT_DIR, "logs")
 SESSIONS_DIR = os.path.join(LOGS_DIR, "sessions")
@@ -439,7 +440,8 @@ async def list_chat_sessions():
             if filename.endswith('.json'):
                 with open(os.path.join(SESSIONS_DIR, filename), 'r') as f:
                     session = json.load(f)
-                    sessions.append(session)
+                    if not session.get('deleted_at'):  # Only include non-deleted sessions
+                        sessions.append(session)
         return sorted(sessions, key=lambda x: x['updated_at'], reverse=True)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -471,7 +473,10 @@ async def create_chat_session(title: str = "New Chat"):
 async def get_chat_session(session_id: str):
     try:
         with open(os.path.join(SESSIONS_DIR, f"{session_id}.json"), 'r') as f:
-            return json.load(f)
+            session = json.load(f)
+            if session.get('deleted_at'):  # Return 404 if session is soft-deleted
+                raise HTTPException(status_code=404, detail="Session not found")
+            return session
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Session not found")
     except Exception as e:
@@ -495,8 +500,17 @@ async def update_chat_session(session_id: str, session: ChatSession):
 @app.delete("/chat-sessions/{session_id}")
 async def delete_chat_session(session_id: str):
     try:
-        os.remove(os.path.join(SESSIONS_DIR, f"{session_id}.json"))
-        return {"message": "Session deleted"}
+        file_path = os.path.join(SESSIONS_DIR, f"{session_id}.json")
+        with open(file_path, 'r') as f:
+            session = json.load(f)
+        
+        session["deleted_at"] = datetime.utcnow().isoformat()
+        session["updated_at"] = session["deleted_at"]
+        
+        with open(file_path, 'w') as f:
+            json.dump(session, f, indent=2)
+            
+        return {"message": "Session soft deleted"}
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail="Session not found")
     except Exception as e:

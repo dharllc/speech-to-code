@@ -48,10 +48,17 @@ export const updateChatSession = async (sessionId, sessionData) => {
 
 export const deleteChatSession = async (sessionId) => {
   try {
-    // Soft delete by setting deleted_at timestamp
-    const response = await axios.put(`${API_URL}/chat-sessions/${sessionId}`, {
-      deleted_at: new Date().toISOString()
-    });
+    // First get the current session data
+    const currentSession = await getChatSession(sessionId);
+    
+    // Update the session with deleted_at timestamp
+    const updatedSession = {
+      ...currentSession,
+      deleted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    };
+
+    const response = await axios.put(`${API_URL}/chat-sessions/${sessionId}`, updatedSession);
     return response.data;
   } catch (error) {
     console.error('Error deleting chat session:', error);
