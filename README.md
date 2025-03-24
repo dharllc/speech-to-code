@@ -40,6 +40,13 @@ Customize and organize your system prompts:
 - File-based suggestions
 - Repository structure visualization
 
+### 💬 Chat Sessions Management
+- Persistent chat history with automatic saving
+- Session organization and management
+- Soft delete functionality for chat sessions
+- Automatic chat naming based on context
+- Local timestamp display for all messages
+
 ### 🎤 Transcription Management
 - Real-time speech-to-text conversion
 - Transcription editing and refinement
@@ -62,6 +69,12 @@ Customize and organize your system prompts:
 - Repository path configuration
 - API key management
 - Port configuration
+
+### 📝 Logging and History
+- Comprehensive session logging
+- Chat history persistence
+- Automatic log directory management
+- Easy access to past conversations
 
 ## 🚀 Getting Started
 
@@ -93,6 +106,8 @@ Before you begin, ensure you have installed:
    - Install necessary dependencies
    - Set up a Python virtual environment
    - Create .env files with placeholders
+   - Create required directories for logs and chat sessions
+   - Set appropriate permissions
 
 4. **Configure Environment Variables**
    Navigate to the Settings page to configure:
@@ -150,6 +165,7 @@ speech-to-code/
 │       ├── services/
 │       └── config/
 ├── logs/
+│   └── chat_sessions/      # Persistent chat history storage
 └── README.md
 ```
 
@@ -159,8 +175,13 @@ If you encounter issues:
 1. Verify API keys in Settings
 2. Check dependencies
 3. Ensure both servers are running
+4. Check the logs directory for detailed session logs
+5. Verify proper permissions on the logs directory
 
-For detailed logs, check the console output of both servers.
+For detailed logs, check:
+- Console output of both servers
+- Session logs in `logs/chat_sessions/`
+- Application logs for debugging
 
 ## 🤝 Contributing
 

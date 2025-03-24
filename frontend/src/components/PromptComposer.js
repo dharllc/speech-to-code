@@ -313,20 +313,16 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
     setStatus('Enhancing transcription...');
     try {
       const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
+        'https://api.openai.com/v1/responses',
         {
           model: 'gpt-4',
-          messages: [
-            {
-              role: 'system',
-              content:
-                'You are a precise and efficient text improvement assistant. Your task is to enhance the readability of speech-generated text while preserving all original meaning and intent.'
-            },
-            {
-              role: 'user',
-              content: text
+          input: text,
+          instructions: 'You are a precise and efficient text improvement assistant. Your task is to enhance the readability of speech-generated text while preserving all original meaning and intent.',
+          text: {
+            format: {
+              type: "text"
             }
-          ]
+          }
         },
         {
           headers: {
@@ -336,7 +332,7 @@ const PromptComposer = ({ selectedRepository, selectedFiles, onFileRemove, setUs
         }
       );
 
-      const enhancedText = response.data.choices[0].message.content;
+      const enhancedText = response.data.output[0].content[0].text;
       setTranscriptionHistory(prev => {
         const index = prev.findIndex(item => item.timestamp === timestamp);
         if (index === -1) return prev;

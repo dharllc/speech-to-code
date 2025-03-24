@@ -1,87 +1,133 @@
 import React from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vs2015 } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import CopyButton from './CopyButton';
+import { format } from 'date-fns';
+import { FiClock } from 'react-icons/fi';
+
+// Import shadcn components
+import { Card, CardContent, CardHeader } from "./ui/card";
+import { Badge } from "./ui/badge";
+import { ScrollArea } from "./ui/scroll-area";
 
 const ConversationDisplay = ({ conversationHistory }) => {
-  const renderCodeBlock = (code, language) => (
-    <div className="relative my-1 rounded-md overflow-hidden">
-      <div className="sticky top-0 z-10 bg-gray-200 dark:bg-gray-700 p-1 flex justify-between items-center">
-        <span className="text-gray-700 dark:text-white text-xs">{language}</span>
-        <CopyButton
-          textToCopy={code}
-          className="bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-white p-1 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-500 transition-colors duration-200"
-        />
-      </div>
-      <div className="max-h-80 overflow-y-auto">
+  const renderCodeBlock = (code, language = 'javascript') => {
+    return (
+      <div className="relative rounded-md overflow-hidden my-2">
+        <div className="absolute right-2 top-2 z-10">
+          <CopyButton textToCopy={code} />
+        </div>
         <SyntaxHighlighter
           language={language}
-          style={vscDarkPlus}
-          className="p-2 text-xs rounded-md"
-          customStyle={{margin: 0, background: 'rgb(30, 30, 30)'}}
+          style={vs2015}
+          customStyle={{
+            margin: 0,
+            padding: '1rem',
+            paddingRight: '3rem',
+            background: 'rgb(30, 30, 30)',
+            borderRadius: '0.375rem'
+          }}
         >
           {code}
         </SyntaxHighlighter>
       </div>
-    </div>
-  );
-
-  const renderMessage = (message) => {
-    const codeBlockRegex = /```(\w+)?\n([\s\S]+?)```/g;
-    const parts = [];
-    let lastIndex = 0;
-    let match;
-
-    while ((match = codeBlockRegex.exec(message.content)) !== null) {
-      if (match.index > lastIndex) {
-        parts.push(message.content.slice(lastIndex, match.index));
-      }
-      const [, language = 'plaintext', code] = match;
-      parts.push(renderCodeBlock(code.trim(), language));
-      lastIndex = match.index + match[0].length;
-    }
-
-    if (lastIndex < message.content.length) {
-      parts.push(message.content.slice(lastIndex));
-    }
-
-    return parts.map((part, index) =>
-      typeof part === 'string' ? (
-        <p key={index} className="my-0.5 whitespace-pre-wrap text-xs text-gray-800 dark:text-gray-200">{part}</p>
-      ) : (
-        React.cloneElement(part, { key: index })
-      )
     );
   };
 
+  const renderMessage = (message) => {
+    const parts = [];
+    let lastIndex = 0;
+    const codeBlockRegex = /```(\w+)?\n([\s\S]*?)\n```/g;
+    let match;
+
+    while ((match = codeBlockRegex.exec(message.content)) !== null) {
+      // Add text before code block
+      if (match.index > lastIndex) {
+        parts.push(
+          <p key={`text-${lastIndex}`} className="whitespace-pre-wrap mb-4">
+            {message.content.slice(lastIndex, match.index)}
+          </p>
+        );
+      }
+
+      // Add code block
+      const language = match[1] || 'javascript';
+      parts.push(
+        <div key={`code-${match.index}`}>
+          {renderCodeBlock(match[2], language)}
+        </div>
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text after last code block
+    if (lastIndex < message.content.length) {
+      parts.push(
+        <p key={`text-${lastIndex}`} className="whitespace-pre-wrap mb-4">
+          {message.content.slice(lastIndex)}
+        </p>
+      );
+    }
+
+    return parts;
+  };
+
   return (
-    <div className="mt-2">
-      <h3 className="text-lg font-bold mb-1 text-gray-900 dark:text-white">Conversation:</h3>
-      <div className="bg-gray-100 dark:bg-gray-800 p-2 rounded-lg max-h-[calc(100vh-150px)] overflow-y-auto">
-        {conversationHistory.map((message, index) => (
-          <div key={index} className="mb-1">
-            <div className={`p-1 rounded-lg ${
-              message.role === 'user' 
-                ? 'bg-blue-100 dark:bg-blue-800' 
-                : 'bg-green-100 dark:bg-green-800'
-            }`}>
-              <div className="flex justify-between items-center mb-0.5">
-                <strong className="text-xs font-semibold text-gray-900 dark:text-white">
-                  {message.role === 'user' ? 'User:' : 'Assistant:'}
-                </strong>
-                <CopyButton
-                  textToCopy={message.content}
-                  className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white p-0.5 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
-                />
+    <Card className="h-full">
+      <CardHeader className="py-2 px-4">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium">
+            {conversationHistory.length} messages
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent className="p-0">
+        <ScrollArea className="h-[calc(100vh-20rem)] px-4">
+          <div className="space-y-4 py-4">
+            {conversationHistory.map((message, index) => (
+              <div
+                key={index}
+                className={`flex flex-col ${
+                  message.role === 'assistant'
+                    ? 'bg-gray-50 dark:bg-gray-900 rounded-lg p-4'
+                    : 'p-4'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Badge variant={message.role === 'assistant' ? 'secondary' : 'default'}>
+                      {message.role === 'assistant' ? 'Assistant' : 'You'}
+                    </Badge>
+                    {message.model && (
+                      <Badge variant="outline" className="text-xs">
+                        {message.model}
+                      </Badge>
+                    )}
+                  </div>
+                  {message.timestamp && (
+                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                      <FiClock className="mr-1" size={12} />
+                      <span>{format(new Date(message.timestamp), 'MMM d, h:mm a')}</span>
+                    </div>
+                  )}
+                </div>
+                <div className="relative">
+                  {message.content && (
+                    <div className="pr-8">
+                      {renderMessage(message)}
+                    </div>
+                  )}
+                  <div className="absolute top-0 right-0">
+                    <CopyButton textToCopy={message.content} />
+                  </div>
+                </div>
               </div>
-              <div className={`text-xs ${message.role === 'user' ? 'max-h-20 overflow-y-auto' : ''}`}>
-                {renderMessage(message)}
-              </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
-    </div>
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 };
 

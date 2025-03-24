@@ -69,3 +69,4 @@ todo.txt
 /backend/context_maps
 config.json
 *.log
+/backend/logs/sessions
