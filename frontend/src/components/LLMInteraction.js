@@ -14,6 +14,7 @@ import ConversationDisplay from './ConversationDisplay';
 import CostDisplay from './CostDisplay';
 import CopyButton from './CopyButton'; // ← Added import for CopyButton
 import StageDisplay from './StageDisplay';
+import StageProgress from './StageProgress';
 
 // Icons (optional)
 import { ChevronDown, ChevronUp, Loader2 } from 'lucide-react';
@@ -51,6 +52,10 @@ const LLMInteraction = ({ initialPrompt }) => {
 
   // Add new state for stage data
   const [stageData, setStageData] = useState(null);
+
+  // Add new state for tracking included files
+  const [includedFiles, setIncludedFiles] = useState(new Set());
+  const [stageHistory, setStageHistory] = useState([]);
 
   // =====================
   //    INITIAL LOAD
@@ -153,9 +158,16 @@ const LLMInteraction = ({ initialPrompt }) => {
       const activePrompt = prompts.find((p) => p.id === activePromptId);
       const currentSystemPrompt = activePrompt?.content || '';
 
+      // Add file context to the system prompt
+      let systemPromptWithContext = currentSystemPrompt;
+      if (includedFiles.size > 0) {
+        systemPromptWithContext += "\n\nContext: The following files have already been provided:\n" + 
+          Array.from(includedFiles).map(file => `- ${file}`).join('\n');
+      }
+
       // Only include system message if a prompt is selected
       const messages = [
-        ...(activePromptId ? [{ role: 'system', content: currentSystemPrompt }] : []),
+        ...(activePromptId ? [{ role: 'system', content: systemPromptWithContext }] : []),
         ...conversationHistory,
         { role: 'user', content: userPrompt }
       ];
@@ -170,19 +182,53 @@ const LLMInteraction = ({ initialPrompt }) => {
           
           // Handle stage-specific data
           if (activePromptId === 'stage1-understand-validate') {
-            setStageData({
+            const stageData = {
               clarityScore: parsedOutput.clarityScore,
-              fileRequests: parsedOutput.fileRequests,
+              fileRequests: parsedOutput.fileRequests?.filter(
+                req => !includedFiles.has(req.file)
+              ) || [],
               questions: parsedOutput.questions,
               summary: parsedOutput.summary
-            });
+            };
+            setStageData(stageData);
+            
+            // Update stage history
+            setStageHistory(prev => [...prev, {
+              stage: 'stage1-understand-validate',
+              timestamp: new Date().toISOString(),
+              clarityScore: parsedOutput.clarityScore,
+              summary: parsedOutput.summary
+            }]);
+
+            // Track newly included files
+            if (parsedOutput.fileRequests) {
+              const newFiles = new Set(parsedOutput.fileRequests.map(req => req.file));
+              setIncludedFiles(prev => new Set([...prev, ...newFiles]));
+            }
           } else if (activePromptId === 'stage2-plan-validate') {
-            setStageData({
+            const stageData = {
               feasibilityScore: parsedOutput.feasibilityScore,
-              additionalFileRequests: parsedOutput.additionalFileRequests,
+              additionalFileRequests: parsedOutput.additionalFileRequests?.filter(
+                req => !includedFiles.has(req.file)
+              ) || [],
               technicalQuestions: parsedOutput.technicalQuestions,
               implementationPlan: parsedOutput.implementationPlan
-            });
+            };
+            setStageData(stageData);
+            
+            // Update stage history
+            setStageHistory(prev => [...prev, {
+              stage: 'stage2-plan-validate',
+              timestamp: new Date().toISOString(),
+              feasibilityScore: parsedOutput.feasibilityScore,
+              implementationPlan: parsedOutput.implementationPlan
+            }]);
+
+            // Track newly included files
+            if (parsedOutput.additionalFileRequests) {
+              const newFiles = new Set(parsedOutput.additionalFileRequests.map(req => req.file));
+              setIncludedFiles(prev => new Set([...prev, ...newFiles]));
+            }
           } else {
             setStageData(null);
           }
@@ -340,7 +386,14 @@ const LLMInteraction = ({ initialPrompt }) => {
             )}
           </div>
 
-          {/* Add StageDisplay before the Temperature Slider */}
+          {/* Add StageProgress before the Temperature Slider */}
+          {stageHistory.length > 0 && (
+            <div className="mb-4">
+              <StageProgress stageHistory={stageHistory} />
+            </div>
+          )}
+
+          {/* Add StageDisplay after StageProgress */}
           {stageData && activePromptId && (
             <div className="mb-4">
               <StageDisplay stageData={stageData} stage={activePromptId} />
