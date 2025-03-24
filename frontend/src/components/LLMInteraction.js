@@ -45,8 +45,8 @@ const LLMInteraction = ({ initialPrompt }) => {
   const timerRef = useRef(null);
 
   // 6) Collapsible UI states
-  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
-  const [showUserPrompt, setShowUserPrompt] = useState(false);
+  const [showSystemPrompt, setShowSystemPrompt] = useState(true);
+  const [showUserPrompt, setShowUserPrompt] = useState(true);
 
   // =====================
   //    INITIAL LOAD
