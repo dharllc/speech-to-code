@@ -174,7 +174,12 @@ const LLMInteraction = ({ initialPrompt }) => {
       const newConversationHistory = [
         ...conversationHistory,
         { role: 'user', content: userPrompt },
-        { role: 'assistant', content: result.response }
+        { 
+          role: 'assistant', 
+          content: result.response,
+          model: model,
+          tokenCount: result.tokenCounts.output
+        }
       ];
       setConversationHistory(newConversationHistory);
 
@@ -194,7 +199,8 @@ const LLMInteraction = ({ initialPrompt }) => {
         ...conversationHistory,
         {
           role: 'assistant',
-          content: 'An error occurred while processing your request.'
+          content: 'An error occurred while processing your request.',
+          model: model
         }
       ]);
     }

@@ -66,9 +66,16 @@ const ConversationDisplay = ({ conversationHistory }) => {
                 : 'bg-green-100 dark:bg-green-800'
             }`}>
               <div className="flex justify-between items-center mb-0.5">
-                <strong className="text-xs font-semibold text-gray-900 dark:text-white">
-                  {message.role === 'user' ? 'User:' : 'Assistant:'}
-                </strong>
+                <div className="flex items-center gap-2">
+                  <strong className="text-xs font-semibold text-gray-900 dark:text-white">
+                    {message.role === 'user' ? 'User:' : `${message.model || 'Assistant'}:`}
+                  </strong>
+                  {message.role === 'assistant' && message.tokenCount && (
+                    <span className="text-xs text-gray-600 dark:text-gray-300">
+                      ({message.tokenCount} tokens)
+                    </span>
+                  )}
+                </div>
                 <CopyButton
                   textToCopy={message.content}
                   className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-white p-0.5 rounded text-xs hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors duration-200"
