@@ -2,7 +2,7 @@
   {
     "id": "6c2e2fbd-4121-4510-a3ee-b4de9206108c",
     "name": "Describe Feature",
-    "step": "Step -1",
+    "step": "Step 1",
     "content": "You are tasked with describing a new product capability in sufficient detail that an advanced software engineering agent can execute it without ambiguity. This task is crucial for ensuring clear communication between product managers and engineering teams, facilitating efficient development and implementation of new features.\n\nFirst, review the existing system description:\n\n<existing_system>\n{{EXISTING_SYSTEM_DESCRIPTION}}\n</existing_system>\n\nNow, consider the new product capability to be implemented:\n\n<new_capability>\n{{PRODUCT_CAPABILITY}}\n</new_capability>\n\nTo describe this new capability in detail, follow these steps:\n\n1. Analyze the new capability in the context of the existing system.\n2. Break down the capability into its core components and functionalities.\n3. Identify any potential interactions or dependencies with existing features.\n4. Determine the technical requirements and constraints for implementation.\n5. Consider edge cases and potential challenges.\n6. Outline any necessary changes to the user interface or experience.\n7. Specify performance expectations and scalability considerations.\n\nProvide your detailed description of the new product capability inside <capability_description> tags. Your description should include, but is not limited to, the following sections:\n\n1. Overview: A high-level summary of the new capability.\n2. Functional Requirements: Detailed specifications of what the capability should do.\n3. Technical Requirements: Specific technical needs or constraints for implementation.\n4. User Interface/Experience: Any changes or additions to the UI/UX.\n5. Data Flow: How data moves through the system with this new capability.\n6. Integration Points: How the new capability interacts with existing features.\n7. Performance Expectations: Specific metrics or benchmarks the capability should meet.\n8. Security Considerations: Any security implications or requirements.\n9. Testing Scenarios: Key test cases to validate the implementation.\n10. Rollout Strategy: Recommendations for deploying the new capability.\n\nAdditional guidelines:\n\n- Use clear, concise language avoiding ambiguity or jargon.\n- Provide specific examples or use cases where appropriate.\n- Include any necessary diagrams or flowcharts (describe them in text if unable to create visual aids).\n- Address potential edge cases or error scenarios.\n- Specify any new APIs, database changes, or third-party integrations required.\n- Consider backwards compatibility and migration needs.\n- Highlight any areas where further clarification or decision-making may be needed.\n\nRemember, the goal is to provide a description detailed enough that an advanced software engineering agent can implement the capability without needing to ask follow-up questions. Be thorough, precise, and anticipate potential areas of confusion or ambiguity.",
     "is_default": false,
     "timestamp": "2025-03-09T01:02:18.614445",
@@ -16,15 +16,6 @@
     "is_default": false,
     "timestamp": "2025-03-05T16:14:48.147849",
     "token_count": 406
-  },
-  {
-    "id": "24dffc98-57d3-4604-91c0-1830fd1782f2",
-    "name": "Write Problem Statement",
-    "step": "Step 1",
-    "content": "You are tasked with articulating a clear and concise problem statement based on a given context. The context may include code snippets, user experience descriptions, debugging scenarios, or information about the codebase and technologies being used. Your goal is to distill this information into a high-density, clear problem statement.\n\nCarefully analyze the provided context. Pay attention to:\n1. The main issue or challenge being described\n2. Any specific technologies, frameworks, or languages mentioned\n3. User experience goals or requirements, if any\n4. Debugging information or error descriptions, if present\n5. Any constraints or limitations mentioned\n\nBased on your analysis, formulate a concise problem statement that captures the essence of the issue. Your statement should:\n- Be clear and unambiguous\n- Have high information density\n- Accurately reflect the core problem as described in the context\n- Avoid unnecessary details while retaining crucial information\n\nUse your own words to articulate the problem, rather than directly quoting large portions of the context. However, you may use key terms or phrases from the original context if they are essential to understanding the problem.\n\nYour final output should consist of only the problem statement, presented within <problem_statement> tags. Do not include any additional commentary, analysis, or suggestions outside of these tags.",
-    "is_default": false,
-    "timestamp": "2025-03-05T11:59:52.173872",
-    "token_count": 258
   },
   {
     "id": "88a23a37-bb81-4cec-8601-9ec9c67901ce",
