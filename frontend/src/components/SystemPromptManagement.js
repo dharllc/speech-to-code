@@ -73,7 +73,7 @@ const SystemPromptManagement = () => {
       <div className="flex flex-col gap-4 p-6 max-w-screen-xl mx-auto w-full">
         <div ref={formRef} className={`bg-white dark:bg-gray-800 rounded-xl shadow-lg transition-all duration-300 ${isFormCollapsed ? 'h-16 overflow-hidden' : ''}`}>
           <div className="flex justify-between items-center p-4">
-            <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-500">{editingPrompt ? 'Edit Prompt' : 'Create Prompt'}</h2>
+            <h2 className="text-2xl font-bold text-blue-500">{editingPrompt ? 'Edit Prompt' : 'Create Prompt'}</h2>
             <button onClick={() => setIsFormCollapsed(!isFormCollapsed)} className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600">
               <svg className={`w-6 h-6 transition-transform ${isFormCollapsed ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 15l7-7 7 7" />
@@ -87,7 +87,7 @@ const SystemPromptManagement = () => {
             </div>
             <textarea name="content" value={newPrompt.content} onChange={handleInputChange} placeholder="Prompt Content" className="w-full px-4 py-2 rounded-lg bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-y min-h-[200px] mb-4" required />
             <div className="flex gap-4">
-              <button type="submit" className="flex-1 py-2 px-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:opacity-90 transition-opacity font-medium">{editingPrompt ? 'Update Prompt' : 'Add Prompt'}</button>
+              <button type="submit" className="flex-1 py-2 px-4 bg-blue-500 text-white rounded-lg hover:opacity-90 transition-opacity font-medium">{editingPrompt ? 'Update Prompt' : 'Add Prompt'}</button>
               {editingPrompt && <button type="button" onClick={() => { setEditingPrompt(null); setNewPrompt({ name: '', step: '', content: '', is_default: false }); }} className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600">Cancel</button>}
             </div>
           </form>
