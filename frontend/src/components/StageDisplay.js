@@ -1,11 +1,19 @@
 import React from 'react';
-import { FiFile, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
+import { File, CheckCircle2, AlertCircle, List, Shield, Copy } from "lucide-react";
+import { Card } from "./ui/card";
+import { Button } from "./ui/button";
+import CopyButton from './CopyButton';
 
 const StageDisplay = ({ stageData, stage }) => {
   if (!stageData) return null;
 
   const getScoreColor = (score, type = 'clarity') => {
     if (type === 'clarity') {
+      if (score >= 90) return 'text-green-500 dark:text-green-400';
+      if (score >= 70) return 'text-blue-500 dark:text-blue-400';
+      if (score >= 40) return 'text-yellow-500 dark:text-yellow-400';
+      return 'text-red-500 dark:text-red-400';
+    } else if (type === 'instruction') {
       if (score >= 90) return 'text-green-500 dark:text-green-400';
       if (score >= 70) return 'text-blue-500 dark:text-blue-400';
       if (score >= 40) return 'text-yellow-500 dark:text-yellow-400';
@@ -23,7 +31,7 @@ const StageDisplay = ({ stageData, stage }) => {
     return (
       <div className="mt-2">
         <h4 className="text-sm font-semibold flex items-center gap-1">
-          <FiFile className="inline" size={14} />
+          <File className="inline" size={14} />
           {title}:
         </h4>
         <ul className="list-none space-y-1 mt-1">
@@ -43,7 +51,7 @@ const StageDisplay = ({ stageData, stage }) => {
     return (
       <div className="mt-2">
         <h4 className="text-sm font-semibold flex items-center gap-1">
-          <FiAlertCircle className="inline" size={14} />
+          <AlertCircle className="inline" size={14} />
           {title}:
         </h4>
         <ul className="list-disc pl-5 mt-1">
@@ -136,13 +144,78 @@ const StageDisplay = ({ stageData, stage }) => {
     );
   };
 
+  const InstructionSteps = ({ steps }) => {
+    if (!steps || steps.length === 0) return null;
+    return (
+      <div className="mt-3">
+        <h4 className="text-sm font-semibold flex items-center gap-1">
+          <List className="inline" size={14} />
+          Implementation Steps:
+        </h4>
+        <ul className="list-none space-y-2 mt-2">
+          {steps.map((step, index) => (
+            <li key={index} className="text-xs pl-4 border-l-2 border-gray-200 dark:border-gray-700">
+              <div className="font-medium">{step.description}</div>
+              {step.files && step.files.length > 0 && (
+                <div className="mt-1 text-blue-600 dark:text-blue-400 font-mono">
+                  Files: {step.files.join(', ')}
+                </div>
+              )}
+              {step.validation && (
+                <div className="mt-1 text-gray-600 dark:text-gray-400">
+                  Validation: {step.validation}
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  const SafetyChecks = ({ checks }) => {
+    if (!checks || checks.length === 0) return null;
+    return (
+      <div className="mt-3">
+        <h4 className="text-sm font-semibold flex items-center gap-1">
+          <Shield className="inline" size={14} />
+          Safety Checks:
+        </h4>
+        <ul className="list-none space-y-2 mt-2">
+          {checks.map((check, index) => (
+            <li key={index} className="text-xs pl-4 border-l-2 border-gray-200 dark:border-gray-700">
+              <div className="font-medium">{check.check}</div>
+              <div className="mt-1 text-gray-600 dark:text-gray-400">
+                Mitigation: {check.mitigation}
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
+  const RefinementSuggestions = ({ suggestions }) => {
+    if (!suggestions || suggestions.length === 0) return null;
+    return (
+      <div className="mt-3">
+        <h4 className="text-sm font-semibold">Refinement Suggestions:</h4>
+        <ul className="list-disc pl-5 mt-1">
+          {suggestions.map((suggestion, index) => (
+            <li key={index} className="text-xs text-gray-700 dark:text-gray-300">{suggestion}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
   return (
     <div className="border rounded-lg p-3 bg-white dark:bg-gray-800 shadow-sm space-y-2">
       {/* Stage 1: Understand & Validate */}
       {stage === 'stage1-understand-validate' && stageData.clarityScore !== undefined && (
         <>
           <div className="flex items-center gap-2">
-            <FiCheckCircle className="text-blue-500" size={16} />
+            <File className="text-blue-500" size={16} />
             <span className="text-sm font-semibold">Clarity Score:</span>
             <span className={`font-bold ${getScoreColor(stageData.clarityScore, 'clarity')}`}>
               {stageData.clarityScore}
@@ -158,7 +231,7 @@ const StageDisplay = ({ stageData, stage }) => {
       {stage === 'stage2-plan-validate' && stageData.feasibilityScore !== undefined && (
         <>
           <div className="flex items-center gap-2">
-            <FiCheckCircle className="text-blue-500" size={16} />
+            <File className="text-blue-500" size={16} />
             <span className="text-sm font-semibold">Feasibility Score:</span>
             <span className={`font-bold ${getScoreColor(stageData.feasibilityScore, 'feasibility')}`}>
               {stageData.feasibilityScore}
@@ -167,6 +240,26 @@ const StageDisplay = ({ stageData, stage }) => {
           <FileRequestList files={stageData.additionalFileRequests} title="Additional Files Needed" />
           <QuestionList questions={stageData.technicalQuestions} title="Technical Questions" />
           <ImplementationPlan plan={stageData.implementationPlan} />
+        </>
+      )}
+
+      {/* Stage 3: Agent Instructions */}
+      {stage === 'stage3-agent-instructions' && (
+        <>
+          {/* Instructions Ready Banner */}
+          <Card className="bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 p-4 mb-4">
+            <div className="flex items-center gap-2">
+              {stageData.agentInstructionsGenerated ? (
+                <CheckCircle2 className="text-green-500" size={16} />
+              ) : (
+                <AlertCircle className="text-gray-400" size={16} />
+              )}
+              <span className="text-sm font-semibold">Agent Instructions Status</span>
+            </div>
+          </Card>
+          <InstructionSteps steps={stageData.instructions?.steps} />
+          <SafetyChecks checks={stageData.safetyChecks} />
+          <RefinementSuggestions suggestions={stageData.refinementSuggestions} />
         </>
       )}
     </div>

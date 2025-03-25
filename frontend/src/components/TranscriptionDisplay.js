@@ -42,7 +42,12 @@ const TranscriptionDisplay = ({
             )}
           </div>
         </div>
-        <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{text}</p>
+        <div className="relative">
+          <div className="max-h-60 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-400 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent hover:scrollbar-thumb-gray-500 dark:hover:scrollbar-thumb-gray-500">
+            <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap py-1">{text}</p>
+          </div>
+          <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-gray-50 to-transparent dark:from-gray-800/50 dark:to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        </div>
       </div>
     )
   );

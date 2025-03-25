@@ -1,6 +1,7 @@
 import React from 'react';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs2015 } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { CheckCircle2 } from "lucide-react";
 import CopyButton from './CopyButton';
 import { format } from 'date-fns';
 import { FiClock } from 'react-icons/fi';
@@ -88,23 +89,34 @@ const ConversationDisplay = ({ conversationHistory }) => {
             {conversationHistory.map((message, index) => (
               <div
                 key={index}
-                className={`flex flex-col ${
+                className={`flex flex-col relative ${
                   message.role === 'assistant'
                     ? 'bg-gray-50 dark:bg-gray-900 rounded-lg p-4'
                     : 'p-4'
                 }`}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Badge variant={message.role === 'assistant' ? 'secondary' : 'default'}>
-                      {message.role === 'assistant' ? 'Assistant' : 'You'}
-                    </Badge>
-                    {message.model && (
-                      <Badge variant="outline" className="text-xs">
-                        {message.model}
-                      </Badge>
-                    )}
+                {message.score !== undefined && (
+                  <div className="absolute right-2 top-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-xs font-medium ${message.score > 90 ? 'text-green-500' : 'text-gray-400'}`}>
+                        {message.score}
+                      </span>
+                      <CheckCircle2 
+                        className={message.score > 90 ? 'text-green-500' : 'text-gray-400'} 
+                        size={16}
+                      />
+                    </div>
                   </div>
+                )}
+                <div className="flex items-center gap-2 mb-2">
+                  <Badge variant={message.role === 'assistant' ? 'secondary' : 'default'}>
+                    {message.role === 'assistant' ? 'Assistant' : 'You'}
+                  </Badge>
+                  {message.model && (
+                    <Badge variant="outline" className="text-xs">
+                      {message.model}
+                    </Badge>
+                  )}
                   {message.timestamp && (
                     <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
                       <FiClock className="mr-1" size={12} />
