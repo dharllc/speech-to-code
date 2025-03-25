@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiCheckCircle, FiAlertCircle, FiClock } from 'react-icons/fi';
+import { CheckCircle2, AlertCircle, Clock } from "lucide-react";
 
 const StageProgress = ({ stageHistory }) => {
   if (!stageHistory || stageHistory.length === 0) return null;
@@ -55,11 +55,11 @@ const StageProgress = ({ stageHistory }) => {
       <div className="flex items-center gap-3">
         <div className="flex-shrink-0">
           {getStageStatus('stage1-understand-validate') === 'complete' ? (
-            <FiCheckCircle className="text-green-500" size={20} />
+            <CheckCircle2 className="text-green-500" size={20} />
           ) : getStageStatus('stage1-understand-validate') === 'in-progress' ? (
-            <FiClock className="text-blue-500" size={20} />
+            <Clock className="text-blue-500" size={20} />
           ) : (
-            <FiAlertCircle className="text-gray-400" size={20} />
+            <AlertCircle className="text-gray-400" size={20} />
           )}
         </div>
         <div className="flex-grow">
@@ -83,13 +83,13 @@ const StageProgress = ({ stageHistory }) => {
       <div className="flex items-center gap-3">
         <div className="flex-shrink-0">
           {getStageStatus('stage2-plan-validate') === 'complete' ? (
-            <FiCheckCircle className="text-green-500" size={20} />
+            <CheckCircle2 className="text-green-500" size={20} />
           ) : getStageStatus('stage2-plan-validate') === 'in-progress' ? (
-            <FiClock className="text-blue-500" size={20} />
+            <Clock className="text-blue-500" size={20} />
           ) : getStageStatus('stage2-plan-validate') === 'locked' ? (
-            <FiAlertCircle className="text-gray-400" size={20} />
+            <AlertCircle className="text-gray-400" size={20} />
           ) : (
-            <FiAlertCircle className="text-gray-400" size={20} />
+            <AlertCircle className="text-gray-400" size={20} />
           )}
         </div>
         <div className="flex-grow">
@@ -113,13 +113,13 @@ const StageProgress = ({ stageHistory }) => {
       <div className="flex items-center gap-3">
         <div className="flex-shrink-0">
           {getStageStatus('stage3-agent-instructions') === 'complete' ? (
-            <FiCheckCircle className="text-green-500" size={20} />
+            <CheckCircle2 className="text-green-500" size={20} />
           ) : getStageStatus('stage3-agent-instructions') === 'in-progress' ? (
-            <FiClock className="text-blue-500" size={20} />
+            <Clock className="text-blue-500" size={20} />
           ) : getStageStatus('stage3-agent-instructions') === 'locked' ? (
-            <FiAlertCircle className="text-gray-400" size={20} />
+            <AlertCircle className="text-gray-400" size={20} />
           ) : (
-            <FiAlertCircle className="text-gray-400" size={20} />
+            <AlertCircle className="text-gray-400" size={20} />
           )}
         </div>
         <div className="flex-grow">

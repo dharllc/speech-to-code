@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FiPlus, FiTrash2, FiEdit2, FiMessageSquare, FiClock } from 'react-icons/fi';
+import { CheckCircle2 } from "lucide-react";
 import { format, formatDistanceToNow } from 'date-fns';
 import * as chatSessionService from '../services/chatSessionService';
 
@@ -44,6 +45,7 @@ const ChatSessions = ({ onSessionSelect, activeSessionId }) => {
   const loadSessions = async () => {
     try {
       const data = await chatSessionService.listChatSessions();
+      console.log('Chat sessions:', data); // Debug log
       // Sort sessions by most recent message timestamp
       const sortedSessions = data.sort((a, b) => {
         const aTimestamp = getLastMessageTimestamp(a);
@@ -143,6 +145,28 @@ const ChatSessions = ({ onSessionSelect, activeSessionId }) => {
     setShowDeleteDialog(true);
   };
 
+  const getStageCheckmarks = (session) => {
+    if (!session.stage_history) return [];
+    
+    // Get latest scores for each stage
+    const latestScores = session.stage_history.reduce((acc, entry) => {
+      if (entry.stage === 'stage1-understand-validate') {
+        acc.stage1 = entry.clarityScore;
+      } else if (entry.stage === 'stage2-plan-validate') {
+        acc.stage2 = entry.feasibilityScore;
+      } else if (entry.stage === 'stage3-agent-instructions') {
+        acc.stage3 = entry.instructionQuality;
+      }
+      return acc;
+    }, {});
+
+    return [
+      latestScores.stage1 > 90,
+      latestScores.stage2 > 90,
+      latestScores.stage3 > 90
+    ];
+  };
+
   return (
     <div className="h-full flex flex-col p-4">
       <div className="flex items-center justify-between mb-4">
@@ -163,17 +187,28 @@ const ChatSessions = ({ onSessionSelect, activeSessionId }) => {
             }`}
             onClick={() => onSessionSelect(session)}
           >
-            <div className="flex flex-col overflow-hidden">
+            <div className="flex flex-col overflow-hidden flex-grow">
               <div className="flex items-center space-x-2">
                 <FiMessageSquare className="flex-shrink-0" />
                 <span className="truncate">{session.title}</span>
               </div>
-              <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mt-1">
-                <FiClock className="mr-1" size={12} />
-                <span>{formatTimestamp(session)}</span>
+              <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <div className="flex items-center">
+                  <FiClock className="mr-1" size={12} />
+                  <span>{formatTimestamp(session)}</span>
+                </div>
+                <div className="flex items-center gap-0.5">
+                  {getStageCheckmarks(session).map((isComplete, index) => (
+                    <CheckCircle2 
+                      key={index}
+                      className={isComplete ? "text-green-500" : "text-gray-400"} 
+                      size={12}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100">
               <button
                 onClick={(e) => handleEditClick(session, e)}

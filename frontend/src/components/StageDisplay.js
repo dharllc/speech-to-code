@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiFile, FiCheckCircle, FiAlertCircle, FiList, FiShield, FiCopy } from 'react-icons/fi';
+import { File, CheckCircle2, AlertCircle, List, Shield, Copy } from "lucide-react";
 import { Card } from "./ui/card";
 import { Button } from "./ui/button";
 import CopyButton from './CopyButton';
@@ -31,7 +31,7 @@ const StageDisplay = ({ stageData, stage }) => {
     return (
       <div className="mt-2">
         <h4 className="text-sm font-semibold flex items-center gap-1">
-          <FiFile className="inline" size={14} />
+          <File className="inline" size={14} />
           {title}:
         </h4>
         <ul className="list-none space-y-1 mt-1">
@@ -51,7 +51,7 @@ const StageDisplay = ({ stageData, stage }) => {
     return (
       <div className="mt-2">
         <h4 className="text-sm font-semibold flex items-center gap-1">
-          <FiAlertCircle className="inline" size={14} />
+          <AlertCircle className="inline" size={14} />
           {title}:
         </h4>
         <ul className="list-disc pl-5 mt-1">
@@ -149,7 +149,7 @@ const StageDisplay = ({ stageData, stage }) => {
     return (
       <div className="mt-3">
         <h4 className="text-sm font-semibold flex items-center gap-1">
-          <FiList className="inline" size={14} />
+          <List className="inline" size={14} />
           Implementation Steps:
         </h4>
         <ul className="list-none space-y-2 mt-2">
@@ -178,7 +178,7 @@ const StageDisplay = ({ stageData, stage }) => {
     return (
       <div className="mt-3">
         <h4 className="text-sm font-semibold flex items-center gap-1">
-          <FiShield className="inline" size={14} />
+          <Shield className="inline" size={14} />
           Safety Checks:
         </h4>
         <ul className="list-none space-y-2 mt-2">
@@ -215,7 +215,7 @@ const StageDisplay = ({ stageData, stage }) => {
       {stage === 'stage1-understand-validate' && stageData.clarityScore !== undefined && (
         <>
           <div className="flex items-center gap-2">
-            <FiCheckCircle className="text-blue-500" size={16} />
+            <File className="text-blue-500" size={16} />
             <span className="text-sm font-semibold">Clarity Score:</span>
             <span className={`font-bold ${getScoreColor(stageData.clarityScore, 'clarity')}`}>
               {stageData.clarityScore}
@@ -231,7 +231,7 @@ const StageDisplay = ({ stageData, stage }) => {
       {stage === 'stage2-plan-validate' && stageData.feasibilityScore !== undefined && (
         <>
           <div className="flex items-center gap-2">
-            <FiCheckCircle className="text-blue-500" size={16} />
+            <File className="text-blue-500" size={16} />
             <span className="text-sm font-semibold">Feasibility Score:</span>
             <span className={`font-bold ${getScoreColor(stageData.feasibilityScore, 'feasibility')}`}>
               {stageData.feasibilityScore}
@@ -244,86 +244,21 @@ const StageDisplay = ({ stageData, stage }) => {
       )}
 
       {/* Stage 3: Agent Instructions */}
-      {stage === 'stage3-agent-instructions' && stageData.instructionQuality !== undefined && (
+      {stage === 'stage3-agent-instructions' && (
         <>
           {/* Instructions Ready Banner */}
           <Card className="bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 p-4 mb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-1">
-                  Agent Instructions Ready
-                </h3>
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  These instructions have been generated for the coding agent. Click the button to copy them.
-                </p>
-              </div>
-              <CopyButton
-                textToCopy={JSON.stringify({
-                  instructions: stageData.instructions,
-                  safetyChecks: stageData.safetyChecks,
-                  refinementSuggestions: stageData.refinementSuggestions
-                }, null, 2)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
-                buttonText={<><FiCopy size={16} /> Copy Instructions</>}
-              />
+            <div className="flex items-center gap-2">
+              {stageData.agentInstructionsGenerated ? (
+                <CheckCircle2 className="text-green-500" size={16} />
+              ) : (
+                <AlertCircle className="text-gray-400" size={16} />
+              )}
+              <span className="text-sm font-semibold">Agent Instructions Status</span>
             </div>
           </Card>
-
-          <div className="flex items-center gap-2">
-            <FiCheckCircle className="text-blue-500" size={16} />
-            <span className="text-sm font-semibold">Instruction Quality Score:</span>
-            <span className={`font-bold ${getScoreColor(stageData.instructionQuality, 'instruction')}`}>
-              {stageData.instructionQuality}
-            </span>
-          </div>
-          
-          {/* Instructions Content */}
-          <div className="mt-3 space-y-4 border border-blue-200 dark:border-blue-800 rounded-lg p-4 bg-blue-50/50 dark:bg-blue-900/20">
-            {stageData.instructions && (
-              <>
-                <div>
-                  <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Context:</h4>
-                  <p className="text-xs text-gray-700 dark:text-gray-300">{stageData.instructions.context}</p>
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Objective:</h4>
-                  <p className="text-xs text-gray-700 dark:text-gray-300">{stageData.instructions.objective}</p>
-                </div>
-              </>
-            )}
-
-            {/* Implementation Steps */}
-            <InstructionSteps steps={stageData.instructions?.steps} />
-
-            {/* Constraints */}
-            {stageData.instructions?.constraints && stageData.instructions.constraints.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Constraints:</h4>
-                <ul className="list-disc pl-5 mt-1">
-                  {stageData.instructions.constraints.map((constraint, index) => (
-                    <li key={index} className="text-xs text-gray-700 dark:text-gray-300">{constraint}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Testing Guidelines */}
-            {stageData.instructions?.testingGuidelines && stageData.instructions.testingGuidelines.length > 0 && (
-              <div>
-                <h4 className="text-sm font-semibold text-blue-900 dark:text-blue-100">Testing Guidelines:</h4>
-                <ul className="list-disc pl-5 mt-1">
-                  {stageData.instructions.testingGuidelines.map((guideline, index) => (
-                    <li key={index} className="text-xs text-gray-700 dark:text-gray-300">{guideline}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          {/* Safety Checks */}
+          <InstructionSteps steps={stageData.instructions?.steps} />
           <SafetyChecks checks={stageData.safetyChecks} />
-
-          {/* Refinement Suggestions */}
           <RefinementSuggestions suggestions={stageData.refinementSuggestions} />
         </>
       )}
