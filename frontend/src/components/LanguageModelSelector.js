@@ -52,27 +52,28 @@ const LanguageModelSelector = ({ availableModels, onModelSelect, loading }) => {
                           : 'shadow-sm hover:shadow-md'
                       }
                       ${isDisabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'}
+                      min-w-0 w-full
                     `}
                   >
                     {/* Top row: model name + loading pulse if selected */}
-                    <div className="flex items-center w-full justify-between mb-1">
-                      <span className="font-medium text-gray-100 truncate">
+                    <div className="flex items-center w-full justify-between mb-1 gap-1">
+                      <span className="font-medium text-gray-100 truncate max-w-[85%]">
                         {model}
                       </span>
                       {isClickedLoading && (
-                        <span className="ml-1 h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
+                        <span className="ml-auto flex-shrink-0 h-2 w-2 rounded-full bg-yellow-400 animate-pulse" />
                       )}
                     </div>
                     
                     {/* Bottom row: token/cost details */}
-                    <div className="text-[10px] text-gray-400 leading-tight">
-                      <span className="whitespace-nowrap">
+                    <div className="flex items-center justify-between text-[10px] text-gray-400 leading-tight gap-1">
+                      <div className="truncate">
                         {formatTokenCount(details.input_tokens)}i / ${formatCost(details.input)}
-                      </span>
-                      <span className="mx-1 text-gray-500">•</span>
-                      <span className="whitespace-nowrap">
+                      </div>
+                      <span className="mx-0.5 text-gray-500 flex-shrink-0">•</span>
+                      <div className="truncate">
                         {formatTokenCount(details.output_tokens)}o / ${formatCost(details.output)}
-                      </span>
+                      </div>
                     </div>
                   </button>
                 );
