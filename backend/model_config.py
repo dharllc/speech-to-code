@@ -14,9 +14,8 @@ MODELS = {
         "claude-3-opus-latest": {"input": 15, "output": 75, "input_tokens": 200000, "output_tokens": 4096}
     },
     "Google": {
-        "gemini-2.0-pro-exp-02-05": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
-        "gemini-2.0-flash-thinking-exp-01-21": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192},
-        "gemini-2.0-flash-exp": {"input": 3.50, "output": 10.50, "input_tokens": 2097152, "output_tokens": 8192}
+        "gemini-2.5-pro-exp-03-25": {"input": 0, "output": 0, "input_tokens": 1000000, "output_tokens": 64000},
+        "gemini-2.0-flash": {"input": 0.1, "output": 0.4, "input_tokens": 1048576, "output_tokens": 8192}
     },
     "XAI": {
         "grok-2-1212": {"input": 2.00, "output": 10.00, "input_tokens": 128000, "output_tokens": 32768}

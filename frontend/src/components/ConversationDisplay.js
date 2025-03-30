@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vs2015 } from 'react-syntax-highlighter/dist/esm/styles/hljs';
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, MessageSquare, Brain, Hash } from "lucide-react";
 import CopyButton from './CopyButton';
 import { format } from 'date-fns';
 import { FiClock } from 'react-icons/fi';
@@ -10,8 +10,27 @@ import { FiClock } from 'react-icons/fi';
 import { Card, CardContent, CardHeader } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { ScrollArea } from "./ui/scroll-area";
+import { Button } from "./ui/button";
+import { Separator } from "./ui/separator";
 
 const ConversationDisplay = ({ conversationHistory }) => {
+  const messageRefs = useRef({});
+
+  const scrollToMessage = (messageId) => {
+    const element = messageRefs.current[messageId];
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const getMessageSummary = (message) => {
+    // Get first line of content or first 100 characters
+    const firstLine = message.content.split('\n')[0];
+    return firstLine.length > 100 
+      ? firstLine.substring(0, 100) + '...' 
+      : firstLine;
+  };
+
   const renderCodeBlock = (code, language = 'javascript') => {
     return (
       <div className="relative rounded-md overflow-hidden my-2">
@@ -26,7 +45,9 @@ const ConversationDisplay = ({ conversationHistory }) => {
             padding: '1rem',
             paddingRight: '3rem',
             background: 'rgb(30, 30, 30)',
-            borderRadius: '0.375rem'
+            borderRadius: '0.375rem',
+            fontSize: '0.875rem',
+            lineHeight: '1.5'
           }}
         >
           {code}
@@ -74,70 +95,133 @@ const ConversationDisplay = ({ conversationHistory }) => {
     return parts;
   };
 
+  // Reverse the conversation history to show most recent messages on top
+  const reversedHistory = [...conversationHistory].reverse();
+
   return (
     <Card className="h-full">
       <CardHeader className="py-2 px-4">
         <div className="flex items-center justify-between">
-          <span className="text-sm font-medium">
-            {conversationHistory.length} messages
-          </span>
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-4 w-4" />
+            <span className="text-sm font-medium">
+              {conversationHistory.length} messages
+            </span>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <ScrollArea className="h-[calc(100vh-20rem)] px-4">
-          <div className="space-y-4 py-4">
-            {conversationHistory.map((message, index) => (
-              <div
-                key={index}
-                className={`flex flex-col relative ${
-                  message.role === 'assistant'
-                    ? 'bg-gray-50 dark:bg-gray-900 rounded-lg p-4'
-                    : 'p-4'
-                }`}
-              >
-                {message.score !== undefined && (
-                  <div className="absolute right-2 top-2">
-                    <div className="flex items-center gap-1.5">
-                      <span className={`text-xs font-medium ${message.score > 90 ? 'text-green-500' : 'text-gray-400'}`}>
-                        {message.score}
+        <div className="flex h-[calc(100vh-20rem)]">
+          {/* Navigation Sidebar */}
+          <div className="w-72 border-r flex-shrink-0">
+            <ScrollArea className="h-full">
+              <div className="space-y-1 p-2">
+                {reversedHistory.map((message, index) => (
+                  <Button
+                    key={`nav-${index}`}
+                    variant="ghost"
+                    className="w-full justify-start text-left text-sm h-auto py-2 px-2"
+                    onClick={() => scrollToMessage(`message-${index}`)}
+                  >
+                    <div className="flex flex-col items-start gap-1 w-full">
+                      <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center gap-2">
+                          <Badge variant={message.role === 'assistant' ? 'secondary' : 'default'} className="text-xs">
+                            {message.role === 'assistant' ? 'Assistant' : 'You'}
+                          </Badge>
+                          {message.timestamp && (
+                            <span className="text-xs text-gray-500">
+                              {format(new Date(message.timestamp), 'h:mm a')}
+                            </span>
+                          )}
+                        </div>
+                        {message.score !== undefined && (
+                          <Badge variant="outline" className="text-xs">
+                            Score: {message.score}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        {message.model && (
+                          <div className="flex items-center gap-1">
+                            <Brain className="h-3 w-3" />
+                            <span>{message.model}</span>
+                          </div>
+                        )}
+                        {message.tokens && (
+                          <div className="flex items-center gap-1">
+                            <Hash className="h-3 w-3" />
+                            <span>{message.tokens}t</span>
+                          </div>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-600 dark:text-gray-400 line-clamp-2">
+                        {getMessageSummary(message)}
                       </span>
-                      <CheckCircle2 
-                        className={message.score > 90 ? 'text-green-500' : 'text-gray-400'} 
-                        size={16}
-                      />
                     </div>
-                  </div>
-                )}
-                <div className="flex items-center gap-2 mb-2">
-                  <Badge variant={message.role === 'assistant' ? 'secondary' : 'default'}>
-                    {message.role === 'assistant' ? 'Assistant' : 'You'}
-                  </Badge>
-                  {message.model && (
-                    <Badge variant="outline" className="text-xs">
-                      {message.model}
-                    </Badge>
-                  )}
-                  {message.timestamp && (
-                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                      <FiClock className="mr-1" size={12} />
-                      <span>{format(new Date(message.timestamp), 'MMM d, h:mm a')}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="relative">
-                  {message.content && (
-                    <div className="pr-8">
-                      {renderMessage(message)}
-                    </div>
-                  )}
-                  <div className="absolute top-0 right-0">
-                    <CopyButton textToCopy={message.content} />
-                  </div>
-                </div>
+                  </Button>
+                ))}
               </div>
-            ))}
+            </ScrollArea>
           </div>
-        </ScrollArea>
+
+          {/* Main Conversation */}
+          <ScrollArea className="flex-1 px-4" type="always">
+            <div className="space-y-4 py-4">
+              {reversedHistory.map((message, index) => (
+                <div
+                  key={index}
+                  ref={el => messageRefs.current[`message-${index}`] = el}
+                  className={`flex flex-col relative ${
+                    message.role === 'assistant'
+                      ? 'bg-gray-50 dark:bg-gray-900 rounded-lg p-4'
+                      : 'p-4'
+                  }`}
+                >
+                  {message.score !== undefined && (
+                    <div className="absolute right-2 top-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className={`text-xs font-medium ${message.score > 90 ? 'text-green-500' : 'text-gray-400'}`}>
+                          {message.score}
+                        </span>
+                        <CheckCircle2 
+                          className={message.score > 90 ? 'text-green-500' : 'text-gray-400'} 
+                          size={16}
+                        />
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant={message.role === 'assistant' ? 'secondary' : 'default'}>
+                      {message.role === 'assistant' ? 'Assistant' : 'You'}
+                    </Badge>
+                    {message.model && (
+                      <Badge variant="outline" className="text-xs">
+                        {message.model}
+                      </Badge>
+                    )}
+                    {message.timestamp && (
+                      <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                        <FiClock className="mr-1" size={12} />
+                        <span>{format(new Date(message.timestamp), 'MMM d, h:mm a')}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="relative">
+                    {message.content && (
+                      <div className="pr-8">
+                        {renderMessage(message)}
+                      </div>
+                    )}
+                    <div className="absolute top-0 right-0">
+                      <CopyButton textToCopy={message.content} />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );
