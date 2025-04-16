@@ -7,6 +7,7 @@ import os
 import tiktoken
 from dotenv import load_dotenv
 from model_config import MODELS
+from fastapi.concurrency import run_in_threadpool
 
 load_dotenv()
 
@@ -25,7 +26,7 @@ def count_tokens(text: str, model: str) -> int:
     encoding = get_encoding(model)
     return len(encoding.encode(text))
 
-async def openai_completion(model: str, messages: list, max_tokens: int, temperature: float):
+def openai_completion(model: str, messages: list, max_tokens: int, temperature: float):
     try:
         # Format messages for chat completion
         formatted_messages = []
@@ -95,7 +96,7 @@ async def openai_completion(model: str, messages: list, max_tokens: int, tempera
         print(f"Error in OpenAI completion: {str(e)}")
         raise
 
-async def anthropic_completion(model: str, messages: list, max_tokens: int, temperature: float):
+def anthropic_completion(model: str, messages: list, max_tokens: int, temperature: float):
     formatted_messages = []
     system_content = ""
     last_user_message = ""
@@ -149,7 +150,7 @@ async def anthropic_completion(model: str, messages: list, max_tokens: int, temp
     )
     return response.content[0].text
 
-async def google_completion(model: str, messages: list, max_tokens: int, temperature: float):
+def google_completion(model: str, messages: list, max_tokens: int, temperature: float):
     model = genai.GenerativeModel(model_name=model)
     prompt = "\n".join([f"{msg['role'].capitalize()}: {msg['content']}" for msg in messages])
     response = model.generate_content(
@@ -161,7 +162,7 @@ async def google_completion(model: str, messages: list, max_tokens: int, tempera
     )
     return response.text
 
-async def xai_completion(model: str, messages: list, max_tokens: int, temperature: float):
+def xai_completion(model: str, messages: list, max_tokens: int, temperature: float):
     # Create a new OpenAI client for XAI
     xai_client = OpenAI(
         api_key=os.getenv("XAI_API_KEY"),
@@ -209,24 +210,24 @@ async def handle_llm_interaction(request: dict):
 
     try:
         if model in MODELS['OpenAI']:
-            response = await openai_completion(model, messages, max_tokens, temperature)
+            response = await run_in_threadpool(openai_completion, model, messages, max_tokens, temperature)
             output_text = response["content"]
             input_tokens = response["usage"]["input_tokens"]
             output_tokens = response["usage"]["output_tokens"]
         elif model in MODELS['Anthropic']:
-            output_text = await anthropic_completion(model, messages, max_tokens, temperature)
+            output_text = await run_in_threadpool(anthropic_completion, model, messages, max_tokens, temperature)
             # Calculate tokens for non-OpenAI responses
             combined_prompt = " ".join([msg['content'] for msg in messages])
             input_tokens = count_tokens(combined_prompt, model)
             output_tokens = count_tokens(output_text, model)
         elif model in MODELS['Google']:
-            output_text = await google_completion(model, messages, max_tokens, temperature)
+            output_text = await run_in_threadpool(google_completion, model, messages, max_tokens, temperature)
             # Calculate tokens for non-OpenAI responses
             combined_prompt = " ".join([msg['content'] for msg in messages])
             input_tokens = count_tokens(combined_prompt, model)
             output_tokens = count_tokens(output_text, model)
         elif model in MODELS['XAI']:
-            response = await xai_completion(model, messages, max_tokens, temperature)
+            response = await run_in_threadpool(xai_completion, model, messages, max_tokens, temperature)
             output_text = response["content"]
             input_tokens = response["usage"]["input_tokens"]
             output_tokens = response["usage"]["output_tokens"]
