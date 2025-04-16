@@ -17,6 +17,9 @@ MODELS = {
         "gemini-2.0-flash": {"input": 0.1, "output": 0.4, "input_tokens": 1048576, "output_tokens": 8192}
     },
     "XAI": {
-        "grok-2-1212": {"input": 2.00, "output": 10.00, "input_tokens": 128000, "output_tokens": 32768}
+        "grok-3": {"input": 2, "output": 15, "input_tokens": 131072, "output_tokens": 32768},
+        "grok-3-fast": {"input": 5, "output": 25, "input_tokens": 131072, "output_tokens": 32768},
+        "grok-3-mini": {"input": 0.3, "output": 0.5, "input_tokens": 128000, "output_tokens": 32768},
+        "grok-3-mini-fast": {"input": 0.6, "output": 0.4, "input_tokens": 128000, "output_tokens": 32768}
     }
 }
