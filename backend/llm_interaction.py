@@ -35,8 +35,8 @@ async def openai_completion(model: str, messages: list, max_tokens: int, tempera
             elif msg["role"] == "system" and msg["content"].strip():  # Add non-empty system messages
                 formatted_messages.insert(0, msg)  # System message should be first
         
-        if model in ["o3-mini", "o1"]:
-            # Use max_completion_tokens for o3-mini and o1, without temperature
+        if model in ["o4-mini", "o3"]:
+            # Use max_completion_tokens for o4-mini and o3, without temperature
             response = client.chat.completions.create(
                 model=model,
                 messages=formatted_messages,
