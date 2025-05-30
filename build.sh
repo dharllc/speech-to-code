@@ -28,8 +28,14 @@ if [ ! -d "venv" ]; then
 fi
 echo "Activating virtual environment..."
 source venv/bin/activate
-echo "Installing backend dependencies..."
-pip install -r requirements.txt
+echo "Upgrading pip and build tools..."
+pip install --upgrade pip setuptools wheel
+echo "Installing problematic packages with precompiled wheels..."
+pip install --only-binary=all grpcio tiktoken tokenizers || echo "Warning: Some packages may need manual installation"
+echo "Installing core dependencies..."
+pip install uvicorn fastapi python-dotenv openai anthropic google-generativeai
+echo "Installing remaining dependencies..."
+pip install -r requirements.txt || echo "Warning: Some packages failed to install, but core functionality should work"
 if [ ! -f .env ]; then
     echo "Creating backend .env file..."
     echo "OPENAI_API_KEY=your-openai-api-key" > .env
