@@ -171,7 +171,40 @@ speech-to-code/
 
 ## 🔧 Troubleshooting
 
-If you encounter issues:
+### Common Installation Issues
+
+**Backend dependencies failing to install:**
+If you encounter build errors with packages like `grpcio`, `tiktoken`, or `tokenizers` on macOS:
+
+1. **Upgrade pip and build tools:**
+   ```bash
+   cd backend
+   source venv/bin/activate
+   pip install --upgrade pip setuptools wheel
+   ```
+
+2. **Install problematic packages with precompiled wheels:**
+   ```bash
+   pip install --only-binary=all grpcio tiktoken tokenizers
+   ```
+
+3. **Install remaining dependencies:**
+   ```bash
+   pip install uvicorn fastapi python-dotenv openai anthropic google-generativeai
+   ```
+
+**"uvicorn not found" error:**
+- Ensure you've activated the virtual environment: `source venv/bin/activate`
+- Install uvicorn directly: `pip install uvicorn`
+
+**"REPO_PATH environment variable is not set" error:**
+- Create a `.env` file in the `backend/` directory
+- Add: `REPO_PATH=/path/to/your/repositories`
+- Example: `REPO_PATH=/Users/username/Documents/GitHub`
+
+### General Issues
+
+If you encounter other issues:
 1. Verify API keys in Settings
 2. Check dependencies
 3. Ensure both servers are running
