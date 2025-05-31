@@ -112,7 +112,7 @@ def generate_context_map(repo_path:str,repo_name:str)->Dict:
     
     # Directories to exclude
     EXCLUDED_DIRS = {
-        '.git', 'node_modules', 'venv', '__pycache__',
+        '.git', 'node_modules', 'venv', '.venv', '__pycache__',
         '.next', # Next.js build output
         'out', # Next.js static export
         'build', # Build directories
@@ -121,6 +121,11 @@ def generate_context_map(repo_path:str,repo_name:str)->Dict:
         '.vercel', # Vercel deployment
         'public/static', # Static assets
         '.turbo', # Turborepo cache
+        '.mypy_cache', # MyPy cache
+        '.pytest_cache', # Pytest cache
+        '.ruff_cache', # Ruff cache
+        'certs', # Certificate files
+        'logs', # Log files
     }
 
     # File extensions to exclude
