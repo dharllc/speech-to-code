@@ -18,7 +18,7 @@ def should_skip_token_count(file_path):
     return filename in skip_files or ext in skip_extensions
 
 def get_tree_structure(path, max_depth=10):
-    excluded_dirs = {'node_modules', 'venv', '__pycache__', '.git', '.next'}
+    excluded_dirs = {'node_modules', 'venv', '.venv', '__pycache__', '.git', '.next', '.mypy_cache', '.pytest_cache', '.ruff_cache', 'certs', 'logs'}
 
     def traverse(current_path, current_depth=0):
         if current_depth > max_depth:
