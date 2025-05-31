@@ -2,7 +2,7 @@
 from fastapi import FastAPI, HTTPException, Query, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from utils.tree_structure import get_tree_structure, should_skip_token_count
-import os, json, tiktoken
+import os, json, re
 from dotenv import load_dotenv, set_key
 from pydantic import BaseModel
 from typing import List, Optional
@@ -81,11 +81,32 @@ def save_system_prompts(prompts):
     with open(SYSTEM_PROMPTS_FILE, 'w') as f:
         json.dump(prompts, f, indent=2)
 
+def approximate_token_count(text: str) -> int:
+    """
+    Fast, offline token count approximation that works without external dependencies.
+    Based on OpenAI's rule of thumb: ~4 characters per token for English text.
+    """
+    if not text or not text.strip():
+        return 0
+    
+    # Remove extra whitespace and normalize
+    text = re.sub(r'\s+', ' ', text.strip())
+    
+    # Count characters
+    char_count = len(text)
+    
+    # Apply approximation: ~4 chars per token, with adjustments for:
+    # - Code (tends to have more tokens per char due to symbols)
+    # - Whitespace and punctuation
+    if re.search(r'[{}();,=\[\]{}]', text):  # Looks like code
+        return int(char_count / 3.5)  # Code has more tokens per char
+    else:
+        return int(char_count / 4.0)  # Standard text approximation
+
 @app.post("/count_tokens")
 async def count_tokens(request: TokenRequest):
     try:
-        encoding = tiktoken.encoding_for_model(request.model)
-        return {"count": len(encoding.encode(request.text))}
+        return {"count": approximate_token_count(request.text)}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -109,8 +130,7 @@ def count_tokens_for_file(file_path):
             content = file.read()
             if not content.strip():
                 return 0
-            encoding = tiktoken.encoding_for_model("gpt-3.5-turbo")
-            return len(encoding.encode(content))
+            return approximate_token_count(content)
     except Exception as e:
         return 0
 
@@ -175,7 +195,7 @@ async def get_file_content(repository: str = Query(...), path: str = Query(...))
             if not content.strip():
                 return {"content": "", "token_count": 0}
                 
-            token_count = len(tiktoken.encoding_for_model("gpt-3.5-turbo").encode(content))
+            token_count = approximate_token_count(content)
             return {"content": content, "token_count": token_count}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -222,7 +242,7 @@ async def create_system_prompt(prompt: SystemPromptCreate):
             content=prompt.content,
             is_default=prompt.is_default,
             timestamp=datetime.now().isoformat(),
-            token_count=len(tiktoken.encoding_for_model("gpt-3.5-turbo").encode(prompt.content))
+            token_count=approximate_token_count(prompt.content)
         )
         prompts.append(new_prompt.dict())
         prompts.sort(key=lambda x: int(x['step'].split()[-1]))
@@ -259,7 +279,7 @@ async def update_system_prompt(prompt_id: str, prompt: SystemPromptCreate):
                 content=prompt.content,
                 is_default=prompt.is_default,
                 timestamp=datetime.now().isoformat(),
-                token_count=len(tiktoken.encoding_for_model("gpt-3.5-turbo").encode(prompt.content))
+                token_count=approximate_token_count(prompt.content)
             )
             prompts[i] = updated_prompt.dict()
             break
