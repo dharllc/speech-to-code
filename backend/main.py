@@ -10,6 +10,7 @@ from datetime import datetime
 import uuid
 from llm_interaction import handle_llm_interaction, get_available_models
 from utils.context_map import generate_context_map,save_context_map,load_context_map
+from utils.git_operations import get_git_info, validate_repository_name
 import os.path as osp
 
 try:
@@ -24,8 +25,11 @@ except Exception as e:
 load_dotenv()
 
 REPO_PATH = os.getenv("REPO_PATH")
-if REPO_PATH is None:
-    raise ValueError("REPO_PATH environment variable is not set")
+print(f"DEBUG: REPO_PATH loaded from environment: '{REPO_PATH}'")
+print(f"DEBUG: REPO_PATH exists: {os.path.exists(REPO_PATH) if REPO_PATH else False}")
+
+if REPO_PATH is None or REPO_PATH.strip() == "":
+    raise ValueError("REPO_PATH environment variable is not set or is empty")
 
 app = FastAPI()
 app.add_middleware(
@@ -171,6 +175,27 @@ async def get_directories():
         return {"directories": directories}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/git-info/{repository}")
+async def get_repository_git_info(repository: str):
+    """Get git information for a specific repository."""
+    try:
+        # Validate repository name to prevent path traversal
+        if not validate_repository_name(repository):
+            raise HTTPException(status_code=400, detail="Invalid repository name")
+        
+        repo_path = os.path.join(REPO_PATH, repository)
+        
+        if not os.path.exists(repo_path):
+            raise HTTPException(status_code=404, detail="Repository not found")
+        
+        git_info = get_git_info(repo_path)
+        return git_info
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get git info: {str(e)}")
     
 @app.get("/file_content")
 async def get_file_content(repository: str = Query(...), path: str = Query(...)):

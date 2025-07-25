@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import PromptComposer from './PromptComposer';
 import RepositoryFileViewer from './RepositoryFileViewer';
+import RepositorySelector from './RepositorySelector';
 
 const TwoColumnLayout = ({ 
   selectedRepository, 
@@ -9,6 +10,7 @@ const TwoColumnLayout = ({
   onFileSelectionChange,
   onBatchFileSelection,
   onClearAllFiles,
+  onRepositorySelect,
   setUserPrompt 
 }) => {
   const [selectedFilesState, setSelectedFiles] = useState([]);
@@ -50,6 +52,12 @@ const TwoColumnLayout = ({
 
       {/* Right Column: Repository Browser */}
       <div className="h-[calc(100vh-8rem)] overflow-auto">
+        <div className="mb-4">
+          <RepositorySelector
+            selectedRepository={selectedRepository}
+            onSelect={onRepositorySelect}
+          />
+        </div>
         <RepositoryFileViewer
           selectedRepository={selectedRepository}
           selectedFiles={selectedFiles}
