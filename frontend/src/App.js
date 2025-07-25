@@ -139,6 +139,7 @@ function App() {
                     onFileSelectionChange={handleFileSelectionChange}
                     onBatchFileSelection={handleBatchFileSelection}
                     onClearAllFiles={handleClearAllFiles} 
+                    onRepositorySelect={handleRepositorySelect}
                     setUserPrompt={setUserPrompt} 
                   />
                 } />

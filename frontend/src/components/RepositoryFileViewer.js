@@ -248,6 +248,7 @@ const RepositoryFileViewer = ({ selectedRepository, onFileSelect, selectedFiles 
     }
   }, [selectedRepository, fetchTreeStructure]);
 
+
   const toggleFolder = (path) => {
     const newState = {
       ...expandedFolders,
