@@ -10,7 +10,7 @@ from datetime import datetime
 import uuid
 from llm_interaction import handle_llm_interaction, get_available_models
 from utils.context_map import generate_context_map,save_context_map,load_context_map
-from utils.git_operations import get_git_info, validate_repository_name
+from utils.git_operations import get_git_info, validate_repository_name, validate_secure_path
 import os.path as osp
 
 try:
@@ -184,18 +184,24 @@ async def get_repository_git_info(repository: str):
         if not validate_repository_name(repository):
             raise HTTPException(status_code=400, detail="Invalid repository name")
         
-        repo_path = os.path.join(REPO_PATH, repository)
+        # Securely construct and validate the repository path
+        repo_path = validate_secure_path(REPO_PATH, repository)
+        if repo_path is None:
+            raise HTTPException(status_code=400, detail="Invalid repository path")
         
+        # Check if repository exists
         if not os.path.exists(repo_path):
             raise HTTPException(status_code=404, detail="Repository not found")
         
+        # Get git information
         git_info = get_git_info(repo_path)
         return git_info
         
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get git info: {str(e)}")
+    except Exception:
+        # Don't expose internal details in error messages
+        raise HTTPException(status_code=500, detail="Failed to get git information")
     
 @app.get("/file_content")
 async def get_file_content(repository: str = Query(...), path: str = Query(...)):
