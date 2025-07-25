@@ -3,78 +3,28 @@ import os
 from typing import Optional, Dict
 import re
 
-def get_allowed_repositories(base_path: str) -> set:
+def validate_repository_name(repo_name: str) -> bool:
     """
-    Get a set of allowed repository names from the filesystem.
-    This creates a whitelist of safe repository names.
-    """
-    try:
-        if not os.path.exists(base_path):
-            return set()
-        
-        allowed_repos = set()
-        for item in os.listdir(base_path):
-            item_path = os.path.join(base_path, item)
-            if os.path.isdir(item_path):
-                # Only include directories with safe names
-                if re.match(r'^[a-zA-Z0-9._-]+$', item) and len(item) <= 100:
-                    allowed_repos.add(item)
-        
-        return allowed_repos
-    except (OSError, PermissionError):
-        return set()
-
-def validate_repository_name(repo_name: str, base_path: str) -> Optional[str]:
-    """
-    Validate repository name against whitelist of allowed repositories.
-    Returns the validated name if safe, None otherwise.
+    Simple validation for repository names in a local development environment.
+    Prevents basic directory traversal while keeping it straightforward.
     """
     if not repo_name or not isinstance(repo_name, str):
-        return None
+        return False
     
-    # Check for basic safety
+    # Prevent directory traversal and keep names reasonable
     if '..' in repo_name or '/' in repo_name or '\\' in repo_name:
-        return None
+        return False
     
-    # Only allow safe characters
-    if not re.match(r'^[a-zA-Z0-9._-]+$', repo_name) or len(repo_name) > 100:
-        return None
-    
-    # Check against whitelist of existing repositories
-    allowed_repos = get_allowed_repositories(base_path)
-    if repo_name in allowed_repos:
-        return repo_name
-    
-    return None
+    # Allow reasonable repository name characters
+    pattern = r'^[a-zA-Z0-9._-]+$'
+    return bool(re.match(pattern, repo_name)) and len(repo_name) <= 100
 
-def get_safe_repository_path(base_path: str, repo_name: str) -> Optional[str]:
+def get_git_info(repo_path: str) -> Dict[str, Optional[str]]:
     """
-    Get a safe repository path after validating the repository name.
-    Only returns paths for whitelisted repositories.
-    """
-    # Validate repository name against whitelist
-    validated_name = validate_repository_name(repo_name, base_path)
-    if validated_name is None:
-        return None
-    
-    # Construct path using only the validated name (not user input)
-    safe_path = os.path.join(base_path, validated_name)
-    
-    # Additional safety check - ensure path exists and is a directory
-    try:
-        if os.path.exists(safe_path) and os.path.isdir(safe_path):
-            return os.path.realpath(safe_path)
-    except (OSError, ValueError):
-        pass
-    
-    return None
-
-def get_git_info(safe_repo_path: str) -> Dict[str, Optional[str]]:
-    """
-    Get git information for a repository using a pre-validated safe path.
+    Get git information for a repository.
     
     Args:
-        safe_repo_path: Already validated and sanitized repository path
+        repo_path: Path to the repository directory
         
     Returns:
         Dict containing:
@@ -83,9 +33,17 @@ def get_git_info(safe_repo_path: str) -> Dict[str, Optional[str]]:
         - error: Error message if any operation failed
     """
     try:
-        # Path is already validated by caller - check if it's a git repository
-        git_dir = safe_repo_path + "/.git"
-        if not os.path.isdir(git_dir):
+        # Check if directory exists
+        if not os.path.exists(repo_path) or not os.path.isdir(repo_path):
+            return {
+                "branch": None,
+                "commit_hash": None,
+                "error": "Repository directory not found"
+            }
+            
+        # Check if it's a git repository
+        git_dir = os.path.join(repo_path, '.git')
+        if not os.path.exists(git_dir):
             return {
                 "branch": None,
                 "commit_hash": None,
@@ -95,7 +53,7 @@ def get_git_info(safe_repo_path: str) -> Dict[str, Optional[str]]:
         # Get current branch name
         branch_result = subprocess.run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            cwd=safe_repo_path,
+            cwd=repo_path,
             capture_output=True,
             text=True,
             timeout=5
@@ -107,7 +65,7 @@ def get_git_info(safe_repo_path: str) -> Dict[str, Optional[str]]:
                 # Try to get commit hash for detached HEAD
                 commit_result = subprocess.run(
                     ["git", "rev-parse", "--short", "HEAD"],
-                    cwd=safe_repo_path,
+                    cwd=repo_path,
                     capture_output=True,
                     text=True,
                     timeout=5
@@ -115,7 +73,7 @@ def get_git_info(safe_repo_path: str) -> Dict[str, Optional[str]]:
                 
                 if commit_result.returncode == 0:
                     return {
-                        "branch": f"(detached HEAD)",
+                        "branch": "(detached HEAD)",
                         "commit_hash": commit_result.stdout.strip(),
                         "error": None
                     }
@@ -123,7 +81,7 @@ def get_git_info(safe_repo_path: str) -> Dict[str, Optional[str]]:
             return {
                 "branch": None,
                 "commit_hash": None,
-                "error": f"Failed to get branch: {branch_result.stderr.strip()}"
+                "error": "Failed to get branch information"
             }
         
         branch = branch_result.stdout.strip()
@@ -131,7 +89,7 @@ def get_git_info(safe_repo_path: str) -> Dict[str, Optional[str]]:
         # Get current commit hash (short version)
         commit_result = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            cwd=safe_repo_path,
+            cwd=repo_path,
             capture_output=True,
             text=True,
             timeout=5

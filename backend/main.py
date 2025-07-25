@@ -10,7 +10,7 @@ from datetime import datetime
 import uuid
 from llm_interaction import handle_llm_interaction, get_available_models
 from utils.context_map import generate_context_map,save_context_map,load_context_map
-from utils.git_operations import get_git_info, get_safe_repository_path
+from utils.git_operations import get_git_info, validate_repository_name
 import os.path as osp
 
 try:
@@ -180,20 +180,22 @@ async def get_directories():
 async def get_repository_git_info(repository: str):
     """Get git information for a specific repository."""
     try:
-        # Get safe repository path using whitelist validation
-        safe_repo_path = get_safe_repository_path(REPO_PATH, repository)
-        if safe_repo_path is None:
-            raise HTTPException(status_code=404, detail="Repository not found")
+        # Simple validation for local development environment
+        if not validate_repository_name(repository):
+            raise HTTPException(status_code=400, detail="Invalid repository name")
         
-        # Get git information using the safe path
-        git_info = get_git_info(safe_repo_path)
+        # Construct repository path
+        repo_path = os.path.join(REPO_PATH, repository)
+        
+        # Get git information
+        git_info = get_git_info(repo_path)
         return git_info
         
     except HTTPException:
         raise
-    except Exception:
-        # Don't expose internal details in error messages
-        raise HTTPException(status_code=500, detail="Failed to get git information")
+    except Exception as e:
+        # For local development, it's okay to show the actual error
+        raise HTTPException(status_code=500, detail=f"Failed to get git info: {str(e)}")
     
 @app.get("/file_content")
 async def get_file_content(repository: str = Query(...), path: str = Query(...)):
