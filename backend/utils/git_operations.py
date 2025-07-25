@@ -3,52 +3,78 @@ import os
 from typing import Optional, Dict
 import re
 
-def validate_repository_name(repo_name: str) -> bool:
+def get_allowed_repositories(base_path: str) -> set:
     """
-    Validate repository name to prevent path traversal attacks.
-    Only allow alphanumeric characters, hyphens, underscores, and dots.
-    """
-    if not repo_name or not isinstance(repo_name, str):
-        return False
-    
-    # Check for path traversal attempts
-    if '..' in repo_name or '/' in repo_name or '\\' in repo_name:
-        return False
-    
-    # Only allow safe characters
-    pattern = r'^[a-zA-Z0-9._-]+$'
-    return bool(re.match(pattern, repo_name)) and len(repo_name) <= 100
-
-def validate_secure_path(base_path: str, user_input: str) -> Optional[str]:
-    """
-    Securely validate and construct a path within the base directory.
-    Returns the resolved path if safe, None if potentially dangerous.
+    Get a set of allowed repository names from the filesystem.
+    This creates a whitelist of safe repository names.
     """
     try:
-        # Normalize the base path
-        base_path = os.path.realpath(base_path)
+        if not os.path.exists(base_path):
+            return set()
         
-        # Construct the requested path
-        requested_path = os.path.join(base_path, user_input)
+        allowed_repos = set()
+        for item in os.listdir(base_path):
+            item_path = os.path.join(base_path, item)
+            if os.path.isdir(item_path):
+                # Only include directories with safe names
+                if re.match(r'^[a-zA-Z0-9._-]+$', item) and len(item) <= 100:
+                    allowed_repos.add(item)
         
-        # Resolve any symlinks and relative paths
-        resolved_path = os.path.realpath(requested_path)
-        
-        # Ensure the resolved path is within the base directory
-        if not resolved_path.startswith(base_path + os.sep) and resolved_path != base_path:
-            return None
-            
-        return resolved_path
-    except (OSError, ValueError):
-        return None
+        return allowed_repos
+    except (OSError, PermissionError):
+        return set()
 
-def get_git_info(repo_path: str) -> Dict[str, Optional[str]]:
+def validate_repository_name(repo_name: str, base_path: str) -> Optional[str]:
     """
-    Get git information for a repository.
-    Returns dict with branch, commit_hash, and any errors.
+    Validate repository name against whitelist of allowed repositories.
+    Returns the validated name if safe, None otherwise.
+    """
+    if not repo_name or not isinstance(repo_name, str):
+        return None
+    
+    # Check for basic safety
+    if '..' in repo_name or '/' in repo_name or '\\' in repo_name:
+        return None
+    
+    # Only allow safe characters
+    if not re.match(r'^[a-zA-Z0-9._-]+$', repo_name) or len(repo_name) > 100:
+        return None
+    
+    # Check against whitelist of existing repositories
+    allowed_repos = get_allowed_repositories(base_path)
+    if repo_name in allowed_repos:
+        return repo_name
+    
+    return None
+
+def get_safe_repository_path(base_path: str, repo_name: str) -> Optional[str]:
+    """
+    Get a safe repository path after validating the repository name.
+    Only returns paths for whitelisted repositories.
+    """
+    # Validate repository name against whitelist
+    validated_name = validate_repository_name(repo_name, base_path)
+    if validated_name is None:
+        return None
+    
+    # Construct path using only the validated name (not user input)
+    safe_path = os.path.join(base_path, validated_name)
+    
+    # Additional safety check - ensure path exists and is a directory
+    try:
+        if os.path.exists(safe_path) and os.path.isdir(safe_path):
+            return os.path.realpath(safe_path)
+    except (OSError, ValueError):
+        pass
+    
+    return None
+
+def get_git_info(safe_repo_path: str) -> Dict[str, Optional[str]]:
+    """
+    Get git information for a repository using a pre-validated safe path.
     
     Args:
-        repo_path: Validated absolute path to the repository
+        safe_repo_path: Already validated and sanitized repository path
         
     Returns:
         Dict containing:
@@ -57,20 +83,9 @@ def get_git_info(repo_path: str) -> Dict[str, Optional[str]]:
         - error: Error message if any operation failed
     """
     try:
-        # Validate the path is safe (should already be validated by caller)
-        resolved_path = os.path.realpath(repo_path)
-        
-        # Verify the path exists
-        if not os.path.exists(resolved_path):
-            return {
-                "branch": None,
-                "commit_hash": None,
-                "error": "Repository not found"
-            }
-            
-        # Check if it's a git repository
-        git_dir = os.path.join(resolved_path, '.git')
-        if not os.path.exists(git_dir):
+        # Path is already validated by caller - check if it's a git repository
+        git_dir = safe_repo_path + "/.git"
+        if not os.path.isdir(git_dir):
             return {
                 "branch": None,
                 "commit_hash": None,
@@ -80,7 +95,7 @@ def get_git_info(repo_path: str) -> Dict[str, Optional[str]]:
         # Get current branch name
         branch_result = subprocess.run(
             ["git", "rev-parse", "--abbrev-ref", "HEAD"],
-            cwd=resolved_path,
+            cwd=safe_repo_path,
             capture_output=True,
             text=True,
             timeout=5
@@ -92,7 +107,7 @@ def get_git_info(repo_path: str) -> Dict[str, Optional[str]]:
                 # Try to get commit hash for detached HEAD
                 commit_result = subprocess.run(
                     ["git", "rev-parse", "--short", "HEAD"],
-                    cwd=resolved_path,
+                    cwd=safe_repo_path,
                     capture_output=True,
                     text=True,
                     timeout=5
@@ -116,7 +131,7 @@ def get_git_info(repo_path: str) -> Dict[str, Optional[str]]:
         # Get current commit hash (short version)
         commit_result = subprocess.run(
             ["git", "rev-parse", "--short", "HEAD"],
-            cwd=resolved_path,
+            cwd=safe_repo_path,
             capture_output=True,
             text=True,
             timeout=5

@@ -10,7 +10,7 @@ from datetime import datetime
 import uuid
 from llm_interaction import handle_llm_interaction, get_available_models
 from utils.context_map import generate_context_map,save_context_map,load_context_map
-from utils.git_operations import get_git_info, validate_repository_name, validate_secure_path
+from utils.git_operations import get_git_info, get_safe_repository_path
 import os.path as osp
 
 try:
@@ -180,21 +180,13 @@ async def get_directories():
 async def get_repository_git_info(repository: str):
     """Get git information for a specific repository."""
     try:
-        # Validate repository name to prevent path traversal
-        if not validate_repository_name(repository):
-            raise HTTPException(status_code=400, detail="Invalid repository name")
-        
-        # Securely construct and validate the repository path
-        repo_path = validate_secure_path(REPO_PATH, repository)
-        if repo_path is None:
-            raise HTTPException(status_code=400, detail="Invalid repository path")
-        
-        # Check if repository exists
-        if not os.path.exists(repo_path):
+        # Get safe repository path using whitelist validation
+        safe_repo_path = get_safe_repository_path(REPO_PATH, repository)
+        if safe_repo_path is None:
             raise HTTPException(status_code=404, detail="Repository not found")
         
-        # Get git information
-        git_info = get_git_info(repo_path)
+        # Get git information using the safe path
+        git_info = get_git_info(safe_repo_path)
         return git_info
         
     except HTTPException:
