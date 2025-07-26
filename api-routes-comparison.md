@@ -1,6 +1,6 @@
 # API Routes Comparison: FastAPI vs Next.js
 
-## ✅ Implemented Routes (13/17)
+## ✅ Implemented Routes (15/17)
 
 | FastAPI Route | Next.js Route | Status | Notes |
 |--------------|---------------|---------|-------|
@@ -24,13 +24,13 @@
 | N/A | `/api/file-stats` | ✅ | NEW - File statistics |
 | `GET /` | `/api/` | ✅ | Health check/Welcome message |
 | `GET /file_lines` | `/api/file_lines` | ✅ | Count lines in a file |
+| `GET /env_vars` | `/api/env_vars` | ✅ | Get environment variables |
+| `POST /env_vars` | `/api/env_vars` | ✅ | Update environment variables |
 
-## ❌ Missing Routes (4/17)
+## ❌ Missing Routes (2/17)
 
 | FastAPI Route | Purpose | Priority | Implementation Notes |
 |--------------|----------|----------|---------------------|
-| `GET /env_vars` | Get environment variables | Medium | Settings management |
-| `POST /env_vars` | Update environment variables | Medium | Settings management |
 | `POST /repository-context/{repo}/initialize` | Initialize context map | **HIGH** | Critical for analyze-prompt |
 | `POST /repository-context/{repo}/refresh` | Refresh context map | **HIGH** | Critical for analyze-prompt |
 | `GET /repository-context/{repo}` | Get context map | **HIGH** | Critical for analyze-prompt |

@@ -100,7 +100,7 @@
 - [x] Implement chat-sessions endpoints (CRUD)
 - [x] Implement file-stats endpoint
 - [x] Implement file_lines endpoint
-- [ ] Implement env_vars endpoints
+- [x] Implement env_vars endpoints
 - [ ] Implement repository-context endpoints
 
 ### Python to TypeScript Conversion
