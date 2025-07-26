@@ -3,7 +3,9 @@ import fs from 'fs';
 import path from 'path';
 import { 
   shouldSkipTokenCountForTree, 
-  shouldExcludeDirectoryFromTree 
+  shouldExcludeDirectoryFromTree,
+  isBinaryFile,
+  detectBinaryContent
 } from '@/lib/utils/fileFilters';
 
 interface TreeNode {
@@ -12,6 +14,14 @@ interface TreeNode {
   children?: TreeNode[];
   size?: number;
   skip_token_count?: boolean;
+  item_count?: number;
+  token_count?: number;
+  total_token_count?: number;
+}
+
+function approximateTokenCount(text: string): number {
+  // Simple approximation: ~4 characters per token
+  return Math.ceil(text.length / 4);
 }
 
 function buildTree(dirPath: string, relativePath: string = '', currentDepth: number = 0, maxDepth: number = 10): TreeNode | null {
@@ -51,13 +61,32 @@ function buildTree(dirPath: string, relativePath: string = '', currentDepth: num
         return a.name.localeCompare(b.name);
       });
       
+      // Calculate item count and token count recursively
+      const itemCount = children.reduce((total, child) => {
+        if (child.type === 'file') {
+          return total + 1;
+        } else {
+          return total + (child.item_count || 0);
+        }
+      }, 0);
+      
+      const totalTokenCount = children.reduce((total, child) => {
+        if (child.type === 'file') {
+          return total + (child.token_count || 0);
+        } else {
+          return total + (child.total_token_count || 0);
+        }
+      }, 0);
+      
       return {
         name,
         type: 'directory',
-        children
+        children,
+        item_count: itemCount,
+        total_token_count: totalTokenCount
       };
     } else {
-      // For files, include them but mark whether to skip token counting
+      // For files, include them and calculate token count
       const skipTokenCount = shouldSkipTokenCountForTree(dirPath);
       
       const fileNode: TreeNode = {
@@ -69,6 +98,38 @@ function buildTree(dirPath: string, relativePath: string = '', currentDepth: num
       // Add skip_token_count flag if needed (matches FastAPI behavior)
       if (skipTokenCount) {
         fileNode.skip_token_count = true;
+        fileNode.token_count = 0;
+      } else {
+        // Calculate token count for non-skipped files
+        try {
+          // Check if it's a binary file
+          if (isBinaryFile(dirPath)) {
+            fileNode.token_count = 0;
+          } else {
+            // Check file size (limit to 1MB for token counting)
+            const maxSize = 1024 * 1024; // 1MB
+            if (stats.size > maxSize) {
+              fileNode.token_count = 0;
+            } else {
+              try {
+                const content = fs.readFileSync(dirPath, 'utf-8');
+                
+                // Check if content is actually binary
+                if (detectBinaryContent(content)) {
+                  fileNode.token_count = 0;
+                } else {
+                  fileNode.token_count = approximateTokenCount(content);
+                }
+              } catch (error) {
+                // If reading as UTF-8 fails, it's likely a binary file
+                fileNode.token_count = 0;
+              }
+            }
+          }
+        } catch (error) {
+          console.error(`Error calculating token count for ${dirPath}:`, error);
+          fileNode.token_count = 0;
+        }
       }
 
       return fileNode;

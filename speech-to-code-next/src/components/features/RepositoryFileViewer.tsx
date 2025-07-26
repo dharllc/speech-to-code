@@ -583,8 +583,8 @@ const RepositoryFileViewer: React.FC<RepositoryFileViewerProps> = ({
           >
             {node.type === 'directory'
               ? `${formatNumber(node.item_count || 0)} items${
-                  node.token_count && !warning.skipTokenCount
-                    ? `, ${formatNumber(node.token_count)} tokens`
+                  node.total_token_count && !warning.skipTokenCount
+                    ? `, ${formatNumber(node.total_token_count)} tokens`
                     : ''
                 }`
               : node.token_count && !warning.skipTokenCount

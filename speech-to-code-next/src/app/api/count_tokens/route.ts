@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 interface TokenRequest {
   text: string;
+  model?: string; // Optional field for compatibility
 }
 
 function approximateTokenCount(text: string): number {
@@ -14,18 +15,21 @@ export async function POST(request: NextRequest) {
   try {
     const body: TokenRequest = await request.json();
     
-    if (!body.text || typeof body.text !== 'string') {
+    if (typeof body.text !== 'string') {
       return NextResponse.json(
         { error: 'Text field is required and must be a string' },
         { status: 400 }
       );
     }
     
-    const tokenCount = approximateTokenCount(body.text);
+    // Allow empty strings - they just have 0 tokens
+    const text = body.text || '';
+    
+    const tokenCount = approximateTokenCount(text);
     
     return NextResponse.json({
       count: tokenCount,
-      character_count: body.text.length
+      character_count: text.length
     });
   } catch (error) {
     console.error('Error counting tokens:', error);

@@ -37,7 +37,6 @@ export async function GET(
     }
     
     const fullPath = path.join(repoPath, repository);
-    
     if (!fs.existsSync(fullPath)) {
       return NextResponse.json(
         { error: 'Repository not found' },
