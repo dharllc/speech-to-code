@@ -1,6 +1,6 @@
 # API Routes Comparison: FastAPI vs Next.js
 
-## ✅ Implemented Routes (12/17)
+## ✅ Implemented Routes (13/17)
 
 | FastAPI Route | Next.js Route | Status | Notes |
 |--------------|---------------|---------|-------|
@@ -23,12 +23,12 @@
 | `DELETE /chat-sessions/{id}` | `/api/chat-sessions/[sessionId]` | ✅ | Soft delete |
 | N/A | `/api/file-stats` | ✅ | NEW - File statistics |
 | `GET /` | `/api/` | ✅ | Health check/Welcome message |
+| `GET /file_lines` | `/api/file_lines` | ✅ | Count lines in a file |
 
-## ❌ Missing Routes (5/17)
+## ❌ Missing Routes (4/17)
 
 | FastAPI Route | Purpose | Priority | Implementation Notes |
 |--------------|----------|----------|---------------------|
-| `GET /file_lines` | Get line count for file | Low | Simple file utility |
 | `GET /env_vars` | Get environment variables | Medium | Settings management |
 | `POST /env_vars` | Update environment variables | Medium | Settings management |
 | `POST /repository-context/{repo}/initialize` | Initialize context map | **HIGH** | Critical for analyze-prompt |

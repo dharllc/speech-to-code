@@ -99,7 +99,7 @@
 - [x] Implement analyze-prompt endpoint
 - [x] Implement chat-sessions endpoints (CRUD)
 - [x] Implement file-stats endpoint
-- [ ] Implement file_lines endpoint
+- [x] Implement file_lines endpoint
 - [ ] Implement env_vars endpoints
 - [ ] Implement repository-context endpoints
 
