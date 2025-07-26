@@ -5,11 +5,11 @@ import PromptActions from './PromptActions';
 import PromptTextArea from './PromptTextArea';
 import TranscriptionDisplay from './TranscriptionDisplay';
 import FileChip from './FileChip';
-import { analyzePromptForFiles } from '../../lib/services/llmService';
+import { analyzePromptForFiles } from '@/lib/services/llmService';
 import FileSuggestions from './FileSuggestions';
 import PromptPreview from './PromptPreview';
-import { API_URL } from '../../lib/config/api';
-import { useFileCombinations } from '../../hooks/useFileCombinations';
+import { API_URL } from '@/lib/config/api';
+import { useFileCombinations } from '@/hooks/useFileCombinations';
 import FileCombinations from './FileCombinations';
 import PromptSettings from './PromptSettings';
 
@@ -32,7 +32,7 @@ import type {
   TokenCountResponse,
   FileSuggestion
 } from '@/types/prompt';
-import type { FileCombination } from '../../types/file';
+import type { FileCombination } from '@/types/file';
 
 const PromptComposer: React.FC<PromptComposerProps> = ({ 
   selectedRepository, 

@@ -4,7 +4,7 @@ import {
   FiFolder, FiFile, FiCode, FiFileText, FiSearch, 
   FiPlus, FiMinus, FiAlertTriangle, FiEye, FiEyeOff, FiX, FiCheck 
 } from 'react-icons/fi';
-import { API_URL } from '../../lib/config/api';
+import { API_URL } from '@/lib/config/api';
 import type { IconType } from 'react-icons';
 import type { 
   TreeNode, 

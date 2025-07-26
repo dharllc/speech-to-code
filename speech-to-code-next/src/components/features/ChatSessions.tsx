@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FiPlus, FiTrash2, FiEdit2, FiMessageSquare, FiClock } from 'react-icons/fi';
 import { CheckCircle2 } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
-import * as chatSessionService from '../../lib/services/chatSessionService';
-import { ChatSession } from '../../types/chat';
+import * as chatSessionService from '@/lib/services/chatSessionService';
+import { ChatSession } from '@/types/chat';
 
 // Import shadcn components
 import { Button } from "../ui/button";

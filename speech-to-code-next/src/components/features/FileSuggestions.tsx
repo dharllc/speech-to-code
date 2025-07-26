@@ -1,6 +1,6 @@
 import React from 'react';
 import { FiCheckCircle, FiHelpCircle, FiAlertCircle, FiPlus, FiMinus } from 'react-icons/fi';
-import type { FileSuggestion } from '../../types/prompt';
+import type { FileSuggestion } from '@/types/prompt';
 import type { IconType } from 'react-icons';
 
 interface FileSuggestionsProps {

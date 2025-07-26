@@ -1,7 +1,7 @@
 import React from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { FiX } from 'react-icons/fi';
-import type { FileCombination, FileItem } from '../../types/file';
+import type { FileCombination, FileItem } from '@/types/file';
 
 interface FileCombinationsProps {
   combinations: FileCombination[];

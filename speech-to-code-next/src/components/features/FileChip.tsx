@@ -1,6 +1,6 @@
 import React from 'react';
 import { FiX, FiAlertTriangle } from 'react-icons/fi';
-import { shouldWarnAboutFile } from '../../lib/utils/fileWarnings';
+import { shouldWarnAboutFile } from '@/lib/utils/fileWarnings';
 
 interface FileChipProps {
   fileName: string;

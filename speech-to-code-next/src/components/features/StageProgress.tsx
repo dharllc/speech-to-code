@@ -1,6 +1,6 @@
 import React from 'react';
 import { CheckCircle2, AlertCircle, Clock } from "lucide-react";
-import { StageHistoryEntry } from '../../types/chat';
+import { StageHistoryEntry } from '@/types/chat';
 
 interface StageProgressProps {
   stageHistory?: StageHistoryEntry[];

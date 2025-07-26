@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import CopyButton from './CopyButton';
-import { API_URL } from '../../lib/config/api';
-import { SystemPrompt, SystemPromptFormData } from '../../types/chat';
+import { API_URL } from '@/lib/config/api';
+import { SystemPrompt, SystemPromptFormData } from '@/types/chat';
 
 const SystemPromptManagement: React.FC = () => {
   const [prompts, setPrompts] = useState<SystemPrompt[]>([]);

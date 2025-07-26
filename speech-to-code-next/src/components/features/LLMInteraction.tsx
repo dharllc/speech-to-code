@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import axios, { AxiosResponse } from 'axios';
-import { sendLLMRequest, getAvailableModels } from '../../lib/services/llmService';
-import { API_URL } from '../../lib/config/api';
-import * as chatSessionService from '../../lib/services/chatSessionService';
+import { sendLLMRequest, getAvailableModels } from '@/lib/services/llmService';
+import { API_URL } from '@/lib/config/api';
+import * as chatSessionService from '@/lib/services/chatSessionService';
 
 // Type imports
 import type { 
@@ -12,16 +12,16 @@ import type {
   StageData, 
   AvailableModels,
   FileRequest
-} from '../../types/llm';
+} from '@/types/llm';
 import type { 
   LLMMessage 
-} from '../../types/api';
+} from '@/types/api';
 import type { 
   ChatSession, 
   StageHistoryEntry, 
   SystemPrompt,
   ConversationEntry
-} from '../../types/chat';
+} from '@/types/chat';
 
 // Child Components
 import SystemPromptSelector from './SystemPromptSelector';

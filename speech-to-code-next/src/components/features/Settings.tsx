@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import RepositorySelector from './RepositorySelector';
 import { Eye, EyeOff, Save } from 'lucide-react';
-import { API_URL } from '../../lib/config/api';
+import { API_URL } from '@/lib/config/api';
 
 interface SettingsProps {
   selectedRepository: string | null;

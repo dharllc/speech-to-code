@@ -2,8 +2,8 @@ import React from 'react';
 import PromptComposer from './PromptComposer';
 import RepositoryFileViewer from './RepositoryFileViewer';
 import RepositorySelector from './RepositorySelector';
-import type { SelectedFile } from '../../types/prompt';
-import type { TreeNode } from '../../types/repository';
+import type { SelectedFile } from '@/types/prompt';
+import type { TreeNode } from '@/types/repository';
 
 interface TwoColumnLayoutProps {
   selectedRepository: string | null;

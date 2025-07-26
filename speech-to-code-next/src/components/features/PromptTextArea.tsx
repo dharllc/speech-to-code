@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { API_URL } from '../../lib/config/api';
+import { API_URL } from '@/lib/config/api';
 import { ArrowDownToLine } from 'lucide-react';
 
 interface PromptTextAreaProps {

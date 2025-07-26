@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { API_URL } from '../../lib/config/api';
+import { API_URL } from '@/lib/config/api';
 
 interface RepositorySelectorProps {
   onSelect: (repository: string) => void;
