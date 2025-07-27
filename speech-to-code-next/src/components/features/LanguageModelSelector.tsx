@@ -20,10 +20,10 @@ interface LanguageModelSelectorProps {
   loading: boolean;
 }
 
-const formatTokenCount = (count: number): string => 
-  count >= 1000 ? `${Math.round(count / 1000)}k` : count.toString();
+const formatTokenCount = (count: number | undefined): string => 
+  (count && count >= 1000) ? `${Math.round(count / 1000)}k` : (count?.toString() ?? '0');
 
-const formatCost = (cost: number): string => Number(cost).toFixed(2);
+const formatCost = (cost: number | undefined): string => Number(cost ?? 0).toFixed(2);
 
 const LanguageModelSelector: React.FC<LanguageModelSelectorProps> = ({ availableModels, onModelSelect, loading }) => {
   const [clickedModel, setClickedModel] = useState<string | null>(null);
@@ -87,11 +87,11 @@ const LanguageModelSelector: React.FC<LanguageModelSelectorProps> = ({ available
                     {/* Bottom row: token/cost details */}
                     <div className="flex items-center justify-between text-[10px] text-gray-400 leading-tight gap-1">
                       <div className="truncate">
-                        {formatTokenCount(details.input_tokens)}i / ${formatCost(details.input)}
+                        {formatTokenCount(details?.input_tokens)}i / ${formatCost(details?.input)}
                       </div>
                       <span className="mx-0.5 text-gray-500 flex-shrink-0">•</span>
                       <div className="truncate">
-                        {formatTokenCount(details.output_tokens)}o / ${formatCost(details.output)}
+                        {formatTokenCount(details?.output_tokens)}o / ${formatCost(details?.output)}
                       </div>
                     </div>
                   </button>
