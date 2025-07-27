@@ -43,7 +43,7 @@ function parseJavaScriptFile(content: string): string[] {
     const namedMatch = match.match(/import\s+{\s*([^}]+)\s*}/);
     const defaultMatch = match.match(/import\s+(\w+)\s+from/);
     return namedMatch?.[1]?.split(',').map(s => s.trim()) || [defaultMatch?.[1]];
-  }).flat().filter(Boolean);
+  }).flat().filter((item): item is string => Boolean(item));
   
   return [...new Set([...functions, ...imports])];
 }
@@ -243,7 +243,7 @@ export function generateContextMap(repoPath: string, repoName: string): ContextM
           } else {
             contextMap.files[relativePath] = getFileMetadata(fullPath, content);
           }
-        } catch (error) {
+        } catch {
           // Skip files that can't be read as UTF-8
           continue;
         }
@@ -274,7 +274,7 @@ export function loadContextMap(repoName: string, basePath: string): ContextMap |
   try {
     const content = fs.readFileSync(filepath, 'utf-8');
     return JSON.parse(content);
-  } catch (error) {
+  } catch {
     return null;
   }
 }

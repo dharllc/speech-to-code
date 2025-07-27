@@ -13,7 +13,7 @@ interface TokenCountResponse {
   count: number;
 }
 
-interface DebouncedFunction<T extends (...args: any[]) => any> {
+interface DebouncedFunction<T extends (...args: unknown[]) => unknown> {
   (...args: Parameters<T>): void;
   cancel: () => void;
 }
@@ -23,8 +23,21 @@ const PromptTextArea: React.FC<PromptTextAreaProps> = ({ prompt, setPrompt, addi
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastKeyboardFocusRef = useRef<boolean>(false);
 
+  const updateTokenCount = async (text: string) => {
+    try {
+      const response = await axios.post<TokenCountResponse>(`${API_URL}/count_tokens`, {
+        text,
+        model: 'gpt-3.5-turbo'
+      });
+      setTokenCount(response.data.count);
+    } catch (error) {
+      console.error('Error counting tokens:', error);
+      setTokenCount(0);
+    }
+  };
+
   useEffect(() => {
-    const debouncedUpdateTokenCount = debounce(updateTokenCount, 300);
+    const debouncedUpdateTokenCount = debounce(updateTokenCount as (...args: unknown[]) => unknown, 300);
     debouncedUpdateTokenCount(prompt);
     return () => debouncedUpdateTokenCount.cancel();
   }, [prompt]);
@@ -54,20 +67,7 @@ const PromptTextArea: React.FC<PromptTextAreaProps> = ({ prompt, setPrompt, addi
     setPrompt(e.target.value);
   };
 
-  const updateTokenCount = async (text: string) => {
-    try {
-      const response = await axios.post<TokenCountResponse>(`${API_URL}/count_tokens`, {
-        text,
-        model: 'gpt-3.5-turbo'
-      });
-      setTokenCount(response.data.count);
-    } catch (error) {
-      console.error('Error counting tokens:', error);
-      setTokenCount(0);
-    }
-  };
-
-  const debounce = <T extends (...args: any[]) => any>(func: T, wait: number): DebouncedFunction<T> => {
+  const debounce = <T extends (...args: unknown[]) => unknown>(func: T, wait: number): DebouncedFunction<T> => {
     let timeout: NodeJS.Timeout | null = null;
     const debouncedFunc = (...args: Parameters<T>) => {
       if (timeout) clearTimeout(timeout);

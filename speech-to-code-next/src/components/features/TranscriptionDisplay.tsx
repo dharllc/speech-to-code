@@ -12,7 +12,6 @@ interface TranscriptionDisplayProps {
   transcriptionHistory: TranscriptionItem[];
   addToPrompt: (text: string) => void;
   autoAddEnabled: boolean;
-  preferEnhanced: boolean;
   enhancementDisabled?: boolean;
 }
 
@@ -24,7 +23,6 @@ const TranscriptionDisplay: React.FC<TranscriptionDisplayProps> = ({
   transcriptionHistory, 
   addToPrompt,
   autoAddEnabled,
-  preferEnhanced: _preferEnhanced,
   enhancementDisabled = false,
 }) => {
   const [addedToPrompt, setAddedToPrompt] = useState<AddedToPromptState>({});

@@ -4,8 +4,7 @@ import path from 'path';
 import { 
   shouldExcludeDirectoryFromContext, 
   shouldExcludeFromContext, 
-  getFileType,
-  getFilteredFilesForAnalysis 
+  getFileType
 } from '@/lib/utils/fileFilters';
 
 interface AnalyzePromptRequest {
@@ -207,7 +206,10 @@ export async function POST(request: NextRequest) {
       .filter(file => file.score > 0)
       .sort((a, b) => b.score - a.score)
       .slice(0, 10) // Top 10 suggestions
-      .map(({ score, ...file }) => file); // Remove internal score
+      .map(({ score, ...file }) => { 
+        void score; // Explicitly mark as used
+        return file; 
+      });
     
     const response: AnalyzePromptResponse = {
       suggestions: scoredFiles,

@@ -67,7 +67,7 @@ const Settings: React.FC<SettingsProps> = ({ selectedRepository, onRepositorySel
     setShowApiKeys(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const renderEnvVar = (key: string, _value: string): React.ReactElement => {
+  const renderEnvVar = (key: string): React.ReactElement => {
     const isApiKey = key.includes('API_KEY');
     return (
       <div key={key} className="mt-4">
@@ -103,7 +103,7 @@ const Settings: React.FC<SettingsProps> = ({ selectedRepository, onRepositorySel
       {selectedRepository && (
         <p className="mt-4">Current repository: {selectedRepository}</p>
       )}
-      {Object.entries(envVars).map(([key, value]) => renderEnvVar(key, value))}
+      {Object.entries(envVars).map(([key]) => renderEnvVar(key))}
       <button 
         onClick={handleSave} 
         className="mt-4 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded flex items-center transition-colors duration-200"

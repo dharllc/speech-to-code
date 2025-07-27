@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Trees, Trash2, Mic, Square, Copy, Check, ArrowRight, Files } from 'lucide-react';
 import AudioVisualizer from './AudioVisualizer';
@@ -37,90 +37,8 @@ const PromptActions: React.FC<PromptActionsProps> = ({
   const keyHandlerBusyRef = useRef<boolean>(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const handleKeyDown = async (e: KeyboardEvent) => {
-      if (keyHandlerBusyRef.current) return;
-      if (e.ctrlKey && !e.metaKey) {
-        keyHandlerBusyRef.current = true;
-        try {
-          switch(e.key.toLowerCase()) {
-            case 't':
-              e.preventDefault();
-              await addTreeStructure();
-              break;
-            case 'z':
-              e.preventDefault();
-              clearPrompt();
-              break;
-            case 'r':
-              e.preventDefault();
-              isRecording ? handleStopRecording() : handleStartRecording();
-              break;
-            case 'c':
-              e.preventDefault();
-              if (!e.target || !(e.target as HTMLElement).closest('input, textarea')) await copyToClipboard();
-              break;
-          }
-        } finally {
-          keyHandlerBusyRef.current = false;
-        }
-      } else if (e.metaKey && e.key === 'Enter') {
-        e.preventDefault();
-        prompt.trim() && handleGoToLLM();
-      }
-    };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isRecording, prompt, addTreeStructure, clearPrompt]);
-
-  const handleStartRecording = async () => {
-    try {
-      chunksRef.current = [];
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaRecorderRef.current = new MediaRecorder(stream);
-      
-      mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
-        if (event.data.size > 0) {
-          chunksRef.current.push(event.data);
-        }
-      };
-
-      mediaRecorderRef.current.start(100); // Record in 100ms chunks
-      setIsRecording(true);
-      setStatus('Recording...');
-      timerRef.current = setInterval(() => setCurrentDuration(prev => prev + 1), 1000);
-    } catch (err) {
-      console.error("Error accessing microphone:", err);
-      setStatus('Error accessing microphone');
-    }
-  };
-
-  const handleStopRecording = () => {
-    const duration = currentDuration;
-    
-    if (mediaRecorderRef.current?.state === 'recording') {
-      mediaRecorderRef.current.stop();
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      setIsRecording(false);
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
-      }
-      setCurrentDuration(0);
-
-      // Change 1.75 to another value to set a minimum audio file length to process a transcription
-      if (duration < 1.75) {
-        setStatus('Recording must be at least 2 seconds');
-        setTimeout(() => setStatus(''), 3000);
-        chunksRef.current = [];
-        return;
-      }
-
-      setTimeout(() => processRecording(), 100); // Give time for final chunks
-    }
-  };
-
-  const processRecording = async () => {
+  const processRecording = useCallback(async () => {
     if (chunksRef.current.length === 0) return;
     
     setStatus('Transcribing...');
@@ -145,9 +63,55 @@ const PromptActions: React.FC<PromptActionsProps> = ({
       console.error('Error transcribing audio:', error);
       setStatus('Error transcribing audio');
     }
-  };
+  }, [setStatus, setTranscription]);
 
-  const copyToClipboard = async () => {
+  const handleStartRecording = useCallback(async () => {
+    try {
+      chunksRef.current = [];
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream);
+      
+      mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorderRef.current.start(100); // Record in 100ms chunks
+      setIsRecording(true);
+      setStatus('Recording...');
+      timerRef.current = setInterval(() => setCurrentDuration(prev => prev + 1), 1000);
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      setStatus('Error accessing microphone');
+    }
+  }, [setIsRecording, setStatus, setCurrentDuration]);
+
+  const handleStopRecording = useCallback(() => {
+    const duration = currentDuration;
+    
+    if (mediaRecorderRef.current?.state === 'recording') {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+      setCurrentDuration(0);
+
+      // Change 1.75 to another value to set a minimum audio file length to process a transcription
+      if (duration < 1.75) {
+        setStatus('Recording must be at least 2 seconds');
+        setTimeout(() => setStatus(''), 3000);
+        chunksRef.current = [];
+        return;
+      }
+
+      setTimeout(() => processRecording(), 100); // Give time for final chunks
+    }
+  }, [currentDuration, setIsRecording, setCurrentDuration, setStatus, processRecording]);
+
+  const copyToClipboard = useCallback(async () => {
     if (!prompt) {
       setStatus('Nothing to copy');
       return;
@@ -176,14 +140,14 @@ const PromptActions: React.FC<PromptActionsProps> = ({
       setStatus('Failed to copy to clipboard');
       setTimeout(() => setStatus(''), 2000);
     }
-  };
+  }, [prompt, handleCopyToClipboard, setStatus, setCopied]);
 
-  const handleGoToLLM = () => {
+  const handleGoToLLM = useCallback(() => {
     if (prompt.trim()) {
       setUserPrompt(prompt.trim());
       router.push('/llm-interaction');
     }
-  };
+  }, [prompt, setUserPrompt, router]);
 
   const buttonStyle = {
     base: "px-2 py-2 text-white rounded flex items-center justify-center shadow-md transition-all duration-300 hover:shadow-lg flex-1",
@@ -194,6 +158,48 @@ const PromptActions: React.FC<PromptActionsProps> = ({
     orange: "bg-gradient-to-r from-orange-400 to-orange-600",
     disabled: "bg-gray-400 cursor-not-allowed"
   };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (keyHandlerBusyRef.current) return;
+      
+      if (event.ctrlKey) {
+        switch (event.key.toLowerCase()) {
+          case 't':
+            event.preventDefault();
+            keyHandlerBusyRef.current = true;
+            addTreeStructure().finally(() => {
+              keyHandlerBusyRef.current = false;
+            });
+            break;
+          case 'z':
+            event.preventDefault();
+            clearPrompt();
+            break;
+          case 'r':
+            event.preventDefault();
+            if (isRecording) {
+              handleStopRecording();
+            } else {
+              handleStartRecording();
+            }
+            break;
+          case 'c':
+            event.preventDefault();
+            copyToClipboard();
+            break;
+        }
+      } else if (event.metaKey && event.key === 'Enter') {
+        event.preventDefault();
+        handleGoToLLM();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [addTreeStructure, clearPrompt, handleStartRecording, handleStopRecording, copyToClipboard, handleGoToLLM, isRecording]);
 
   return (
     <div className="mb-2">

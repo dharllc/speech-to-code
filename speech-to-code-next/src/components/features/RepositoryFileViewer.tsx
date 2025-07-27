@@ -239,7 +239,7 @@ const RepositoryFileViewer: React.FC<RepositoryFileViewerProps> = ({
     }
   };
 
-  const sortTreeStructure = (node: TreeNode): TreeNode => {
+  const sortTreeStructure = useCallback(function sortTreeStructureRecursive(node: TreeNode): TreeNode {
     if (node.type === 'directory' && node.children) {
       // Calculate total token count for directories
       node.children.forEach(child => {
@@ -261,10 +261,10 @@ const RepositoryFileViewer: React.FC<RepositoryFileViewerProps> = ({
       });
       
       // Recursively sort children
-      node.children.forEach(sortTreeStructure);
+      node.children.forEach(sortTreeStructureRecursive);
     }
     return node;
-  };
+  }, []);
 
   const fetchTreeStructure = useCallback(async (repo: string) => {
     try {
@@ -296,7 +296,7 @@ const RepositoryFileViewer: React.FC<RepositoryFileViewerProps> = ({
     } catch (error) {
       console.error('Failed to fetch tree structure:', error);
     }
-  }, [instanceId]);
+  }, [instanceId, sortTreeStructure]);
 
   useEffect(() => {
     if (selectedRepository) {

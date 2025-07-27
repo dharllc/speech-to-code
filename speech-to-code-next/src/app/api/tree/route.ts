@@ -120,7 +120,7 @@ function buildTree(dirPath: string, relativePath: string = '', currentDepth: num
                 } else {
                   fileNode.token_count = approximateTokenCount(content);
                 }
-              } catch (error) {
+              } catch {
                 // If reading as UTF-8 fails, it's likely a binary file
                 fileNode.token_count = 0;
               }

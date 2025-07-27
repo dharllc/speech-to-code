@@ -53,8 +53,8 @@ const SystemPromptManagement: React.FC = () => {
       setEditingPrompt(null);
       setError('');
       setIsFormCollapsed(true);
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to save prompt');
+    } catch (err: unknown) {
+      setError((err as { response?: { data?: { detail?: string } } })?.response?.data?.detail || 'Failed to save prompt');
       console.error('Error saving prompt:', err);
     }
   };

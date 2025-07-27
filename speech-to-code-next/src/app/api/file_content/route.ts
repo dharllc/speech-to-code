@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
         skip_token_count: skipTokenCount,
         size: stats.size
       });
-    } catch (error) {
+    } catch {
       // If reading as UTF-8 fails, it's likely a binary file
       return NextResponse.json({
         content: '[Binary file]',

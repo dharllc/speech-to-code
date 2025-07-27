@@ -119,7 +119,7 @@ const LLMInteraction: React.FC<LLMInteractionProps> = ({ initialPrompt }) => {
       url.searchParams.set('session', activeSession.id);
       window.history.pushState({}, '', url.toString());
     }
-  }, [activeSession?.id]);
+  }, [activeSession]);
 
   // Save session state after each change
   useEffect(() => {
@@ -138,7 +138,7 @@ const LLMInteraction: React.FC<LLMInteractionProps> = ({ initialPrompt }) => {
       }
     };
     saveSession();
-  }, [conversationHistory, stageHistory, includedFiles]);
+  }, [activeSession, conversationHistory, stageHistory, includedFiles]);
 
   const fetchPrompts = async (): Promise<void> => {
     try {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { FiPlus, FiTrash2, FiEdit2, FiMessageSquare, FiClock } from 'react-icons/fi';
 import { CheckCircle2 } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
@@ -40,11 +40,7 @@ const ChatSessions: React.FC<ChatSessionsProps> = ({ onSessionSelect, activeSess
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
-  useEffect(() => {
-    loadSessions();
-  }, []);
-
-  const loadSessions = async () => {
+  const loadSessions = useCallback(async () => {
     try {
       const data = await chatSessionService.listChatSessions();
       console.log('Chat sessions:', data); // Debug log
@@ -58,7 +54,11 @@ const ChatSessions: React.FC<ChatSessionsProps> = ({ onSessionSelect, activeSess
     } catch (error) {
       console.error('Failed to load sessions:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadSessions();
+  }, [loadSessions]);
 
   const getLastMessageTimestamp = (session: ChatSession): number => {
     if (!session.conversation_history || session.conversation_history.length === 0) {

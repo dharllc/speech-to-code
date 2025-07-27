@@ -97,12 +97,35 @@ const PromptComposer: React.FC<PromptComposerProps> = ({
     }
   }, [autoAddEnabled, enhancementDisabled]);
 
+  // ======================
+  //  FETCH TREE STRUCTURE
+  // ======================
+  const formatTreeStructure = useCallback(function formatTreeStructureRecursive(node: TreeNode, depth: number = 0): string {
+    let result = '  '.repeat(depth) + node.name + '\n';
+    if (node.children) {
+      node.children.forEach(child => {
+        result += formatTreeStructureRecursive(child, depth + 1);
+      });
+    }
+    return result;
+  }, []);
+
+  const fetchTreeStructure = useCallback(async (repo: string) => {
+    try {
+      const response = await axios.get<TreeResponse>(`${API_URL}/tree?repository=${repo}`);
+      const formattedTree = formatTreeStructure(JSON.parse(response.data.tree));
+      setTreeStructure(formattedTree);
+    } catch (error) {
+      console.error('Failed to fetch tree structure:', error);
+    }
+  }, [formatTreeStructure, setTreeStructure]);
+
   // Fetch tree structure whenever repository changes
   useEffect(() => {
     if (selectedRepository) {
       fetchTreeStructure(selectedRepository);
     }
-  }, [selectedRepository]);
+  }, [selectedRepository, fetchTreeStructure]);
 
   // ======================
   //       ANALYSIS
@@ -143,7 +166,7 @@ const PromptComposer: React.FC<PromptComposerProps> = ({
   // ======================
   //  FILE CONTENT FETCH
   // ======================
-  const fetchFileContents = async () => {
+  const fetchFileContents = useCallback(async () => {
     const newContents = { ...fileContents };
 
     // Remove any old file paths no longer selected
@@ -204,34 +227,12 @@ const PromptComposer: React.FC<PromptComposerProps> = ({
     }
 
     setFileContents(newContents);
-  };
+  }, [selectedFiles, selectedRepository, fileContents, setFileContents]);
 
   useEffect(() => {
     fetchFileContents();
-  }, [selectedFiles, selectedRepository]);
+  }, [selectedFiles, selectedRepository, fetchFileContents]);
 
-  // ======================
-  //  FETCH TREE STRUCTURE
-  // ======================
-  const fetchTreeStructure = async (repo: string) => {
-    try {
-      const response = await axios.get<TreeResponse>(`${API_URL}/tree?repository=${repo}`);
-      const formattedTree = formatTreeStructure(JSON.parse(response.data.tree));
-      setTreeStructure(formattedTree);
-    } catch (error) {
-      console.error('Failed to fetch tree structure:', error);
-    }
-  };
-
-  const formatTreeStructure = (node: TreeNode, depth: number = 0): string => {
-    let result = '  '.repeat(depth) + node.name + '\n';
-    if (node.children) {
-      node.children.forEach(child => {
-        result += formatTreeStructure(child, depth + 1);
-      });
-    }
-    return result;
-  };
 
   // ======================
   //   REMOVE SELECTED
@@ -640,7 +641,7 @@ const PromptComposer: React.FC<PromptComposerProps> = ({
       setStatus('Error restoring combination');
       setTimeout(() => setStatus(''), 2000);
     }
-  }, [onFileRemove, onBatchFileSelection, selectedRepository]);
+  }, [onFileRemove, onBatchFileSelection, selectedRepository, selectedFiles]);
 
   // ======================
   //  RENDER
@@ -804,7 +805,6 @@ const PromptComposer: React.FC<PromptComposerProps> = ({
                 transcriptionHistory={transcriptionHistory}
                 addToPrompt={addToPrompt}
                 autoAddEnabled={autoAddEnabled}
-                preferEnhanced={true}
                 enhancementDisabled={enhancementDisabled}
               />
             </ScrollArea>

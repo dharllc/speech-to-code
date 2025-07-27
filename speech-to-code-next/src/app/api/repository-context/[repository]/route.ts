@@ -6,10 +6,10 @@ const CONTEXT_MAPS_DIR = path.join(process.cwd(), 'context_maps');
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { repository: string } }
+  context: { params: Promise<{ repository: string }> }
 ) {
   try {
-    const { repository } = params;
+    const { repository } = await context.params;
     
     if (!repository) {
       return NextResponse.json(
